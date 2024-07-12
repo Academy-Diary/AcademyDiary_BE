@@ -21,7 +21,7 @@ app.use("/", indexRouter);
 
 // error handler
 const errorHandler = require("./lib/middlewares/errorHandler");
-upp.use(errorHandler);
+app.use(errorHandler);
 
 // start server
 app.listen(port, () => {
