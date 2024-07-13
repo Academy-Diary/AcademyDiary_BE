@@ -17,7 +17,9 @@ if (process.env.NODE_ENV === "prod") {
 
 // routes
 const indexRouter = require("./routes/index");
+const userRouter = require("./routes/userRouter");
 app.use("/", indexRouter);
+app.use("/user", userRouter);
 
 // error handler
 const errorHandler = require("./lib/middlewares/errorHandler");
