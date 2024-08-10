@@ -2,9 +2,12 @@ const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
+const session = require('express-session')
+const passport = require('passport')
+const LocalStrategy = require('passport-local')
 
 const app = express();
-const port = 5000;
+const port = 8000;
 
 app.use(cors()); //cross-origin
 app.use(express.json()); // REST API body 파싱
@@ -29,3 +32,14 @@ app.use(errorHandler);
 app.listen(port, () => {
   console.log(`App running on port ${port}...\n>> http://localhost:${port}`);
 });
+
+//passport라이브러리 세팅
+app.use(session({
+  secret: '암호화에 쓸 비번', //env파일로 뺄것
+  resave : false, //유저가 요청날릴 때 마다 session데이터를 다시 갱신할건지 여부
+  saveUninitialized : false
+}))
+app.use(passport.initialize())
+app.use(passport.session())
+
+module.exports = app;
