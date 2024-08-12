@@ -1,24 +1,33 @@
 const jwt = require("jsonwebtoken");
 const secretKey = process.env.JWT_SECRET_KEY;
 
-// 새로운 토큰을 생성하는 함수
-const generateToken = (payload) => {
-  const token = jwt.sign(payload, secretKey, { expiresIn: '10m' });
-    return token;
+// 액세스 토큰을 생성하는 함수
+const generateAccessToken = (payload) => {
+    return jwt.sign(payload, secretKey, { expiresIn: '1h' });;
 };
 
-// 기존 토큰을 사용하여 새로운 토큰을 생성하는 함수
-const refreshToken = (token) => {
+// 리프레시 토큰을 생성하는 함수
+const generateRefreshToken = (payload) => {
+  return jwt.sign(payload, secretKey, { expiresIn: '7d' }); // 리프레시 토큰: 7일
+};
+
+// 리프레시 토큰을 사용하여 새로운 액세스 토큰을 생성
+const refreshAccessToken = (refreshToken) => {
   try {
-    const decoded = jwt.verify(token, secretKey);
+    const decoded = jwt.verify(refreshToken, secretKey);
     const payload = {
       userId: decoded.userId,
       isAdmin: decoded.isAdmin,
     };
-    const newToken = generateToken(payload);
-    return newToken;
+    return generateAccessToken(payload);
   } catch (error) {
     console.error('Error refreshing token:', error);
     return null;
   }
+};
+
+module.exports = {
+  generateAccessToken,
+  generateRefreshToken,
+  refreshAccessToken
 };

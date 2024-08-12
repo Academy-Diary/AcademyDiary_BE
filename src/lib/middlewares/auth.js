@@ -19,3 +19,5 @@ function authenticateJWT(req, res, next) {
     res.sendStatus(401); // Unauthorized: No token provided
   }
 }
+
+module.exports = { authenticateJWT };

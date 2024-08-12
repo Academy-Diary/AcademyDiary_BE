@@ -4,12 +4,12 @@ const bcrypt = require("bcrypt");
 const { CustomError } = require("../lib/errors/customError");
 const ErrorCode = require("../lib/errors/errorCode");
 const { StatusCodes } = require("http-status-codes");
-const { generateToken } = require("../lib/jwt/index.js");
+const { generateAccessToken, generateRefreshToken, refreshAccessToken } = require("../lib/jwt/index.js");
+const jwt = require('jsonwebtoken');
+const secretKey = process.env.JWT_SECRET_KEY;
  
 exports.createUser = asyncWrapper(async (req, res, next) => {
   const { user_id, password } = req.body;
-
-  // 유효성 검사 id, password등 입력 형식에 맞는지.
 
   // 이미 존재하는 유저인지
   const user = await prisma.user.findUnique({
@@ -58,9 +58,11 @@ exports.createJWT = asyncWrapper(async (req, res) => {
   const isMatch = bcrypt.compareSync(password, user.password);
   if (isMatch) {
     const payload = { user_id: user_id };
-    const token = generateToken(payload);
-    res.cookie("token", token, { httpOnly: true, maxAge: 3600000 });
-    res.json({ message: "로그인 되었습니다." });
+    const accessToken = generateAccessToken(payload);
+    const refreshToken = generateRefreshToken(payload);
+
+    res.cookie("refreshToken", refreshToken, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 }); //7일
+    res.json({ accessToken });
   } else {
     res.status(400).json({ message: "비밀번호가 일치하지 않습니다." });
   }
@@ -68,24 +70,39 @@ exports.createJWT = asyncWrapper(async (req, res) => {
 
 // 
 exports.removeJWT = asyncWrapper(async (req, res) => {
-  const token = req.cookies.token;
+  const refreshToken = req.cookies.refreshToken;
   // 검사1: 토큰이 없을 경우
-  if (!token) {
+  if (!refreshToken) {
     res
       .status(400)
       .json({ message: "토큰이 없습니다. 로그인 상태를 확안하세요." });
     return;
   }
   // 검사 2: 토큰이 정상적인 토큰이 아닌 경우
-  const decoded = jwt.decode(token);
-  if (!decoded) {
-    res
-      .status(401)
-      .json({ message: "잘못된 토큰입니다. 로그인 상태를 확인하세요." });
-    return;
+  try {
+    jwt.verify(refreshToken, secretKey); // 토큰 유효성 검증
+  } catch (err) {
+    return res.status(401).json({ message: "잘못된 리프레시 토큰입니다." });
   }
 
   // 쿠키 삭제
-  res.clearCookie("token");
+  res.clearCookie("refreshToken");
   res.json({ message: "로그아웃 되었습니다." });
+});
+
+// 리프레시 토큰을 사용하여 액세스 토큰 갱신
+exports.refreshToken = asyncWrapper(async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+
+  if (!refreshToken) {
+    return res.status(401).json({ message: '리프레시 토큰이 존재하지 않습니다.' });
+  }
+  
+  const newAccessToken = refreshAccessToken(refreshToken);
+
+  if (!newAccessToken) {
+    return res.status(403).json({ message: '유효하지 않거나 만료된 리프레시 토큰입니다. 다시 로그인 해주세요.' });
+  }
+
+  res.json({ accessToken: newAccessToken });
 });
