@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const secretKey = process.env.JWT_SECRET_KEY;
+const { secretKey } = require("../../config/secret");
 
 // 액세스 토큰을 생성하는 함수
 const generateAccessToken = (payload) => {
