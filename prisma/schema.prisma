@@ -3,14 +3,25 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
-// TODO: 임시유저
+// TODO: 임시유저 => db schema 에 맞게 변환 해야함.
 model User {
   id    Int     @id @default(autoincrement())
-  email String  @unique
+  user_id String @unique
+  academy_id String @unique
+  email String @unique
+  birth_date DateTime
+  user_name String
   password String
+  role Role @default(STUDENT)
 }
 
+enum Role{
+  CHIEF
+  TEACHER
+  PARENT
+  STUDENT
+}

@@ -4,7 +4,7 @@ const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
 
 const app = express();
-const port = 5000;
+const port = 8000;
 
 app.use(cors()); //cross-origin
 app.use(express.json()); // REST API body 파싱
@@ -29,3 +29,5 @@ app.use(errorHandler);
 app.listen(port, () => {
   console.log(`App running on port ${port}...\n>> http://localhost:${port}`);
 });
+
+module.exports = app;
