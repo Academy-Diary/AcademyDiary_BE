@@ -21,7 +21,7 @@ model User {
 
 model Academy {
   id           Int     @id @default(autoincrement())
-  user_id      Int
+  user_id      String @unique
   academy_id   String  @unique
   academy_key  String  @unique
   academy_name String
@@ -29,8 +29,6 @@ model Academy {
   address      String
   phone_number String
   status       Status  @default(INITIAL)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
 }
 
 enum Status {
