@@ -116,13 +116,43 @@ exports.refreshToken = asyncWrapper(async (req, res) => {
   const newAccessToken = refreshAccessToken(refreshToken);
 
   if (!newAccessToken) {
-    return res
-      .status(403)
-      .json({
-        message:
-          "유효하지 않거나 만료된 리프레시 토큰입니다. 다시 로그인 해주세요.",
-      });
+    return res.status(403).json({
+      message:
+        "유효하지 않거나 만료된 리프레시 토큰입니다. 다시 로그인 해주세요.",
+    });
   }
 
   res.json({ accessToken: newAccessToken });
+});
+
+exports.checkIdDuplicated = asyncWrapper(async (req, res, next) => {
+  const user_id = req.params["user_id"].trim();
+
+  // user_id가 공백인 경우
+  if (!user_id) {
+    throw new CustomError(
+      "유효하지 않은 아이디입니다.",
+      ErrorCode.BAD_REQUEST,
+      StatusCodes.BAD_REQUEST
+    );
+  }
+
+  const user = await prisma.user
+    .findUnique({
+      where: { user_id },
+    })
+    .catch((err) => {
+      // Prisma 에러가 발생하면 CustomError로 처리하여 미들웨어 체인에 전달
+      throw new CustomError(
+        "Prisma Error occurred!",
+        ErrorCode.INTERNAL_SERVER_PRISMA_ERROR,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
+    });
+
+  if (user) {
+    return res.status(409).json({ message: "이미 존재하는 아이디입니다." });
+  } else {
+    return res.status(200).json({ message: "사용 가능한 아이디입니다." });
+  }
 });
