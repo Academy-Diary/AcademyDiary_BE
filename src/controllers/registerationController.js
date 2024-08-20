@@ -4,17 +4,23 @@ const { CustomError } = require("../lib/errors/customError");
 const ErrorCode = require("../lib/errors/errorCode");
 const { StatusCodes } = require("http-status-codes");
 const { Status } = require("@prisma/client");
+const crypto = require("crypto");
+
+function generateInviteKey() {
+  return crypto.randomBytes(16).toString("hex");
+}
 
 exports.registAcademy = asyncWrapper(async(req, res, next) => {
     const { user_id, academy_id, academy_key, academy_name, academy_email, address, phone_number, status } =
     req.body;
 
+    const inviteKey = generateInviteKey();
     try {
         const newAcademy = await prisma.academy.create({
             data: {
                 user_id,
                 academy_id,
-                academy_key,
+                academy_key : inviteKey,
                 academy_name,
                 academy_email,
                 address,
