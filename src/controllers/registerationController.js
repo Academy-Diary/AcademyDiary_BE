@@ -3,6 +3,7 @@ const prisma = require("../lib/prisma/index");
 const { CustomError } = require("../lib/errors/customError");
 const ErrorCode = require("../lib/errors/errorCode");
 const { StatusCodes } = require("http-status-codes");
+const { Status } = require("@prisma/client");
 
 exports.registAcademy = asyncWrapper(async(req, res, next) => {
     const { user_id, academy_id, academy_key, academy_name, academy_email, address, phone_number, status } =
@@ -28,9 +29,13 @@ exports.registAcademy = asyncWrapper(async(req, res, next) => {
         });
     } catch (error) {
         if (error.code === 'P2002') { // Prisma의 unique constraint 오류 코드
-            next(new CustomError(ErrorCode.DUPLICATE_ENTRY, '이미 존재하는 학원 ID나 이메일입니다.'));
+            res.status(StatusCodes.DUPLICATE_ENTRY).json({
+                message: '이미 존재하는 학원 ID나 이메일입니다.'
+            })
         } else {
-            next(new CustomError(ErrorCode.INTERNAL_SERVER_ERROR, '학원 등록 중 오류가 발생했습니다.'));
+            res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                message: '학원 등록 중 오류가 발생했습니다.'
+            })
         }
     }
 })
