@@ -16,6 +16,7 @@ model User {
   birth_date DateTime
   user_name String
   password String
+  phone_number String
   role Role @default(STUDENT)
 }
 

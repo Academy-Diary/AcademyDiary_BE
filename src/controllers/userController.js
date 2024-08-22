@@ -13,7 +13,7 @@ const jwt = require("jsonwebtoken");
 const { secretKey } = require("../config/secret");
 
 exports.createUser = asyncWrapper(async (req, res, next) => {
-  const { user_id, academy_id, email, birth_date, user_name, password, role } =
+  const { user_id, academy_id, email, birth_date, user_name, phone_number, password, role } =
     req.body;
 
   // 이미 존재하는 유저인지
