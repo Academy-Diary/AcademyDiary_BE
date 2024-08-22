@@ -156,3 +156,37 @@ exports.checkIdDuplicated = asyncWrapper(async (req, res, next) => {
     return res.status(200).json({ message: "사용 가능한 아이디입니다." });
   }
 });
+
+exports.findUserId = asyncWrapper(async (req, res, next) => {
+  let { email, phone_number } = req.body;
+  // email, phone_number 공백인 경우
+  if (!email || !phone_number || !(email.trim()) || !(phone_number.trim())) {
+    throw new CustomError(
+      "email, phone_number를 입력해주세요.",
+      StatusCodes.BAD_REQUEST,
+      StatusCodes.BAD_REQUEST
+    );
+  }
+
+  const user = await prisma.user
+    .findUniqueOrThrow({
+      where: { email: email, phone_number: phone_number },
+    })
+    .catch((error) => {
+      if(error.code === "P2018" || error.code === "P2025") { // prisma not found error code
+        throw new CustomError(
+          "해당하는 유저가 존재하지 않습니다.",
+          StatusCodes.NOT_FOUND,
+          StatusCodes.NOT_FOUND
+        );
+      }else {
+        throw new CustomError(
+          "Prisma Error occurred!",
+          ErrorCode.INTERNAL_SERVER_PRISMA_ERROR,
+          StatusCodes.INTERNAL_SERVER_ERROR
+        );
+      }
+    });
+
+  res.status(StatusCodes.OK).json({ user_id: user.user_id });
+});
