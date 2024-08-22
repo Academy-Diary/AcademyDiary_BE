@@ -159,10 +159,22 @@ exports.checkIdDuplicated = asyncWrapper(async (req, res, next) => {
 
 exports.findUserId = asyncWrapper(async (req, res, next) => {
   let { email, phone_number } = req.body;
+  const regEmail = /^[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*@[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*\.[a-zA-Z]{2,3}$/i
+  const regPhone = /^01([0|1|6|7|8|9])([0-9]{3,4})([0-9]{4})$/;
+  // ref) https://choijying21.tistory.com/entry/자바스크립트-자주-쓰는-정규식-모음-이메일-핸드폰-주민번호-등 [JDevelog:티스토리]
+
   // email, phone_number 공백인 경우
   if (!email || !phone_number || !(email.trim()) || !(phone_number.trim())) {
     throw new CustomError(
       "email, phone_number를 입력해주세요.",
+      StatusCodes.BAD_REQUEST,
+      StatusCodes.BAD_REQUEST
+    );
+  }
+  // email, phone_number 형식이 맞지 않는 경우
+  if (!regEmail.test(email) || !regPhone.test(phone_number)) {
+    throw new CustomError(
+      "email, phone_number 형식이 맞지 않습니다.",
       StatusCodes.BAD_REQUEST,
       StatusCodes.BAD_REQUEST
     );
