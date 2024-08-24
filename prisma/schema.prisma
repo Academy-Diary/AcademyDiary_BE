@@ -31,6 +31,13 @@ model Academy {
   status       Status  @default(INITIAL)
 }
 
+model AcademyUserRegistrationList {
+  academy_id   String  @unique
+  user_id      String @unique
+  role Role @default(STUDENT)
+  status       Status  @default(INITIAL)
+}
+
 enum Status {
   INITIAL
   ACTIVE
