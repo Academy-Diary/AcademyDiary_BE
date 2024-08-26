@@ -21,6 +21,10 @@ router.get("/check-id/:user_id", userController.checkIdDuplicated);
 // 아이디 찾기
 router.post("/find-id", userController.findUserId);
 
+// 비밀번호 찾기
+router.post("/reset-password", userController.resetUserPassword);
+
+
 // 보호된 라우트 예시
 // router.get("/protected", authenticateJWT, (req, res) => {
 //   res.json({ message: "This is a protected route", user: req.user });

@@ -1,6 +1,7 @@
 const { asyncWrapper } = require("../lib/middlewares/async");
 const prisma = require("../lib/prisma/index");
 const bcrypt = require("bcrypt");
+const nodemailer = require("nodemailer");
 const { CustomError } = require("../lib/errors/customError");
 const ErrorCode = require("../lib/errors/errorCode");
 const { StatusCodes } = require("http-status-codes");
@@ -10,11 +11,19 @@ const {
   refreshAccessToken,
 } = require("../lib/jwt/index.js");
 const jwt = require("jsonwebtoken");
-const { secretKey } = require("../config/secret");
+const { secretKey, gmailID, gmailPW } = require("../config/secret");
 
 exports.createUser = asyncWrapper(async (req, res, next) => {
-  const { user_id, academy_id, email, birth_date, user_name, phone_number, password, role } =
-    req.body;
+  const {
+    user_id,
+    academy_id,
+    email,
+    birth_date,
+    user_name,
+    phone_number,
+    password,
+    role,
+  } = req.body;
 
   // 이미 존재하는 유저인지
   const user = await prisma.user.findUnique({
@@ -159,12 +168,13 @@ exports.checkIdDuplicated = asyncWrapper(async (req, res, next) => {
 
 exports.findUserId = asyncWrapper(async (req, res, next) => {
   let { email, phone_number } = req.body;
-  const regEmail = /^[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*@[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*\.[a-zA-Z]{2,3}$/i
+  const regEmail =
+    /^[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*@[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*\.[a-zA-Z]{2,3}$/i;
   const regPhone = /^01([0|1|6|7|8|9])([0-9]{3,4})([0-9]{4})$/;
   // ref) https://choijying21.tistory.com/entry/자바스크립트-자주-쓰는-정규식-모음-이메일-핸드폰-주민번호-등 [JDevelog:티스토리]
 
   // email, phone_number 공백인 경우
-  if (!email || !phone_number || !(email.trim()) || !(phone_number.trim())) {
+  if (!email || !phone_number || !email.trim() || !phone_number.trim()) {
     throw new CustomError(
       "email, phone_number를 입력해주세요.",
       StatusCodes.BAD_REQUEST,
@@ -185,13 +195,14 @@ exports.findUserId = asyncWrapper(async (req, res, next) => {
       where: { email: email, phone_number: phone_number },
     })
     .catch((error) => {
-      if(error.code === "P2018" || error.code === "P2025") { // prisma not found error code
+      if (error.code === "P2018" || error.code === "P2025") {
+        // prisma not found error code
         throw new CustomError(
           "해당하는 유저가 존재하지 않습니다.",
           StatusCodes.NOT_FOUND,
           StatusCodes.NOT_FOUND
         );
-      }else {
+      } else {
         throw new CustomError(
           "Prisma Error occurred!",
           ErrorCode.INTERNAL_SERVER_PRISMA_ERROR,
@@ -202,3 +213,103 @@ exports.findUserId = asyncWrapper(async (req, res, next) => {
 
   res.status(StatusCodes.OK).json({ user_id: user.user_id });
 });
+
+exports.resetUserPassword = asyncWrapper(async (req, res, next) => {
+  let { user_id, email, phone_number } = req.body;
+  const regEmail =
+    /^[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*@[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*\.[a-zA-Z]{2,3}$/i;
+  const regPhone = /^01([0|1|6|7|8|9])([0-9]{3,4})([0-9]{4})$/;
+
+  // user_id email, phone_number 공백인 경우
+  if (
+    !user_id ||
+    !email ||
+    !phone_number ||
+    !user_id.trim() ||
+    !email.trim() ||
+    !phone_number.trim()
+  ) {
+    throw new CustomError(
+      "user id, email, phone_number를 입력해주세요.",
+      StatusCodes.BAD_REQUEST,
+      StatusCodes.BAD_REQUEST
+    );
+  }
+  // email, phone_number 형식이 맞지 않는 경우
+  // if (!regEmail.test(email) || !regPhone.test(phone_number)) {
+  //   throw new CustomError(
+  //     "email, phone_number 형식이 맞지 않습니다.",
+  //     StatusCodes.BAD_REQUEST,
+  //     StatusCodes.BAD_REQUEST
+  //   );
+  // }
+  // USER DB에 해당하는 유저가 있는지 확인
+  const user = await prisma.user
+    .findUniqueOrThrow({
+      where: { user_id: user_id, email: email, phone_number: phone_number },
+    })
+    .catch((error) => {
+      if (error.code === "P2018" || error.code === "P2025") {
+        // prisma not found error code
+        throw new CustomError(
+          "해당하는 유저가 존재하지 않습니다.",
+          StatusCodes.NOT_FOUND,
+          StatusCodes.NOT_FOUND
+        );
+      } else {
+        throw new CustomError(
+          "Prisma Error occurred!",
+          ErrorCode.INTERNAL_SERVER_PRISMA_ERROR,
+          StatusCodes.INTERNAL_SERVER_ERROR
+        );
+      }
+    });
+
+  // 임시 비밀번호 전송
+  const transporter = nodemailer.createTransport({
+    service: "gmail", //gmail service 사용
+    port: 465, //465 port를 통해 요청 전송
+    secure: true, //보안모드 사용
+    auth: {
+      //gmail ID 및 password
+      user: gmailID,
+      pass: gmailPW,
+    },
+  });
+
+  const newPassword = generateRandomPassword(8); // 8자리 임시 비밀번호 생성
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  const updatedUser = await prisma.user.update({
+    where: { id: user_id },
+    data: { password: hashedPassword},
+  });
+
+  const emailOptions = {
+    //비밀번호 초기화를 보내는 이메일의 Option
+    from: gmailID, //관리자 Email
+    to: email || "seonu2001@naver.com", //비밀번호 초기화 요청 유저 Email
+    subject: "academyPro 비밀번호 초기화 메일", //보내는 메일의 제목
+    //보내는 메일의 내용
+    html:
+      "<p>비밀번호 초기화입니다. 로그인 후 비밀번호 변경 해주세요</p>" +
+      `<p>임시 비밀번호: ${newPassword}</p>`,
+  };
+  transporter.sendMail(emailOptions); //요청 전송
+
+  res.send({ success: true });
+  // 출처: https://well-made-codestory.tistory.com/37 [SJ BackEnd Log:티스토리]
+});
+
+function generateRandomPassword(temp_pw_lenngth = 8) {
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let password = "";
+
+  for (let i = 0; i < temp_pw_lenngth; i++) {
+    const randomIndex = Math.floor(Math.random() * chars.length);
+    password += chars[randomIndex];
+  }
+
+  return password;
+}
