@@ -135,12 +135,12 @@ exports.refreshToken = asyncWrapper(async (req, res) => {
 });
 
 exports.checkIdDuplicated = asyncWrapper(async (req, res, next) => {
-  const user_id = req.params["user_id"].trim();
+  const user_id = req.params["user_id"];
 
   // user_id가 공백인 경우
-  if (!user_id) {
+  if (user_id === null || !user_id.trim()) {
     throw new CustomError(
-      "유효하지 않은 아이디입니다.",
+      "아이디를 입력해 주세요.",
       ErrorCode.BAD_REQUEST,
       StatusCodes.BAD_REQUEST
     );
@@ -166,14 +166,65 @@ exports.checkIdDuplicated = asyncWrapper(async (req, res, next) => {
   }
 });
 
+// 아이디 찾기
 exports.findUserId = asyncWrapper(async (req, res, next) => {
-  let { email, phone_number } = req.body;
-  const regEmail =
-    /^[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*@[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*\.[a-zA-Z]{2,3}$/i;
-  const regPhone = /^01([0|1|6|7|8|9])([0-9]{3,4})([0-9]{4})$/;
+  const { email, phone_number } = req.body;
+
+  validateRequestData(email, phone_number);
+
+  const user = await findUserByCriteria({ email, phone_number });
+
+  res.status(StatusCodes.OK).json({ user_id: user.user_id });
+});
+
+// 비밀번호 재설정
+exports.resetUserPassword = asyncWrapper(async (req, res, next) => {
+  const { user_id, email, phone_number } = req.body;
+
+  validateRequestData(email, phone_number, user_id);
+
+  const user = await findUserByCriteria({ user_id, email, phone_number });
+
+  // 임시 비밀번호 생성 및 해싱
+  const newPassword = generateRandomPassword(8);
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  await prisma.user.update({
+    where: { user_id },
+    data: { password: hashedPassword },
+  });
+
+  // 이메일 전송 설정
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    port: 465,
+    secure: true,
+    auth: {
+      user: gmailID,
+      pass: gmailPW,
+    },
+  });
+
+  const emailOptions = {
+    from: process.env.GMAIL_ID,
+    to: email,
+    subject: "academyPro 비밀번호 초기화 메일",
+    html: `<p>비밀번호 초기화입니다. 로그인 후 비밀번호 변경 해주세요. </p><p>임시 비밀번호: ${newPassword}</p>`,
+  };
+
+  transporter.sendMail(emailOptions);
+
+  res.status(StatusCodes.OK).json({ message: "비밀번호가 초기화되었습니다." });
+});
+
+// 유효성 검사 함수
+function validateRequestData(email, phone_number, user_id = undefined) {
   // ref) https://choijying21.tistory.com/entry/자바스크립트-자주-쓰는-정규식-모음-이메일-핸드폰-주민번호-등 [JDevelog:티스토리]
 
-  // email, phone_number 공백인 경우
+  const regEmail =
+    /^[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*@[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*\.[a-zA-Z]{2,3}$/i;
+  const regPhone = /^01([0|1|6|7|8|9])-?([0-9]{3,4})-?([0-9]{4})$/;
+
   if (!email || !phone_number || !email.trim() || !phone_number.trim()) {
     throw new CustomError(
       "email, phone_number를 입력해주세요.",
@@ -181,7 +232,7 @@ exports.findUserId = asyncWrapper(async (req, res, next) => {
       StatusCodes.BAD_REQUEST
     );
   }
-  // email, phone_number 형식이 맞지 않는 경우
+
   if (!regEmail.test(email) || !regPhone.test(phone_number)) {
     throw new CustomError(
       "email, phone_number 형식이 맞지 않습니다.",
@@ -190,67 +241,23 @@ exports.findUserId = asyncWrapper(async (req, res, next) => {
     );
   }
 
-  const user = await prisma.user
-    .findUniqueOrThrow({
-      where: { email: email, phone_number: phone_number },
-    })
-    .catch((error) => {
-      if (error.code === "P2018" || error.code === "P2025") {
-        // prisma not found error code
-        throw new CustomError(
-          "해당하는 유저가 존재하지 않습니다.",
-          StatusCodes.NOT_FOUND,
-          StatusCodes.NOT_FOUND
-        );
-      } else {
-        throw new CustomError(
-          "Prisma Error occurred!",
-          ErrorCode.INTERNAL_SERVER_PRISMA_ERROR,
-          StatusCodes.INTERNAL_SERVER_ERROR
-        );
-      }
-    });
-
-  res.status(StatusCodes.OK).json({ user_id: user.user_id });
-});
-
-exports.resetUserPassword = asyncWrapper(async (req, res, next) => {
-  let { user_id, email, phone_number } = req.body;
-  const regEmail =
-    /^[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*@[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*\.[a-zA-Z]{2,3}$/i;
-  const regPhone = /^01([0|1|6|7|8|9])([0-9]{3,4})([0-9]{4})$/;
-
-  // user_id email, phone_number 공백인 경우
-  if (
-    !user_id ||
-    !email ||
-    !phone_number ||
-    !user_id.trim() ||
-    !email.trim() ||
-    !phone_number.trim()
-  ) {
+  if (user_id !== undefined && (user_id === null || !user_id.trim())) {
     throw new CustomError(
-      "user id, email, phone_number를 입력해주세요.",
+      "user id를 입력해주세요.",
       StatusCodes.BAD_REQUEST,
       StatusCodes.BAD_REQUEST
     );
   }
-  // email, phone_number 형식이 맞지 않는 경우
-  // if (!regEmail.test(email) || !regPhone.test(phone_number)) {
-  //   throw new CustomError(
-  //     "email, phone_number 형식이 맞지 않습니다.",
-  //     StatusCodes.BAD_REQUEST,
-  //     StatusCodes.BAD_REQUEST
-  //   );
-  // }
-  // USER DB에 해당하는 유저가 있는지 확인
-  const user = await prisma.user
+}
+
+// 유저 검색 함수
+async function findUserByCriteria(criteria) {
+  return await prisma.user
     .findUniqueOrThrow({
-      where: { user_id: user_id, email: email, phone_number: phone_number },
+      where: criteria,
     })
     .catch((error) => {
       if (error.code === "P2018" || error.code === "P2025") {
-        // prisma not found error code
         throw new CustomError(
           "해당하는 유저가 존재하지 않습니다.",
           StatusCodes.NOT_FOUND,
@@ -264,52 +271,12 @@ exports.resetUserPassword = asyncWrapper(async (req, res, next) => {
         );
       }
     });
-
-  // 임시 비밀번호 전송
-  const transporter = nodemailer.createTransport({
-    service: "gmail", //gmail service 사용
-    port: 465, //465 port를 통해 요청 전송
-    secure: true, //보안모드 사용
-    auth: {
-      //gmail ID 및 password
-      user: gmailID,
-      pass: gmailPW,
-    },
-  });
-
-  const newPassword = generateRandomPassword(8); // 8자리 임시 비밀번호 생성
-  const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-  const updatedUser = await prisma.user.update({
-    where: { id: user_id },
-    data: { password: hashedPassword},
-  });
-
-  const emailOptions = {
-    //비밀번호 초기화를 보내는 이메일의 Option
-    from: gmailID, //관리자 Email
-    to: email || "seonu2001@naver.com", //비밀번호 초기화 요청 유저 Email
-    subject: "academyPro 비밀번호 초기화 메일", //보내는 메일의 제목
-    //보내는 메일의 내용
-    html:
-      "<p>비밀번호 초기화입니다. 로그인 후 비밀번호 변경 해주세요</p>" +
-      `<p>임시 비밀번호: ${newPassword}</p>`,
-  };
-  transporter.sendMail(emailOptions); //요청 전송
-
-  res.send({ success: true });
-  // 출처: https://well-made-codestory.tistory.com/37 [SJ BackEnd Log:티스토리]
-});
-
+}
+// 임시 비밀번호 생성 함수
 function generateRandomPassword(temp_pw_lenngth = 8) {
   const chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let password = "";
-
-  for (let i = 0; i < temp_pw_lenngth; i++) {
-    const randomIndex = Math.floor(Math.random() * chars.length);
-    password += chars[randomIndex];
-  }
-
-  return password;
+  return Array.from({ length: temp_pw_lenngth }, () =>
+    chars.charAt(Math.floor(Math.random() * chars.length))
+  ).join("");
 }
