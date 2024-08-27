@@ -94,3 +94,46 @@ exports.registUser = asyncWrapper(async(req, res, next) =>{
 
 
 })
+
+exports.decideUserStatus = asyncWrapper(async(req, res, next) =>{
+    const { academy_id, user_id, agreed} = req.body;
+    
+    const searchUser = await prisma.AcademyUserRegistrationList.findUniqueOrThrow({
+        where : { 
+            academy_id : academy_id,
+            user_id : user_id
+        }
+    }).catch((error) => {
+        if (error.code === "P2018" || error.code === "P2025") {
+            // prisma not found error code
+            throw new CustomError(
+              "해당하는 유저가 존재하지 않습니다.",
+              StatusCodes.NOT_FOUND,
+              StatusCodes.NOT_FOUND
+            );
+          } else {
+            throw new CustomError(
+              "Prisma Error occurred!",
+              ErrorCode.INTERNAL_SERVER_PRISMA_ERROR,
+              StatusCodes.INTERNAL_SERVER_ERROR
+            );
+          }
+    })
+
+    // agreed 값에 따라 상태를 결정
+    const newStatus = agreed ? 'ACTIVE' : 'INACTIVE';
+
+    //유저의 STATUS 업데이트
+    const updatedUser = await prisma.AcademyUserRegistrationList.update({
+        where : { 
+            academy_id : academy_id,
+            user_id : user_id
+        },
+        data: { status : newStatus},
+        });
+
+    res.status(StatusCodes.ACCEPTED).json({
+        message: '유저승인/거절이 성공적으로 완료되었습니다.',
+        data: updatedUser
+    })
+})
