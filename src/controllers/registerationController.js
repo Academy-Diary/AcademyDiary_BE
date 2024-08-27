@@ -96,18 +96,10 @@ exports.registerUser = asyncWrapper(async(req, res, next) =>{
         })
     
     } catch(error) {
-        if (error.code === 'P2002') { // Prisma의 unique constraint 오류 코드
-            res.status(StatusCodes.DUPLICATE_ENTRY).json({
-                message: '이미 등록요청된 유저입니다.'
-            })
-        }else {
-            res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-                message: '사용자 등록 요청 중 오류가 발생했습니다.'
-            })
-        }
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+            message: '사용자 등록 요청 중 오류가 발생했습니다.'
+        })
     }
-
-
 })
 
 exports.decideUserStatus = asyncWrapper(async(req, res, next) =>{
