@@ -5,6 +5,7 @@ const ErrorCode = require("../lib/errors/errorCode");
 const { StatusCodes } = require("http-status-codes");
 const { Status } = require("@prisma/client");
 const crypto = require("crypto");
+const { error } = require("console");
 
 function generateInviteKey() {
   return crypto.randomBytes(16).toString("hex");
@@ -51,14 +52,24 @@ exports.registUser = asyncWrapper(async(req, res, next) =>{
 
     try {
         //입력받은 academy_key로 academy찾기
-        const searchAcademy = await prisma.academy.findUnique({
+        const searchAcademy = await prisma.academy.findUniqueOrThrow({
             where : { academy_key }
+        }).catch((error) => {
+            if (error.code === "P2018" || error.code === "P2025") {
+                // prisma not found error code
+                throw new CustomError(
+                  "학원을 찾을 수 없습니다.",
+                  StatusCodes.NOT_FOUND,
+                  StatusCodes.NOT_FOUND
+                );
+              } else {
+                throw new CustomError(
+                  "Prisma Error occurred!",
+                  ErrorCode.INTERNAL_SERVER_PRISMA_ERROR,
+                  StatusCodes.INTERNAL_SERVER_ERROR
+                );
+              }
         })
-        if(!searchAcademy){
-            return res.status(StatusCodes.NOT_FOUND).json({
-                message: '학원을 찾을 수 없습니다.'
-            });
-        }
 
         //학원 유저 신청 목록DB에 user_id가 이미 있는지 검사
         const checkUser = await prisma.AcademyUserRegistrationList.findUnique({
@@ -88,6 +99,10 @@ exports.registUser = asyncWrapper(async(req, res, next) =>{
         if (error.code === 'P2002') { // Prisma의 unique constraint 오류 코드
             res.status(StatusCodes.DUPLICATE_ENTRY).json({
                 message: '이미 등록요청된 유저입니다.'
+            })
+        }else {
+            res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                message: '사용자 등록 요청 중 오류가 발생했습니다.'
             })
         }
     }
