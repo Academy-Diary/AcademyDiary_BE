@@ -42,9 +42,10 @@ exports.createUser = asyncWrapper(async (req, res, next) => {
         user_id,
         academy_id,
         email,
-        birth_date: new Date(req.body.birth_date),
+        birth_date: new Date(birth_date),
         user_name,
         password: hashedPassword,
+        phone_number,
         role,
       },
     })
