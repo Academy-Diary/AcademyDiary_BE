@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const regsiterController = require('../controllers/registerationController');
+const registerController = require('../controllers/registerationController');
 const { authenticateJWT } = require('../lib/middlewares/auth.js')
 
-router.post('/request/academy', authenticateJWT, regsiterController.registAcademy);
+router.post('/request/academy', authenticateJWT, registerController.registerAcademy);
 
-router.post('/request/user',authenticateJWT, regsiterController.registUser);
+router.post('/request/user',authenticateJWT, registerController.registerUser);
 
-router.post('/decide/user', authenticateJWT, regsiterController.decideUserStatus);
+router.post('/decide/user', authenticateJWT, registerController.decideUserStatus);
 
 // 보호된 라우트 예시
 // router.get("/protected", authenticateJWT, (req, res) => {

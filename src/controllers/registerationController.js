@@ -11,7 +11,7 @@ function generateInviteKey() {
   return crypto.randomBytes(16).toString("hex");
 }
 
-exports.registAcademy = asyncWrapper(async(req, res, next) => {
+exports.registerAcademy = asyncWrapper(async(req, res, next) => {
     const { user_id, academy_id, academy_key, academy_name, academy_email, address, phone_number, status } =
     req.body;
 
@@ -47,7 +47,7 @@ exports.registAcademy = asyncWrapper(async(req, res, next) => {
     }
 })
 
-exports.registUser = asyncWrapper(async(req, res, next) =>{
+exports.registerUser = asyncWrapper(async(req, res, next) =>{
     const { user_id, academy_key, role } = req.body;
 
     try {
