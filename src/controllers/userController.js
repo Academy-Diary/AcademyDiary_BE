@@ -84,6 +84,10 @@ exports.createJWT = asyncWrapper(async (req, res) => {
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     }); //7일
+
+    // 액세스 토큰을 Authorization 헤더에 추가
+    res.setHeader('Authorization', `Bearer ${accessToken}`);
+    
     res.json({ accessToken });
   } else {
     res.status(400).json({ message: "비밀번호가 일치하지 않습니다." });
