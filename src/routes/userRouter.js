@@ -15,6 +15,16 @@ router.post("/logout", userController.removeJWT);
 // 리프레시 토큰을 사용하여 액세스 토큰 갱신
 router.post("/refresh-token", userController.refreshToken);
 
+// 아이디 중복 확인
+router.get("/check-id/:user_id", userController.checkIdDuplicated);
+
+// 아이디 찾기
+router.post("/find-id", userController.findUserId);
+
+// 비밀번호 찾기
+router.post("/reset-password", userController.resetUserPassword);
+
+
 // 보호된 라우트 예시
 // router.get("/protected", authenticateJWT, (req, res) => {
 //   res.json({ message: "This is a protected route", user: req.user });
