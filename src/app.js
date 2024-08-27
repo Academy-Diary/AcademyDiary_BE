@@ -18,8 +18,10 @@ if (process.env.NODE_ENV === "prod") {
 // routes
 const indexRouter = require("./routes/index");
 const userRouter = require("./routes/userRouter");
+const registerationRouter = require("./routes/registerationRouter");
 app.use("/", indexRouter);
 app.use("/user", userRouter);
+app.use("/registeration", registerationRouter);
 
 // error handler
 const errorHandler = require("./lib/middlewares/errorHandler");
