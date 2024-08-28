@@ -11,7 +11,9 @@ const {
   refreshAccessToken,
 } = require("../lib/jwt/index.js");
 const jwt = require("jsonwebtoken");
-const { secretKey, gmailID, gmailPW } = require("../config/secret");
+const secretKey = process.env.JWT_SECRET_KEY;
+const gmailID = process.env.GMAIL_ID;
+const gmailPW = process.env.GMAIL_PW;
 
 exports.createUser = asyncWrapper(async (req, res, next) => {
   const {
