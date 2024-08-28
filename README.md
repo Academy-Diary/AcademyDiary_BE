@@ -8,5 +8,6 @@ quick start with commands below🧡
 git clone https://github.com/2024-summer-project/AcademyManager_BE.git
 cd ./AcademyManager_BE
 npm install
+npx prisma generate
 npm run dev
 ```
