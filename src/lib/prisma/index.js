@@ -2,13 +2,15 @@ const { PrismaClient } = require("@prisma/client");
 
 let option = {};
 if (process.env.NODE_ENV === "prod") {
-  pass;
+  // Production 환경에서는 로그를 최소화하고, 에러 메시지를 기본 형식으로 설정
+  option = {
+    log: [],  // 로그를 출력하지 않음
+    errorFormat: "minimal",  // 에러 메시지를 기본 형식으로 출력
+  };
 } else {
   option = {
-    // Prisma를 이용해 데이터베이스를 접근할 때, SQL을 출력
+    // Development 환경에서는 SQL 쿼리 로그를 출력하고, 에러 메시지를 읽기 쉬운 형태로 설정
     log: ["query", "info", "warn", "error"],
-
-    // 에러 메시지를 평문이 아닌, 개발자가 읽기 쉬운 형태로 출력
     errorFormat: "pretty",
   };
 }
