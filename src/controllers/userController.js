@@ -65,7 +65,7 @@ exports.createUser = asyncWrapper(async (req, res, next) => {
       );
     });
 
-  res.status(StatusCodes.CREATED).json(newUser);
+  res.status(StatusCodes.CREATED).json({ message: "회원가입이 완료되었습니다." });
 });
 
 exports.createJWT = asyncWrapper(async (req, res) => {
@@ -79,7 +79,7 @@ exports.createJWT = asyncWrapper(async (req, res) => {
   if (!user) {
     console.log("가입되지 않은 아이디입니다.");
     throw new CustomError(
-      "가입되지 않은 아이디입니다..",
+      "가입되지 않은 아이디입니다.",
       StatusCodes.BAD_REQUEST,
       StatusCodes.BAD_REQUEST
     );
@@ -99,7 +99,9 @@ exports.createJWT = asyncWrapper(async (req, res) => {
     // 액세스 토큰을 Authorization 헤더에 추가
     res.setHeader("Authorization", `Bearer ${accessToken}`);
 
-    res.status(StatusCodes.CREATED).json({ accessToken });
+    res.status(StatusCodes.CREATED).json({ 
+      message: "로그인 되었습니다.",
+      accessToken: accessToken });
   } else {
     throw new CustomError(
       "비밀번호가 일치하지 않습니다.",
@@ -157,7 +159,9 @@ exports.refreshToken = asyncWrapper(async (req, res) => {
     );
   }
 
-  res.status(StatusCodes.CREATED).json({ accessToken: newAccessToken });
+  res.status(StatusCodes.CREATED).json({ 
+    message: "액세스 토큰이 갱신되었습니다.",
+    accessToken: newAccessToken });
 });
 
 exports.checkIdDuplicated = asyncWrapper(async (req, res, next) => {
