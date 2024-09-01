@@ -32,7 +32,11 @@ exports.createUser = asyncWrapper(async (req, res, next) => {
     where: { user_id },
   });
   if (user) {
-    return res.status(400).json({ message: "이미 존재하는 아이디입니다." });
+    throw new CustomError(
+      "이미 존재하는 아이디입니다.",
+      StatusCodes.CONFLICT,
+      StatusCodes.CONFLICT
+    );
   }
 
   //bcrypt라이브러리로 비밀번호 해싱
@@ -74,7 +78,11 @@ exports.createJWT = asyncWrapper(async (req, res) => {
   // 해당 유저가 없는 경우
   if (!user) {
     console.log("가입되지 않은 아이디입니다.");
-    return res.status(400).json({ message: "가입되지 않은 아이디입니다." });
+    throw new CustomError(
+      "가입되지 않은 아이디입니다..",
+      StatusCodes.BAD_REQUEST,
+      StatusCodes.BAD_REQUEST
+    );
   }
   // 검사2:비밀번호가 일치하는지 확인
   const isMatch = bcrypt.compareSync(password, user.password);
@@ -89,11 +97,15 @@ exports.createJWT = asyncWrapper(async (req, res) => {
     }); //7일
 
     // 액세스 토큰을 Authorization 헤더에 추가
-    res.setHeader('Authorization', `Bearer ${accessToken}`);
-    
+    res.setHeader("Authorization", `Bearer ${accessToken}`);
+
     res.status(StatusCodes.CREATED).json({ accessToken });
   } else {
-    res.status(400).json({ message: "비밀번호가 일치하지 않습니다." });
+    throw new CustomError(
+      "비밀번호가 일치하지 않습니다.",
+      StatusCodes.BAD_REQUEST,
+      StatusCodes.BAD_REQUEST
+    );
   }
 });
 
@@ -102,16 +114,21 @@ exports.removeJWT = asyncWrapper(async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
   // 검사1: 토큰이 없을 경우
   if (!refreshToken) {
-    res
-      .status(400)
-      .json({ message: "토큰이 없습니다. 로그인 상태를 확안하세요." });
-    return;
+    throw new CustomError(
+      "리프레시 토큰이 쿠키에 존재하지 않습니다.",
+      StatusCodes.BAD_REQUEST,
+      StatusCodes.BAD_REQUEST
+    );
   }
   // 검사 2: 토큰이 정상적인 토큰이 아닌 경우
   try {
     jwt.verify(refreshToken, secretKey); // 토큰 유효성 검증
   } catch (err) {
-    return res.status(401).json({ message: "잘못된 리프레시 토큰입니다." });
+    throw new CustomError(
+      "잘못된 리프레시 토큰입니다.",
+      StatusCodes.BAD_REQUEST,
+      StatusCodes.BAD_REQUEST
+    );
   }
 
   // 쿠키 삭제
@@ -124,18 +141,20 @@ exports.refreshToken = asyncWrapper(async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
 
   if (!refreshToken) {
-    return res
-      .status(401)
-      .json({ message: "리프레시 토큰이 존재하지 않습니다." });
+    throw new CustomError(
+      "리프레시 토큰이 쿠키에 존재하지 않습니다.",
+      StatusCodes.BAD_REQUEST,
+      StatusCodes.BAD_REQUEST
+    );
   }
-
   const newAccessToken = refreshAccessToken(refreshToken);
 
   if (!newAccessToken) {
-    return res.status(403).json({
-      message:
-        "유효하지 않거나 만료된 리프레시 토큰입니다. 다시 로그인 해주세요.",
-    });
+    throw new CustomError(
+      "유효하지 않거나 만료된 리프레시 토큰입니다. 다시 로그인 해주세요.",
+      StatusCodes.FORBIDDEN,
+      StatusCodes.FORBIDDEN
+    );
   }
 
   res.status(StatusCodes.CREATED).json({ accessToken: newAccessToken });
@@ -148,7 +167,7 @@ exports.checkIdDuplicated = asyncWrapper(async (req, res, next) => {
   if (user_id === null || !user_id.trim()) {
     throw new CustomError(
       "아이디를 입력해 주세요.",
-      ErrorCode.BAD_REQUEST,
+      StatusCodes.BAD_REQUEST,
       StatusCodes.BAD_REQUEST
     );
   }
@@ -167,9 +186,15 @@ exports.checkIdDuplicated = asyncWrapper(async (req, res, next) => {
     });
 
   if (user) {
-    return res.status(409).json({ message: "이미 존재하는 아이디입니다." });
+    throw new CustomError(
+      "이미 존재하는 아이디입니다.",
+      StatusCodes.CONFLICT,
+      StatusCodes.CONFLICT
+    );
   } else {
-    return res.status(StatusCodes.OK).json({ message: "사용 가능한 아이디입니다." });
+    return res
+      .status(StatusCodes.OK)
+      .json({ message: "사용 가능한 아이디입니다." });
   }
 });
 
