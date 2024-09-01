@@ -61,7 +61,7 @@ exports.createUser = asyncWrapper(async (req, res, next) => {
       );
     });
 
-  res.status(201).json(newUser);
+  res.status(StatusCodes.CREATED).json(newUser);
 });
 
 exports.createJWT = asyncWrapper(async (req, res) => {
@@ -91,7 +91,7 @@ exports.createJWT = asyncWrapper(async (req, res) => {
     // 액세스 토큰을 Authorization 헤더에 추가
     res.setHeader('Authorization', `Bearer ${accessToken}`);
     
-    res.json({ accessToken });
+    res.status(StatusCodes.CREATED).json({ accessToken });
   } else {
     res.status(400).json({ message: "비밀번호가 일치하지 않습니다." });
   }
@@ -116,7 +116,7 @@ exports.removeJWT = asyncWrapper(async (req, res) => {
 
   // 쿠키 삭제
   res.clearCookie("refreshToken");
-  res.json({ message: "로그아웃 되었습니다." });
+  res.status(StatusCodes.OK).json({ message: "로그아웃 되었습니다." });
 });
 
 // 리프레시 토큰을 사용하여 액세스 토큰 갱신
@@ -138,7 +138,7 @@ exports.refreshToken = asyncWrapper(async (req, res) => {
     });
   }
 
-  res.json({ accessToken: newAccessToken });
+  res.status(StatusCodes.CREATED).json({ accessToken: newAccessToken });
 });
 
 exports.checkIdDuplicated = asyncWrapper(async (req, res, next) => {
@@ -169,7 +169,7 @@ exports.checkIdDuplicated = asyncWrapper(async (req, res, next) => {
   if (user) {
     return res.status(409).json({ message: "이미 존재하는 아이디입니다." });
   } else {
-    return res.status(200).json({ message: "사용 가능한 아이디입니다." });
+    return res.status(StatusCodes.OK).json({ message: "사용 가능한 아이디입니다." });
   }
 });
 
