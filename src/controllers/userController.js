@@ -250,7 +250,7 @@ exports.resetUserPassword = asyncWrapper(async (req, res, next) => {
 
   transporter.sendMail(emailOptions);
 
-  res.status(StatusCodes.OK).json({ message: "비밀번호가 초기화되었습니다." });
+  res.status(StatusCodes.OK).json({ message: "비밀번호가 초기화 메일이 발송되었습니다." });
 });
 
 // 유효성 검사 함수
