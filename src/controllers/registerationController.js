@@ -36,13 +36,17 @@ exports.registerAcademy = asyncWrapper(async(req, res, next) => {
         });
     } catch (error) {
         if (error.code === 'P2002') { // Prisma의 unique constraint 오류 코드
-            res.status(StatusCodes.DUPLICATE_ENTRY).json({
-                message: '이미 존재하는 학원 ID나 이메일입니다.'
-            })
+            throw new CustomError(
+                "이미 존재하는 학원 ID나 이메일입니다.",
+                StatusCodes.DUPLICATE_ENTRY,
+                StatusCodes.DUPLICATE_ENTRY
+            );
         } else {
-            res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-                message: '학원 등록 중 오류가 발생했습니다.'
-            })
+            throw new CustomError(
+                "학원 등록 중 오류가 발생했습니다.",
+                StatusCodes.INTERNAL_SERVER_ERROR,
+                StatusCodes.INTERNAL_SERVER_ERROR
+            );
         }
     }
 })
@@ -76,9 +80,11 @@ exports.registerUser = asyncWrapper(async(req, res, next) =>{
             where : { user_id }
         })
         if (checkUser) {
-            return res.status(StatusCodes.CONFLICT).json({
-                message: '이미 등록요청된 유저입니다.'
-            });
+            throw new CustomError(
+                "이미 등록요청된 유저입니다.",
+                StatusCodes.CONFLICT,
+                StatusCodes.CONFLICT
+            );
         }
         //없다면 DB에 req.body내용 추가
         const newUser = await prisma.AcademyUserRegistrationList.create({
@@ -96,9 +102,11 @@ exports.registerUser = asyncWrapper(async(req, res, next) =>{
         })
     
     } catch(error) {
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-            message: '사용자 등록 요청 중 오류가 발생했습니다.'
-        })
+        throw new CustomError(
+            "사용자 등록 요청 중 오류가 발생했습니다.",
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            StatusCodes.INTERNAL_SERVER_ERROR
+        );
     }
 })
 
