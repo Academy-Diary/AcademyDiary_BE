@@ -18,7 +18,7 @@ const gmailPW = process.env.GMAIL_PW;
 exports.createUser = asyncWrapper(async (req, res, next) => {
   const {
     user_id,
-    academy_id,
+    academy_id, // 삭제해야함
     email,
     birth_date,
     user_name,
@@ -65,7 +65,9 @@ exports.createUser = asyncWrapper(async (req, res, next) => {
       );
     });
 
-  res.status(StatusCodes.CREATED).json({ message: "회원가입이 완료되었습니다." });
+  res
+    .status(StatusCodes.CREATED)
+    .json({ message: "회원가입이 완료되었습니다." });
 });
 
 exports.createJWT = asyncWrapper(async (req, res) => {
@@ -99,9 +101,10 @@ exports.createJWT = asyncWrapper(async (req, res) => {
     // 액세스 토큰을 Authorization 헤더에 추가
     res.setHeader("Authorization", `Bearer ${accessToken}`);
 
-    res.status(StatusCodes.CREATED).json({ 
+    res.status(StatusCodes.CREATED).json({
       message: "로그인 되었습니다.",
-      accessToken: accessToken });
+      accessToken: accessToken,
+    });
   } else {
     throw new CustomError(
       "비밀번호가 일치하지 않습니다.",
@@ -159,9 +162,10 @@ exports.refreshToken = asyncWrapper(async (req, res) => {
     );
   }
 
-  res.status(StatusCodes.CREATED).json({ 
+  res.status(StatusCodes.CREATED).json({
     message: "액세스 토큰이 갱신되었습니다.",
-    accessToken: newAccessToken });
+    accessToken: newAccessToken,
+  });
 });
 
 exports.checkIdDuplicated = asyncWrapper(async (req, res, next) => {
@@ -250,7 +254,32 @@ exports.resetUserPassword = asyncWrapper(async (req, res, next) => {
 
   transporter.sendMail(emailOptions);
 
-  res.status(StatusCodes.OK).json({ message: "비밀번호가 초기화 메일이 발송되었습니다." });
+  res
+    .status(StatusCodes.OK)
+    .json({ message: "비밀번호가 초기화 메일이 발송되었습니다." });
+});
+
+// 회원 탈퇴 함수
+exports.deleteUser = asyncWrapper(async (req, res, next) => {
+  const user_id = req.params["user_id"];
+
+  const user = await findUserByCriteria({ user_id });
+
+  console.log(user);
+  if (user.academy_id !== null && user.academy_id.trim() !== "") {
+    return next(
+      new CustomError(
+        "학원에 소속된 유저는 탈퇴할 수 없습니다.",
+        StatusCodes.FORBIDDEN,
+        StatusCodes.FORBIDDEN
+      )
+    );
+  }
+  await prisma.user.delete({
+    where: { user_id },
+  });
+
+  res.status(StatusCodes.OK).json({ message: "회원 탈퇴가 완료되었습니다." });
 });
 
 // 유효성 검사 함수

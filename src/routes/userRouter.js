@@ -10,7 +10,7 @@ router.post(`/signup`, userController.createUser);
 router.post("/login", userController.createJWT);
 
 // 로그아웃
-router.post("/logout", userController.removeJWT);
+router.post("/logout", authenticateJWT,userController.removeJWT);
 
 // 리프레시 토큰을 사용하여 액세스 토큰 갱신
 router.post("/refresh-token", userController.refreshToken);
@@ -23,6 +23,9 @@ router.post("/find-id", userController.findUserId);
 
 // 비밀번호 찾기
 router.post("/reset-password", userController.resetUserPassword);
+
+// 회원 탈퇴
+router.delete("/:user_id", userController.deleteUser);
 
 
 // 보호된 라우트 예시
