@@ -22,6 +22,7 @@ const registerationRouter = require("./routes/registerationRouter");
 app.use("/", indexRouter);
 app.use("/user", userRouter);
 app.use("/registeration", registerationRouter);
+app.use("/student", studentRouter);
 
 // error handler
 const errorHandler = require("./lib/middlewares/errorHandler");
