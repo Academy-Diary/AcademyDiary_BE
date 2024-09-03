@@ -9,6 +9,10 @@ router.post('/request/user',authenticateJWT, registerController.registerUser);
 
 router.post('/decide/user', authenticateJWT, registerController.decideUserStatus);
 
+router.get('/list/user', authenticateJWT, registerController.listUser);
+
+router.get('/list/academy', authenticateJWT, registerController.listAcademy);
+
 // 보호된 라우트 예시
 // router.get("/protected", authenticateJWT, (req, res) => {
 //   res.json({ message: "This is a protected route", user: req.user });
