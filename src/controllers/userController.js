@@ -325,13 +325,13 @@ exports.updateUserBasicInfo = asyncWrapper(async (req, res, next) => {
   const user = await findUserByCriteria({ user_id });
 
   // 입력값이 없는 경우 기존 값으로 대체
-  if(!email || email.trim() === ""){
+  if (!email || email.trim() === "") {
     email = user.email;
   }
-  if(!phone_number || phone_number.trim() === ""){
+  if (!phone_number || phone_number.trim() === "") {
     phone_number = user.phone_number;
   }
-  if(!user_name || user_name.trim() === ""){
+  if (!user_name || user_name.trim() === "") {
     user_name = user.user_name;
   }
 
@@ -344,7 +344,7 @@ exports.updateUserBasicInfo = asyncWrapper(async (req, res, next) => {
     },
   });
 
-  res.status(StatusCodes.OK).json({ 
+  res.status(StatusCodes.OK).json({
     message: "회원 정보가 수정되었습니다.",
     user_id: user_id,
     email: email,
