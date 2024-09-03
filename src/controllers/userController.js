@@ -11,6 +11,7 @@ const {
   refreshAccessToken,
 } = require("../lib/jwt/index.js");
 const jwt = require("jsonwebtoken");
+const path = require("path");
 const secretKey = process.env.JWT_SECRET_KEY;
 const gmailID = process.env.GMAIL_ID;
 const gmailPW = process.env.GMAIL_PW;
@@ -280,6 +281,38 @@ exports.deleteUser = asyncWrapper(async (req, res, next) => {
   });
 
   res.status(StatusCodes.OK).json({ message: "회원 탈퇴가 완료되었습니다." });
+});
+
+// 회원 기본 정보 조회
+exports.getUserBasicInfo = asyncWrapper(async (req, res, next) => {
+  const user_id = req.params["user_id"];
+
+  const user = await findUserByCriteria({ user_id });
+
+  res.sendFile(path.resolve(__dirname, `../../public/profile/${user.image}`));
+
+  res.status(StatusCodes.OK).json({
+    user_id: user.user_id,
+    academy_id: user.academy_id,
+    email: user.email,
+    birth_date: user.birth_date,
+    user_name: user.user_name,
+    phone_number: user.phone_number,
+    role: user.role,
+    image: user.image,
+  });
+});
+
+exports.getUserImageInfo = asyncWrapper(async (req, res, next) => {
+  const user_id = req.params["user_id"];
+
+  const user = await findUserByCriteria({ user_id });
+
+  // 이미지 파일 경로 설정
+  const imagePath = path.resolve(__dirname, `../../public/profile/${user.image}`);
+
+  // 이미지 파일 반환
+  res.sendFile(imagePath);
 });
 
 // 유효성 검사 함수

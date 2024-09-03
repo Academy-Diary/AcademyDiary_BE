@@ -25,7 +25,13 @@ router.post("/find-id", userController.findUserId);
 router.post("/reset-password", userController.resetUserPassword);
 
 // 회원 탈퇴
-router.delete("/:user_id", userController.deleteUser);
+router.delete("/:user_id", authenticateJWT, userController.deleteUser);
+
+// 사용자 이미지 정보 API
+router.get('/:user_id/image_info',authenticateJWT, userController.getUserImageInfo);
+
+// 사용자 정보 API
+router.get('/:user_id/basic_info', authenticateJWT, userController.getUserBasicInfo);
 
 
 // 보호된 라우트 예시
