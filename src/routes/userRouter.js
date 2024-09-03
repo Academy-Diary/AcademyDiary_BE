@@ -33,6 +33,8 @@ router.get('/:user_id/image-info',authenticateJWT, userController.getUserImageIn
 // 사용자 정보 API
 router.get('/:user_id/basic-info', authenticateJWT, userController.getUserBasicInfo);
 
+// 사용자 기본 정보 수정 API
+router.put('/:user_id/basic-info', authenticateJWT, userController.updateUserBasicInfo);
 
 // 보호된 라우트 예시
 // router.get("/protected", authenticateJWT, (req, res) => {

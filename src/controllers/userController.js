@@ -309,10 +309,49 @@ exports.getUserImageInfo = asyncWrapper(async (req, res, next) => {
   const user = await findUserByCriteria({ user_id });
 
   // 이미지 파일 경로 설정
-  const imagePath = path.resolve(__dirname, `../../public/profile/${user.image}`);
+  const imagePath = path.resolve(
+    __dirname,
+    `../../public/profile/${user.image}`
+  );
 
   // 이미지 파일 반환
   res.sendFile(imagePath);
+});
+
+// 회원 기본 정보 수정
+exports.updateUserBasicInfo = asyncWrapper(async (req, res, next) => {
+  const user_id = req.params["user_id"];
+  let { email, phone_number, user_name } = req.body;
+
+  const user = await findUserByCriteria({ user_id });
+
+  // 입력값이 없는 경우 기존 값으로 대체
+  if(!email || email.trim() === ""){
+    email = user.email;
+  }
+  if(!phone_number || phone_number.trim() === ""){
+    phone_number = user.phone_number;
+  }
+  if(!user_name || user_name.trim() === ""){
+    user_name = user.user_name;
+  }
+
+  await prisma.user.update({
+    where: { user_id },
+    data: {
+      email,
+      phone_number,
+      user_name,
+    },
+  });
+
+  res.status(StatusCodes.OK).json({ 
+    message: "회원 정보가 수정되었습니다.",
+    user_id: user_id,
+    email: email,
+    phone_number: phone_number,
+    user_name: user_name,
+  });
 });
 
 // 유효성 검사 함수
