@@ -2,6 +2,7 @@ const express = require("express");
 const { authenticateJWT } = require("../lib/middlewares/auth.js");
 const router = express.Router();
 const userController = require("../controllers/userController");
+const uploadImage = require("../lib/middlewares/uploadImage");
 
 // 회원가입
 router.post(`/signup`, userController.createUser);
@@ -46,6 +47,14 @@ router.put(
   "/:user_id/basic-info",
   authenticateJWT,
   userController.updateUserBasicInfo
+);
+
+// 사용자 이미지 정보 수정 API
+router.put(
+  "/:user_id/image-info",
+  authenticateJWT,
+  uploadImage.single("file"),
+  userController.updateUserImageInfo
 );
 
 // 보호된 라우트 예시

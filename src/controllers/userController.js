@@ -12,6 +12,7 @@ const {
 } = require("../lib/jwt/index.js");
 const jwt = require("jsonwebtoken");
 const path = require("path");
+const multer = require("multer");
 const secretKey = process.env.JWT_SECRET_KEY;
 const gmailID = process.env.GMAIL_ID;
 const gmailPW = process.env.GMAIL_PW;
@@ -350,6 +351,38 @@ exports.updateUserBasicInfo = asyncWrapper(async (req, res, next) => {
     email: email,
     phone_number: phone_number,
     user_name: user_name,
+  });
+});
+
+// 회원 이미지 정보 수정
+exports.updateUserImageInfo = asyncWrapper(async (req, res, next) => {
+  const user_id = req.params["user_id"];
+
+  // Multer에 의해 업로드된 파일이 없을 경우 에러 처리
+  if (!req.file) {
+    return next(
+      new CustomError(
+        "프로필 이미지 파일이 전송되지 않았습니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+
+  // 이미지가 업로드된 경우, 데이터베이스 업데이트
+  const imagePath = `public/profile/${req.file.filename}`; // 새 이미지 경로 설정
+
+  await prisma.user.update({
+    where: { user_id },
+    data: {
+      image: req.file.filename,
+    },
+  });
+
+  res.status(StatusCodes.OK).json({
+    message: "회원 이미지 정보가 수정되었습니다.",
+    user_id: user_id,
+    image: imagePath,
   });
 });
 
