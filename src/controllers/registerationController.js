@@ -154,7 +154,7 @@ exports.listUser = asyncWrapper(async (req, res, next) => {
         if (req_role === "TEACHER") {
             result = await prisma.AcademyUserRegistrationList.findMany({
                 where: {
-                    academy_id: academy_id,
+                    academy_id : academy_id,
                     role: "TEACHER",
                     status: "INITIAL"
                 }
@@ -162,25 +162,25 @@ exports.listUser = asyncWrapper(async (req, res, next) => {
         } else if (req_role === "STUDENT") {
             result = await prisma.AcademyUserRegistrationList.findMany({
                 where: {
-                    academy_id: academy_id,
+                    academy_id : academy_id,
                     role: "STUDENT",
                     status: "INITIAL"
                 }
             });
         } else {
-            throw new CustomError(
+            return next(new CustomError(
                 "유효하지 않은 역할입니다.",
                 StatusCodes.BAD_REQUEST,
                 StatusCodes.BAD_REQUEST
-            );
+            ));
         }
 
         if (!result || result.length === 0) {
-            throw new CustomError(
+            return next(new CustomError(
                 "해당 조건에 맞는 사용자가 없습니다.",
                 StatusCodes.NOT_FOUND,
                 StatusCodes.NOT_FOUND
-            );
+            ));
         }
 
         res.status(StatusCodes.OK).json({ data: result });
@@ -188,6 +188,33 @@ exports.listUser = asyncWrapper(async (req, res, next) => {
     } catch (error) {
         next(new CustomError(
             "불러오는 중에 오류가 발생했습니다.",
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            StatusCodes.INTERNAL_SERVER_ERROR
+        ));
+    }
+})
+
+exports.listAcademy = asyncWrapper(async(req, res, next) => {
+    try {
+        const result = await prisma.Academy.findMany({
+            where : {
+                status: "INITIAL"
+            }
+        })
+
+        if (!result || result.length === 0) {
+            return next(new CustomError(
+                "해당 조건에 맞는 사용자가 없습니다.",
+                StatusCodes.NOT_FOUND,
+                StatusCodes.NOT_FOUND
+            ));
+        }
+
+        res.status(StatusCodes.OK).json({ data: result });
+
+    } catch(error) {
+        next(new CustomError(
+            "아카데미 목록을 불러오는 중에 오류가 발생했습니다.",
             StatusCodes.INTERNAL_SERVER_ERROR,
             StatusCodes.INTERNAL_SERVER_ERROR
         ));
