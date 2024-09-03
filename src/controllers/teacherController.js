@@ -70,7 +70,7 @@ exports.getTeacher = asyncWrapper(async(req, res, next) => {
 
         // 성공 응답
         res.status(StatusCodes.OK).json({ 
-            message: "",
+            message: "강사를 성공적으로 불러왔습니다.",
             data: getTeacher
         });
     } catch(error) {
