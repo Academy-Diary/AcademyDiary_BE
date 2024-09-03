@@ -99,8 +99,13 @@ exports.createJWT = asyncWrapper(async (req, res) => {
     // 액세스 토큰을 Authorization 헤더에 추가
     res.setHeader("Authorization", `Bearer ${accessToken}`);
 
+    const userStatus = await prisma.AcademyUserRegistrationList.findUnique({
+      where: { user_id },
+      select: { status: true }
+    })
     res.status(StatusCodes.CREATED).json({ 
       message: "로그인 되었습니다.",
+      userStatus,
       accessToken: accessToken });
   } else {
     throw new CustomError(
