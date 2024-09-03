@@ -289,9 +289,8 @@ exports.getUserBasicInfo = asyncWrapper(async (req, res, next) => {
 
   const user = await findUserByCriteria({ user_id });
 
-  res.sendFile(path.resolve(__dirname, `../../public/profile/${user.image}`));
-
   res.status(StatusCodes.OK).json({
+    message: "회원 정보 조회가 완료되었습니다.",
     user_id: user.user_id,
     academy_id: user.academy_id,
     email: user.email,
