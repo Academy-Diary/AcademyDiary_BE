@@ -6,29 +6,37 @@ const { StatusCodes } = require("http-status-codes");
 
 
 exports.deleteTeacher = asyncWrapper(async(req, res, next) => {
-    const { user_id } = req.params;
+    const { id } = req.params;
 
     try {
+        //user_id가 올바르게 전달되었는지 확인
+        if (!id) {
+            return next(new CustomError(
+                "유효한 user_id가 제공되지 않았습니다.",
+                StatusCodes.BAD_REQUEST,
+                StatusCodes.BAD_REQUEST
+            ));
+        }
         //강사 정보 조회
         const targetTeacher = await prisma.user.findUnique({
             where : { 
-                user_id : user_id,
+                user_id : id,
              }
         });
 
         // 강사가 존재하지 않거나 강사 역할이 아닌 경우
         if (!targetTeacher || targetTeacher.role !== "TEACHER") {
             return next(new CustomError(
-                `ID ${user_id}에 해당하는 강사가 없습니다.`,
+                `ID ${id}에 해당하는 강사가 없습니다.`,
                 StatusCodes.NOT_FOUND,
                 StatusCodes.NOT_FOUND
             ));
         }
 
         //강사의 academy_id를 NULL로 업데이트
-        const updateTeacher = await prisma.user.update({
+        await prisma.user.update({
             where : {
-                user_id : user_id,
+                user_id : id,
             },
             data : {
                 academy_id : null
@@ -38,13 +46,13 @@ exports.deleteTeacher = asyncWrapper(async(req, res, next) => {
         //AcademyUserRegistrationList에서 해당 강사 행 삭제
         await prisma.AcademyUserRegistrationList.delete({
             where:{
-                user_id: user_id
+                user_id: id
             }
         });
 
         // 성공 응답
         res.status(StatusCodes.OK).json({ 
-            message: `강사 ID ${user_id}의 academy_id가 성공적으로 NULL로 설정되었고, 등록 목록에서 삭제되었습니다.`,
+            message: `강사 ID ${id}의 academy_id가 성공적으로 NULL로 설정되었고, 등록 목록에서 삭제되었습니다.`,
         });
     } catch(error) {
         next(new CustomError(
