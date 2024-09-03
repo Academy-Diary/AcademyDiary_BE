@@ -28,10 +28,10 @@ router.post("/reset-password", userController.resetUserPassword);
 router.delete("/:user_id", authenticateJWT, userController.deleteUser);
 
 // 사용자 이미지 정보 API
-router.get('/:user_id/image_info',authenticateJWT, userController.getUserImageInfo);
+router.get('/:user_id/image-info',authenticateJWT, userController.getUserImageInfo);
 
 // 사용자 정보 API
-router.get('/:user_id/basic_info', authenticateJWT, userController.getUserBasicInfo);
+router.get('/:user_id/basic-info', authenticateJWT, userController.getUserBasicInfo);
 
 
 // 보호된 라우트 예시
