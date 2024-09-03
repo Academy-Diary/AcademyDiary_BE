@@ -33,6 +33,8 @@ exports.deleteTeacher = asyncWrapper(async(req, res, next) => {
             }
         });
 
+        //AcademyUserRegistrationList도 지워야함!
+
         // 성공 응답
         res.status(StatusCodes.OK).json({ 
             message: `교사 ID ${user_id}의 academy_id가 성공적으로 NULL로 설정되었습니다.`,
@@ -47,5 +49,35 @@ exports.deleteTeacher = asyncWrapper(async(req, res, next) => {
 })
 
 exports.getTeacher = asyncWrapper(async(req, res, next) => {
+    const { academy_id } = req.body;
 
+    try{
+        const getTeacher = await prisma.AcademyUserRegistrationList.findMany({
+            where : {
+                academy_id : academy_id,
+                role : "TEACHER",
+                status : "INACTIVE"
+            }
+        });
+
+        if(!getTeacher || getTeacher.length === 0) {
+            return next(new CustomError(
+                "등록되어 있는 강사가 없습니다.",
+                StatusCodes.NOT_FOUND,
+                StatusCodes.NOT_FOUND
+            ));
+        }
+
+        // 성공 응답
+        res.status(StatusCodes.OK).json({ 
+            message: "",
+            data: getTeacher
+        });
+    } catch(error) {
+        next(new CustomError(
+            "강사 목록을 불러오는 중 오류가 발생했습니다.",
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            StatusCodes.INTERNAL_SERVER_ERROR
+        ));
+    }
 })
