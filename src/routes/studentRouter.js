@@ -4,9 +4,9 @@ const studentController = require("../controllers/studentController");
 const { authenticateJWT } = require("../lib/middlewares/auth.js");
 
 // 학원에서 학생 삭제
-router.delete("/:user_id", studentController.deleteStudent);
+router.delete("/:user_id", authenticateJWT, studentController.deleteStudent);
 
 // 모든 원생 조회
-router.get("/", studentController.getStudent);
+router.get("/", authenticateJWT, studentController.getStudent);
 
 module.exports = router;
