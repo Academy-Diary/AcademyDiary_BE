@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
-require('dotenv').config();
+require("dotenv").config();
 const app = express();
 const port = 8000;
 
@@ -19,10 +19,13 @@ if (process.env.NODE_ENV === "prod") {
 const indexRouter = require("./routes/index");
 const userRouter = require("./routes/userRouter");
 const registerationRouter = require("./routes/registerationRouter");
+const studentRouter = require("./routes/studentRouter");
 const teacherRouter = require("./routes/teacherRouter");
+
 app.use("/", indexRouter);
 app.use("/user", userRouter);
 app.use("/registeration", registerationRouter);
+app.use("/student", studentRouter);
 app.use("/teacher", teacherRouter);
 
 // error handler
