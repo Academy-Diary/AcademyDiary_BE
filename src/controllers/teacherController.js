@@ -71,7 +71,7 @@ exports.getTeacher = asyncWrapper(async(req, res, next) => {
             where : {
                 academy_id : academy_id,
                 role : "TEACHER",
-                status : "INACTIVE"
+                status : "ACTIVE"
             }
         });
 
