@@ -6,7 +6,22 @@ require("dotenv").config();
 const app = express();
 const port = 8000;
 
-app.use(cors()); //cross-origin
+const whitelist = ["http://localhost:5173", "http://127.0.0.1:5173"];
+
+const corsOptions = {
+  credentials: true, // Allow credentials
+  origin: function (origin, callback) {
+    console.log("origin", origin);
+    if (whitelist.indexOf(origin) !== -1) {
+      // 만일 whitelist 배열에 origin인자가 있을 경우
+      callback(null, true); // cors 허용
+    } else {
+      callback(new Error("Not Allowed Origin!")); // cors 비허용
+    }
+  },
+};
+
+app.use(cors(corsOptions));
 app.use(express.json()); // REST API body 파싱
 app.use(cookieParser()); // request의 cookie 파싱
 if (process.env.NODE_ENV === "prod") {
