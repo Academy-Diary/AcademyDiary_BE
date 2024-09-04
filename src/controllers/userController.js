@@ -11,6 +11,8 @@ const {
   refreshAccessToken,
 } = require("../lib/jwt/index.js");
 const jwt = require("jsonwebtoken");
+const path = require("path");
+const multer = require("multer");
 const secretKey = process.env.JWT_SECRET_KEY;
 const gmailID = process.env.GMAIL_ID;
 const gmailPW = process.env.GMAIL_PW;
@@ -18,7 +20,7 @@ const gmailPW = process.env.GMAIL_PW;
 exports.createUser = asyncWrapper(async (req, res, next) => {
   const {
     user_id,
-    academy_id,
+    academy_id, // 삭제해야함
     email,
     birth_date,
     user_name,
@@ -65,7 +67,9 @@ exports.createUser = asyncWrapper(async (req, res, next) => {
       );
     });
 
-  res.status(StatusCodes.CREATED).json({ message: "회원가입이 완료되었습니다." });
+  res
+    .status(StatusCodes.CREATED)
+    .json({ message: "회원가입이 완료되었습니다." });
 });
 
 exports.createJWT = asyncWrapper(async (req, res) => {
@@ -107,6 +111,7 @@ exports.createJWT = asyncWrapper(async (req, res) => {
       message: "로그인 되었습니다.",
       userStatus,
       accessToken: accessToken });
+
   } else {
     throw new CustomError(
       "비밀번호가 일치하지 않습니다.",
@@ -164,9 +169,10 @@ exports.refreshToken = asyncWrapper(async (req, res) => {
     );
   }
 
-  res.status(StatusCodes.CREATED).json({ 
+  res.status(StatusCodes.CREATED).json({
     message: "액세스 토큰이 갱신되었습니다.",
-    accessToken: newAccessToken });
+    accessToken: newAccessToken,
+  });
 });
 
 exports.checkIdDuplicated = asyncWrapper(async (req, res, next) => {
@@ -255,7 +261,134 @@ exports.resetUserPassword = asyncWrapper(async (req, res, next) => {
 
   transporter.sendMail(emailOptions);
 
-  res.status(StatusCodes.OK).json({ message: "비밀번호가 초기화 메일이 발송되었습니다." });
+  res
+    .status(StatusCodes.OK)
+    .json({ message: "비밀번호가 초기화 메일이 발송되었습니다." });
+});
+
+// 회원 탈퇴 함수
+exports.deleteUser = asyncWrapper(async (req, res, next) => {
+  const user_id = req.params["user_id"];
+
+  const user = await findUserByCriteria({ user_id });
+
+  console.log(user);
+  if (user.academy_id !== null && user.academy_id.trim() !== "") {
+    return next(
+      new CustomError(
+        "학원에 소속된 유저는 탈퇴할 수 없습니다.",
+        StatusCodes.FORBIDDEN,
+        StatusCodes.FORBIDDEN
+      )
+    );
+  }
+  await prisma.user.delete({
+    where: { user_id },
+  });
+
+  res.status(StatusCodes.OK).json({ message: "회원 탈퇴가 완료되었습니다." });
+});
+
+// 회원 기본 정보 조회
+exports.getUserBasicInfo = asyncWrapper(async (req, res, next) => {
+  const user_id = req.params["user_id"];
+
+  const user = await findUserByCriteria({ user_id });
+
+  res.status(StatusCodes.OK).json({
+    message: "회원 정보 조회가 완료되었습니다.",
+    user_id: user.user_id,
+    academy_id: user.academy_id,
+    email: user.email,
+    birth_date: user.birth_date,
+    user_name: user.user_name,
+    phone_number: user.phone_number,
+    role: user.role,
+    image: user.image,
+  });
+});
+
+exports.getUserImageInfo = asyncWrapper(async (req, res, next) => {
+  const user_id = req.params["user_id"];
+
+  const user = await findUserByCriteria({ user_id });
+
+  // 이미지 파일 경로 설정
+  const imagePath = path.resolve(
+    __dirname,
+    `../../public/profile/${user.image}`
+  );
+
+  // 이미지 파일 반환
+  res.sendFile(imagePath);
+});
+
+// 회원 기본 정보 수정
+exports.updateUserBasicInfo = asyncWrapper(async (req, res, next) => {
+  const user_id = req.params["user_id"];
+  let { email, phone_number, user_name } = req.body;
+
+  const user = await findUserByCriteria({ user_id });
+
+  // 입력값이 없는 경우 기존 값으로 대체
+  if (!email || email.trim() === "") {
+    email = user.email;
+  }
+  if (!phone_number || phone_number.trim() === "") {
+    phone_number = user.phone_number;
+  }
+  if (!user_name || user_name.trim() === "") {
+    user_name = user.user_name;
+  }
+
+  await prisma.user.update({
+    where: { user_id },
+    data: {
+      email,
+      phone_number,
+      user_name,
+    },
+  });
+
+  res.status(StatusCodes.OK).json({
+    message: "회원 정보가 수정되었습니다.",
+    user_id: user_id,
+    email: email,
+    phone_number: phone_number,
+    user_name: user_name,
+  });
+});
+
+// 회원 이미지 정보 수정
+exports.updateUserImageInfo = asyncWrapper(async (req, res, next) => {
+  const user_id = req.params["user_id"];
+
+  // Multer에 의해 업로드된 파일이 없을 경우 에러 처리
+  if (!req.file) {
+    return next(
+      new CustomError(
+        "프로필 이미지 파일이 전송되지 않았습니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+
+  // 이미지가 업로드된 경우, 데이터베이스 업데이트
+  const imagePath = `public/profile/${req.file.filename}`; // 새 이미지 경로 설정
+
+  await prisma.user.update({
+    where: { user_id },
+    data: {
+      image: req.file.filename,
+    },
+  });
+
+  res.status(StatusCodes.OK).json({
+    message: "회원 이미지 정보가 수정되었습니다.",
+    user_id: user_id,
+    image: imagePath,
+  });
 });
 
 // 유효성 검사 함수

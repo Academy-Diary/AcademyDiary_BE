@@ -9,34 +9,55 @@ datasource db {
 
 // TODO: 임시유저 => db schema 에 맞게 변환 해야함.
 model User {
-  id    Int     @id @default(autoincrement())
-  user_id String @unique
-  academy_id String @unique
-  email String @unique
-  birth_date DateTime
-  user_name String
-  password String
+  id           Int      @id @default(autoincrement())
+  user_id      String   @unique
+  academy_id   String?
+  email        String   @unique
+  birth_date   DateTime
+  user_name    String
+  password     String
   phone_number String
-  role Role @default(STUDENT)
+  role         Role     @default(STUDENT)
+  image        String   @default("default.png")
+
+  // Relations
+  academy Academy? @relation(fields: [academy_id], references: [academy_id], name: "UserAcademyRelation")
+  chief   Chief?   @relation("UserChiefRelation")
 }
 
 model Academy {
-  id           Int     @id @default(autoincrement())
-  user_id      String @unique
-  academy_id   String  @unique
-  academy_key  String  @unique
-  academy_name String
-  academy_email String @unique
-  address      String
-  phone_number String
-  status       Status  @default(INITIAL)
+  id            Int     @id @default(autoincrement())
+  user_id       String  @unique
+  academy_id    String? @unique
+  academy_key   String  @unique
+  academy_name  String
+  academy_email String  @unique
+  address       String
+  phone_number  String
+  status        Status  @default(INITIAL)
+
+  // Relations
+  users User[] @relation("UserAcademyRelation")
+  chief Chief? @relation("AcademyChiefRelation")
+}
+
+model Chief {
+  id            String @id @default(uuid()) // 단일 기본키로 설정
+  chief_user_id String @unique
+  academy_id    String @unique
+
+  // Relations
+  user    User    @relation("UserChiefRelation", fields: [chief_user_id], references: [user_id])
+  academy Academy @relation("AcademyChiefRelation", fields: [academy_id], references: [academy_id])
+
+  @@unique([chief_user_id, academy_id]) // 고유 쌍으로 설정
 }
 
 model AcademyUserRegistrationList {
-  academy_id   String  @unique
-  user_id      String @unique
-  role Role @default(STUDENT)
-  status       Status  @default(INITIAL)
+  academy_id String @unique
+  user_id    String @unique
+  role       Role   @default(STUDENT)
+  status     Status @default(INITIAL)
 }
 
 enum Status {
@@ -45,7 +66,7 @@ enum Status {
   INACTIVE
 }
 
-enum Role{
+enum Role {
   CHIEF
   TEACHER
   PARENT

@@ -1,7 +1,8 @@
 const express = require("express");
-const {authenticateJWT} = require("../lib/middlewares/auth.js")
+const { authenticateJWT } = require("../lib/middlewares/auth.js");
 const router = express.Router();
 const userController = require("../controllers/userController");
+const uploadImage = require("../lib/middlewares/uploadImage");
 
 // 회원가입
 router.post(`/signup`, userController.createUser);
@@ -10,7 +11,7 @@ router.post(`/signup`, userController.createUser);
 router.post("/login", userController.createJWT);
 
 // 로그아웃
-router.post("/logout", userController.removeJWT);
+router.post("/logout", authenticateJWT, userController.removeJWT);
 
 // 리프레시 토큰을 사용하여 액세스 토큰 갱신
 router.post("/refresh-token", userController.refreshToken);
@@ -24,6 +25,37 @@ router.post("/find-id", userController.findUserId);
 // 비밀번호 찾기
 router.post("/reset-password", userController.resetUserPassword);
 
+// 회원 탈퇴
+router.delete("/:user_id", authenticateJWT, userController.deleteUser);
+
+// 사용자 이미지 정보 API
+router.get(
+  "/:user_id/image-info",
+  authenticateJWT,
+  userController.getUserImageInfo
+);
+
+// 사용자 정보 API
+router.get(
+  "/:user_id/basic-info",
+  authenticateJWT,
+  userController.getUserBasicInfo
+);
+
+// 사용자 기본 정보 수정 API
+router.put(
+  "/:user_id/basic-info",
+  authenticateJWT,
+  userController.updateUserBasicInfo
+);
+
+// 사용자 이미지 정보 수정 API
+router.put(
+  "/:user_id/image-info",
+  authenticateJWT,
+  uploadImage.single("file"),
+  userController.updateUserImageInfo
+);
 
 // 보호된 라우트 예시
 // router.get("/protected", authenticateJWT, (req, res) => {
