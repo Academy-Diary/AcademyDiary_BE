@@ -42,7 +42,10 @@ exports.deleteStudent = asyncWrapper(async (req, res, next) => {
     );
   }
 
-  if (!registerationTableStudent || registerationTableStudent.role !== "STUDENT") {
+  if (
+    !registerationTableStudent ||
+    registerationTableStudent.role !== "STUDENT"
+  ) {
     return next(
       new CustomError(
         `AcademyUserRegistrationList DB에 ID ${user_id}에 해당하는 학생이 없습니다.`,
@@ -72,5 +75,34 @@ exports.deleteStudent = asyncWrapper(async (req, res, next) => {
   // 성공 응답
   res.status(StatusCodes.OK).json({
     message: `학생 ID ${user_id}의 academy_id가 성공적으로 NULL로 설정되었고, 등록 목록에서 삭제되었습니다.`,
+  });
+});
+
+exports.getStudent = asyncWrapper(async (req, res, next) => {
+  const { academy_id } = req.body;
+
+  // 나중에 User DB에서 가져오게끔 수정.
+  const students = await prisma.AcademyUserRegistrationList.findMany({
+    where: {
+      academy_id: academy_id,
+      role: "STUDENT",
+      status: "ACTIVE",
+    },
+  });
+
+  if (!students || students.length === 0) {
+    return next(
+      new CustomError(
+        "등록되어 있는 학생이 없습니다.",
+        StatusCodes.NOT_FOUND,
+        StatusCodes.NOT_FOUND
+      )
+    );
+  }
+
+  // 성공 응답
+  res.status(StatusCodes.OK).json({
+    message: "학생를 성공적으로 불러왔습니다.",
+    data: students,
   });
 });
