@@ -105,13 +105,26 @@ exports.createJWT = asyncWrapper(async (req, res) => {
 
     const userStatus = await prisma.AcademyUserRegistrationList.findUnique({
       where: { user_id },
-      select: { status: true }
-    })
-    res.status(StatusCodes.CREATED).json({ 
+      select: { status: true },
+    });
+
+    const resUser = {
+      user_id: user.user_id,
+      academy_id: user.academy_id,
+      email: user.email,
+      birth_date: user.birth_date,
+      user_name: user.user_name,
+      phone_number: user.phone_number,
+      role: user.role,
+      image: user.image,
+    };
+
+    res.status(StatusCodes.CREATED).json({
       message: "로그인 되었습니다.",
       userStatus,
-      accessToken: accessToken });
-
+      accessToken: accessToken,
+      user: resUser,
+    });
   } else {
     throw new CustomError(
       "비밀번호가 일치하지 않습니다.",
