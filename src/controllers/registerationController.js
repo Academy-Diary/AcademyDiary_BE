@@ -19,7 +19,6 @@ exports.registerAcademy = asyncWrapper(async(req, res, next) => {
     try {
         const newAcademy = await prisma.academy.create({
             data: {
-                user_id,
                 academy_id,
                 academy_key : inviteKey,
                 academy_name,
