@@ -22,7 +22,7 @@ model User {
 
   // Relations
   academy Academy? @relation(fields: [academy_id], references: [academy_id], name: "UserAcademyRelation")
-  chief   Chief?   @relation("UserChiefRelation")
+  chief   Chief_Academy?   @relation("UserChiefRelation")
 }
 
 model Academy {
@@ -37,10 +37,10 @@ model Academy {
 
   // Relations
   users User[] @relation("UserAcademyRelation")
-  chief Chief? @relation("AcademyChiefRelation")
+  chief Chief_Academy? @relation("AcademyChiefRelation")
 }
 
-model Chief {
+model Chief_Academy {
   id            String @id @default(uuid()) // 단일 기본키로 설정
   chief_user_id String @unique
   academy_id    String @unique
