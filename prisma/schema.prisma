@@ -33,7 +33,7 @@ model Academy {
   academy_email String  @unique
   address       String
   phone_number  String
-  status        Status  @default(INITIAL)
+  status        Status  @default(PENDING)
 
   // Relations
   users User[] @relation("UserAcademyRelation")
@@ -57,16 +57,16 @@ model AcademyUserRegistrationList {
   academy_id String @unique
   user_id    String @unique
   role       Role   @default(STUDENT)
-  status     Status @default(INITIAL)
+  status     Status @default(PENDING)
 
   academy   Academy @relation("AcademyUserRegistrationList_Academy_Relation", fields: [academy_id], references: [academy_id])
 
 }
 
 enum Status {
-  INITIAL
-  ACTIVE
-  INACTIVE
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum Role {
