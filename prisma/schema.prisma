@@ -27,7 +27,6 @@ model User {
 
 model Academy {
   id            Int     @id @default(autoincrement())
-  user_id       String  @unique
   academy_id    String? @unique
   academy_key   String  @unique
   academy_name  String
