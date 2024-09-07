@@ -13,9 +13,7 @@ const {
 const jwt = require("jsonwebtoken");
 const path = require("path");
 const multer = require("multer");
-const secretKey = process.env.JWT_SECRET_KEY;
-const gmailID = process.env.GMAIL_ID;
-const gmailPW = process.env.GMAIL_PW;
+const { secretKey, gmailID, gmailPW } = require("../config/secret.js")
 
 exports.createUser = asyncWrapper(async (req, res, next) => {
   const {
@@ -266,7 +264,7 @@ exports.resetUserPassword = asyncWrapper(async (req, res, next) => {
   });
 
   const emailOptions = {
-    from: process.env.GMAIL_ID,
+    from: gmailID,
     to: email,
     subject: "academyPro 비밀번호 초기화 메일",
     html: `<p>비밀번호 초기화입니다. 로그인 후 비밀번호 변경 해주세요. </p><p>임시 비밀번호: ${newPassword}</p>`,
