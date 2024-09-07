@@ -163,7 +163,7 @@ exports.listUser = asyncWrapper(async (req, res, next) => {
                 where: {
                     academy_id : academy_id,
                     role: "TEACHER",
-                    status: "INITIAL"
+                    status: "PENDING"
                 }
             });
         } else if (req_role === "STUDENT") {
@@ -171,7 +171,7 @@ exports.listUser = asyncWrapper(async (req, res, next) => {
                 where: {
                     academy_id : academy_id,
                     role: "STUDENT",
-                    status: "INITIAL"
+                    status: "PENDING"
                 }
             });
         } else {
@@ -205,7 +205,7 @@ exports.listAcademy = asyncWrapper(async(req, res, next) => {
     try {
         const result = await prisma.Academy.findMany({
             where : {
-                status: "INITIAL"
+                status: "PENDING"
             }
         })
 
