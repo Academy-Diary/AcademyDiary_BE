@@ -23,6 +23,7 @@ model User {
   // Relations
   academy      Academy? @relation(fields: [academy_id], references: [academy_id], name: "UserAcademyRelation")
   chief         Chief_Academy?   @relation("UserChiefRelation")
+  registrationList AcademyUserRegistrationList[] @relation("AcademyUserRegistrationList_User_Relation")
 }
 
 model Academy {
@@ -38,7 +39,7 @@ model Academy {
   // Relations
   users User[] @relation("UserAcademyRelation")
   chief Chief_Academy? @relation("AcademyChiefRelation")
-  registrationList   AcademyUserRegistrationList? @relation("AcademyUserRegistrationList_Academy_Relation")
+  registrationList   AcademyUserRegistrationList[] @relation("AcademyUserRegistrationList_Academy_Relation")
 }
 
 model Chief_Academy {
@@ -54,13 +55,14 @@ model Chief_Academy {
 }
 
 model AcademyUserRegistrationList {
-  academy_id String @unique
-  user_id    String @unique
+  academy_id String 
+  user_id    String 
   role       Role   @default(STUDENT)
   status     Status @default(PENDING)
 
   academy   Academy @relation("AcademyUserRegistrationList_Academy_Relation", fields: [academy_id], references: [academy_id])
-
+  user    User    @relation("AcademyUserRegistrationList_User_Relation", fields: [user_id], references: [user_id])       // 고유 필드를 참조
+  @@unique([academy_id, user_id])
 }
 
 enum Status {
