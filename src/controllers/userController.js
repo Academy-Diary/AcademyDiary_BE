@@ -339,13 +339,18 @@ exports.getUserImageInfo = asyncWrapper(async (req, res, next) => {
 // 회원 기본 정보 수정
 exports.updateUserBasicInfo = asyncWrapper(async (req, res, next) => {
   const user_id = req.params["user_id"];
-  let { email, phone_number, user_name } = req.body;
+  let { email, password, phone_number, user_name } = req.body;
 
   const user = await findUserByCriteria({ user_id });
 
   // 입력값이 없는 경우 기존 값으로 대체
   if (!email || email.trim() === "") {
     email = user.email;
+  }
+  if (!password || password.trim() === "") {
+    password = user.password;
+  } else {
+    password = await bcrypt.hash(password, 10);
   }
   if (!phone_number || phone_number.trim() === "") {
     phone_number = user.phone_number;
@@ -358,6 +363,7 @@ exports.updateUserBasicInfo = asyncWrapper(async (req, res, next) => {
     where: { user_id },
     data: {
       email,
+      password,
       phone_number,
       user_name,
     },
