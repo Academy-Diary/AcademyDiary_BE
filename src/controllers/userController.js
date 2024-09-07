@@ -264,7 +264,7 @@ exports.resetUserPassword = asyncWrapper(async (req, res, next) => {
   });
 
   const emailOptions = {
-    from: process.env.GMAIL_ID,
+    from: gmailID,
     to: email,
     subject: "academyPro 비밀번호 초기화 메일",
     html: `<p>비밀번호 초기화입니다. 로그인 후 비밀번호 변경 해주세요. </p><p>임시 비밀번호: ${newPassword}</p>`,
