@@ -12,7 +12,7 @@ function generateInviteKey() {
 }
 
 exports.registerAcademy = asyncWrapper(async(req, res, next) => {
-    const { user_id, academy_id, academy_key, academy_name, academy_email, address, phone_number, status } =
+    const { academy_id, academy_name, academy_email, address, phone_number } =
     req.body;
 
     const inviteKey = generateInviteKey();
@@ -25,7 +25,7 @@ exports.registerAcademy = asyncWrapper(async(req, res, next) => {
                 academy_email,
                 address,
                 phone_number,
-                status: 'INITIAL' // 학원의 상태를 'INITIAL'로 설정합니다.
+                status: "PENDING" // 학원의 상태를 "PENDING"로 설정합니다.
             }
         });
 
