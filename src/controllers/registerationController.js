@@ -91,7 +91,7 @@ exports.registerUser = asyncWrapper(async(req, res, next) =>{
                 user_id,
                 academy_id : searchAcademy.academy_id,
                 role,
-                status: 'INITIAL'
+                status: "PENDING"
             }
         });
 
