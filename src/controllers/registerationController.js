@@ -12,21 +12,20 @@ function generateInviteKey() {
 }
 
 exports.registerAcademy = asyncWrapper(async(req, res, next) => {
-    const { user_id, academy_id, academy_key, academy_name, academy_email, address, phone_number, status } =
+    const { academy_id, academy_name, academy_email, address, phone_number } =
     req.body;
 
     const inviteKey = generateInviteKey();
     try {
         const newAcademy = await prisma.academy.create({
             data: {
-                user_id,
                 academy_id,
                 academy_key : inviteKey,
                 academy_name,
                 academy_email,
                 address,
                 phone_number,
-                status: 'INITIAL' // 학원의 상태를 'INITIAL'로 설정합니다.
+                status: "PENDING" // 학원의 상태를 "PENDING"로 설정합니다.
             }
         });
 
@@ -92,7 +91,7 @@ exports.registerUser = asyncWrapper(async(req, res, next) =>{
                 user_id,
                 academy_id : searchAcademy.academy_id,
                 role,
-                status: 'INITIAL'
+                status: "PENDING"
             }
         });
 
@@ -164,7 +163,7 @@ exports.listUser = asyncWrapper(async (req, res, next) => {
                 where: {
                     academy_id : academy_id,
                     role: "TEACHER",
-                    status: "INITIAL"
+                    status: "PENDING"
                 }
             });
         } else if (req_role === "STUDENT") {
@@ -172,7 +171,7 @@ exports.listUser = asyncWrapper(async (req, res, next) => {
                 where: {
                     academy_id : academy_id,
                     role: "STUDENT",
-                    status: "INITIAL"
+                    status: "PENDING"
                 }
             });
         } else {
@@ -206,7 +205,7 @@ exports.listAcademy = asyncWrapper(async(req, res, next) => {
     try {
         const result = await prisma.Academy.findMany({
             where : {
-                status: "INITIAL"
+                status: "PENDING"
             }
         })
 

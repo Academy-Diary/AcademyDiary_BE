@@ -86,7 +86,7 @@ exports.getStudent = asyncWrapper(async (req, res, next) => {
     where: {
       academy_id: academy_id,
       role: "STUDENT",
-      status: "ACTIVE",
+      status: "APPROVED",
     },
   });
 

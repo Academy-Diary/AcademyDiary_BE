@@ -21,49 +21,53 @@ model User {
   image        String   @default("default.png")
 
   // Relations
-  academy Academy? @relation(fields: [academy_id], references: [academy_id], name: "UserAcademyRelation")
-  chief   Chief?   @relation("UserChiefRelation")
+  academy      Academy? @relation(fields: [academy_id], references: [academy_id], name: "UserAcademyRelation")
+  chief         Chief_Academy?   @relation("UserChiefRelation")
+  registrationList AcademyUserRegistrationList? @relation("AcademyUserRegistrationList_User_Relation")
 }
 
 model Academy {
   id            Int     @id @default(autoincrement())
-  user_id       String  @unique
   academy_id    String? @unique
   academy_key   String  @unique
   academy_name  String
   academy_email String  @unique
   address       String
   phone_number  String
-  status        Status  @default(INITIAL)
+  status        Status  @default(PENDING)
 
   // Relations
   users User[] @relation("UserAcademyRelation")
-  chief Chief? @relation("AcademyChiefRelation")
+  chief Chief_Academy? @relation("AcademyChiefRelation")
+  registrationList   AcademyUserRegistrationList[] @relation("AcademyUserRegistrationList_Academy_Relation")
 }
 
-model Chief {
+model Chief_Academy {
   id            String @id @default(uuid()) // 단일 기본키로 설정
-  chief_user_id String @unique
+  chief_id      String @unique
   academy_id    String @unique
 
   // Relations
-  user    User    @relation("UserChiefRelation", fields: [chief_user_id], references: [user_id])
+  user    User    @relation("UserChiefRelation", fields: [chief_id], references: [user_id])
   academy Academy @relation("AcademyChiefRelation", fields: [academy_id], references: [academy_id])
 
-  @@unique([chief_user_id, academy_id]) // 고유 쌍으로 설정
+  @@unique([chief_id, academy_id]) // 고유 쌍으로 설정
 }
 
 model AcademyUserRegistrationList {
-  academy_id String @unique
+  academy_id String 
   user_id    String @unique
   role       Role   @default(STUDENT)
-  status     Status @default(INITIAL)
+  status     Status @default(PENDING)
+
+  academy   Academy @relation("AcademyUserRegistrationList_Academy_Relation", fields: [academy_id], references: [academy_id])
+  user    User    @relation("AcademyUserRegistrationList_User_Relation", fields: [user_id], references: [user_id])
 }
 
 enum Status {
-  INITIAL
-  ACTIVE
-  INACTIVE
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum Role {
@@ -71,4 +75,5 @@ enum Role {
   TEACHER
   PARENT
   STUDENT
+  ADMIN
 }
