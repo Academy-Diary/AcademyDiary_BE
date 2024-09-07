@@ -13,9 +13,7 @@ const {
 const jwt = require("jsonwebtoken");
 const path = require("path");
 const multer = require("multer");
-const secretKey = process.env.JWT_SECRET_KEY;
-const gmailID = process.env.GMAIL_ID;
-const gmailPW = process.env.GMAIL_PW;
+const { secretKey, gmailID, gmailPW } = require("../config/secret.js")
 
 exports.createUser = asyncWrapper(async (req, res, next) => {
   const {
