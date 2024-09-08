@@ -68,8 +68,7 @@ model AcademyUserRegistrationList {
 }
 
 model Lecture {
-  id Int @id @default(autoincrement())
-  lecture_id String @unique
+  lecture_id Int @id @default(autoincrement())
   lecture_name String
   teacher_id  String
   headcount Int? //수강생 수
@@ -84,7 +83,7 @@ model Lecture {
 //강의-강사 N:M테이블
 model LectureParticipant {
   id Int @id @default (autoincrement())
-  lecture_id String
+  lecture_id Int
   user_id String
 
   // Relations
