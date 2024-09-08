@@ -20,17 +20,44 @@ exports.getLecture = asyncWrapper(async(req, res, next) => {
         where : {
             academy_id: academy_id
         }
-    })
+    });
 
     if(!targetLecture || targetLecture.length === 0) {
         return next(new CustomError(
             "현재 개설된 강의가 존재하지 않습니다.",
             StatusCodes.NOT_FOUND,
-            StatusCodes.NOT_Fou
+            StatusCodes.NOT_FOUND
         ))
     }
+    
     res.status(StatusCodes.OK).json({
         message: "강의를 성공적으로 불러왔습니다.",
         data: LectureList
-    })
+    });
+})
+
+//강의 생성
+exports.createLecture = asyncWrapper(async(req, res, next) => {
+    const { lecture_name, user_id, academy_id } = req.body;
+
+    if(!lecture_name || lecture_name.length === 0 || !user_id || !academy_id) {
+        return next(new CustomError(
+            "유효하지 않은 입력입니다!",
+            StatusCodes.BAD_REQUEST,
+            StatusCodes.BAD_REQUEST
+        ))
+    } 
+
+    const result = await prisma.Lecture.create({
+        data: {
+            lecture_name,
+            teacher_id : user_id,
+            academy_id
+        }
+    });
+
+    res.status(StatusCodes.OK).json({
+        message:"새로운 강의가 생성되었습니다!",
+        lecture: result
+    });
 })
