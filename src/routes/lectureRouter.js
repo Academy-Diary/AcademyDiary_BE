@@ -9,4 +9,7 @@ router.get("/", authenticateJWT, lectureController.getLecture);
 //강의 생성
 router.post("/", authenticateJWT, lectureController.createLecture);
 
+//강의 수정
+router.put("/:lecture_id", authenticateJWT, lectureController.modifyLecture);
+
 module.exports = router;

@@ -29,7 +29,7 @@ exports.getLecture = asyncWrapper(async(req, res, next) => {
             StatusCodes.NOT_FOUND
         ))
     }
-    
+
     res.status(StatusCodes.OK).json({
         message: "강의를 성공적으로 불러왔습니다.",
         data: LectureList
@@ -59,5 +59,40 @@ exports.createLecture = asyncWrapper(async(req, res, next) => {
     res.status(StatusCodes.OK).json({
         message:"새로운 강의가 생성되었습니다!",
         lecture: result
+    });
+})
+
+//강의 수정
+exports.modifyLecture = asyncWrapper(async(req, res, next) => {
+    const { lecture_id } = req.params;
+    const { lecture_name, teacher_id } = req.body;
+
+    const targetLecture = await prisma.Lecture.findUnique({
+        where:{
+            lecture_id
+        }
+    });
+
+    if(!targetLecture) {
+        return next(new CustomError(
+            "유효하지 않은 입력입니다.",
+            StatusCodes.BAD_REQUEST,
+            StatusCodes.BAD_REQUEST
+        ));
+    }
+    
+    const result = await prisma.Lecture.update({
+        where:{
+            lecture_id
+        },
+        data:{
+            lecture_name : lecture_name,
+            teacher_id : teacher_id
+        }
+    });
+
+    res.status(StatusCodes.OK).json({
+        message: "수정이 성공적으로 완료되었습니다.",
+        data: result
     });
 })
