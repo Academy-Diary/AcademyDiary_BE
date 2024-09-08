@@ -36,12 +36,14 @@ const userRouter = require("./routes/userRouter");
 const registerationRouter = require("./routes/registerationRouter");
 const studentRouter = require("./routes/studentRouter");
 const teacherRouter = require("./routes/teacherRouter");
+const lectureRouter = require("./routes/lectureRouter");
 
 app.use("/", indexRouter);
 app.use("/user", userRouter);
 app.use("/registeration", registerationRouter);
 app.use("/student", studentRouter);
 app.use("/teacher", teacherRouter);
+app.use("/lecture", lectureRouter);
 
 // error handler
 const errorHandler = require("./lib/middlewares/errorHandler");
