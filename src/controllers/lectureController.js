@@ -22,7 +22,7 @@ exports.getLecture = asyncWrapper(async(req, res, next) => {
         }
     });
 
-    if(!targetLecture || targetLecture.length === 0) {
+    if(!LectureList || LectureList.length === 0) {
         return next(new CustomError(
             "현재 개설된 강의가 존재하지 않습니다.",
             StatusCodes.NOT_FOUND,
