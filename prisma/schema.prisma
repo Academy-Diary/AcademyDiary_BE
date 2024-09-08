@@ -24,7 +24,8 @@ model User {
   academy      Academy? @relation(fields: [academy_id], references: [academy_id], name: "UserAcademyRelation")
   chief         Chief_Academy?   @relation("UserChiefRelation")
   registrationList AcademyUserRegistrationList? @relation("AcademyUserRegistrationList_User_Relation")
-  lectures      Lecture[] @relation("Teacher_Lecture")
+  lectures      Lecture[] @relation("Teacher_Lecture") //강사-강의 1:N
+  registerdLecture LectureParticipant[] //강의-수강생 N:M
 }
 
 model Academy {
@@ -70,8 +71,23 @@ model Lecture {
   lecture_id String @unique
   lecture_name String
   teacher_id  String
-  headcount Int //수강생 수  
+  headcount Int //수강생 수
+
+  // Relations
   teacher User @relation("Teacher_Lecture", fields: [teacher_id], references: [user_id])
+  participant LectureParticipant[]
+}
+
+//강의-강사 N:M테이블
+model LectureParticipant {
+  id Int @id @default (autoincrement())
+  lecture_id String
+  user_id String
+
+  // Relations
+  lecture Lecture @relation(fields: [lecture_id], references: [lecture_id])
+  user User @relation(fields: [user_id], references: [user_id])
+  @@unique([lecture_id, user_id])
 }
 
 enum Status {
