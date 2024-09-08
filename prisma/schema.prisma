@@ -64,6 +64,13 @@ model AcademyUserRegistrationList {
   user    User    @relation("AcademyUserRegistrationList_User_Relation", fields: [user_id], references: [user_id])
 }
 
+model Lecture {
+  id Int @id @default(autoincrement())
+  lecture_id String @unique
+  lecture_name String
+  headcount Int //수강생 수
+}
+
 enum Status {
   PENDING
   APPROVED
