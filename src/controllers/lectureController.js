@@ -67,6 +67,14 @@ exports.modifyLecture = asyncWrapper(async(req, res, next) => {
     const { lecture_id } = req.params;
     const { lecture_name, teacher_id } = req.body;
 
+    if (!lecture_id || !lecture_name || !teacher_id) {
+        return next(new CustomError(
+            "유효하지 않은 입력입니다.",
+            StatusCodes.BAD_REQUEST,
+            StatusCodes.BAD_REQUEST
+        ));
+    }
+
     const targetLecture = await prisma.Lecture.findUnique({
         where:{
             lecture_id
