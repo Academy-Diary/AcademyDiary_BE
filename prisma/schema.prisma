@@ -72,7 +72,7 @@ model Lecture {
   lecture_id String @unique
   lecture_name String
   teacher_id  String
-  headcount Int //수강생 수
+  headcount Int? //수강생 수
   academy_id String
 
   // Relations
