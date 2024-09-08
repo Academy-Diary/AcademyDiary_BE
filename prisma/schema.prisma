@@ -24,6 +24,7 @@ model User {
   academy      Academy? @relation(fields: [academy_id], references: [academy_id], name: "UserAcademyRelation")
   chief         Chief_Academy?   @relation("UserChiefRelation")
   registrationList AcademyUserRegistrationList? @relation("AcademyUserRegistrationList_User_Relation")
+  lectures      Lecture[] @relation("Teacher_Lecture")
 }
 
 model Academy {
@@ -68,7 +69,9 @@ model Lecture {
   id Int @id @default(autoincrement())
   lecture_id String @unique
   lecture_name String
-  headcount Int //수강생 수
+  teacher_id  String
+  headcount Int //수강생 수  
+  teacher User @relation("Teacher_Lecture", fields: [teacher_id], references: [user_id])
 }
 
 enum Status {
