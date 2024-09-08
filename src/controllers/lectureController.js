@@ -104,3 +104,42 @@ exports.modifyLecture = asyncWrapper(async(req, res, next) => {
         data: result
     });
 })
+
+//강의 삭제
+exports.deleteLecture = asyncWrapper(async(req, res, next) => {
+    let { lecture_id } = req.params;
+
+    // lecture_id가 존재하지 않으면 에러 처리
+    if (!lecture_id) {
+        return next(new CustomError(
+            "유효한 lecture_id가 제공되지 않았습니다.",
+            StatusCodes.BAD_REQUEST,
+            StatusCodes.BAD_REQUEST
+        ));
+    }
+    const target_id = parseInt(lecture_id, 10);
+
+    const targetLecture = await prisma.Lecture.findUnique({
+        where:{
+            lecture_id : target_id
+        }
+    });
+
+    if(!targetLecture) {
+        return next(new CustomError(
+            "유효하지 않은 입력입니다.",
+            StatusCodes.BAD_REQUEST,
+            StatusCodes.BAD_REQUEST
+        ));
+    }
+
+    await prisma.Lecture.delete({
+        where:{
+            lecture_id : target_id
+        }
+    });
+
+    res.status(StatusCodes.OK).json({
+        message: "삭제가 성공적으로 완료되었습니다."
+    });
+})

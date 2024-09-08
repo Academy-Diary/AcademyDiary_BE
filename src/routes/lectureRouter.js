@@ -12,4 +12,6 @@ router.post("/", authenticateJWT, lectureController.createLecture);
 //강의 수정
 router.put("/:lecture_id", authenticateJWT, lectureController.modifyLecture);
 
+//강의 삭제
+router.delete("/:lecture_id", authenticateJWT, lectureController.deleteLecture);
 module.exports = router;
