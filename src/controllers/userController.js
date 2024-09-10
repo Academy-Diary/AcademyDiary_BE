@@ -18,7 +18,6 @@ const { secretKey, gmailID, gmailPW } = require("../config/secret.js")
 exports.createUser = asyncWrapper(async (req, res, next) => {
   const {
     user_id,
-    academy_id, // 삭제해야함
     email,
     birth_date,
     user_name,
@@ -46,7 +45,6 @@ exports.createUser = asyncWrapper(async (req, res, next) => {
     .create({
       data: {
         user_id,
-        academy_id,
         email,
         birth_date: new Date(birth_date),
         user_name,
