@@ -75,9 +75,11 @@ exports.modifyLecture = asyncWrapper(async(req, res, next) => {
         ));
     }
 
+    const target_id = parseInt(lecture_id, 10);
+
     const targetLecture = await prisma.Lecture.findUnique({
         where:{
-            lecture_id
+            lecture_id : target_id
         }
     });
 
@@ -91,7 +93,7 @@ exports.modifyLecture = asyncWrapper(async(req, res, next) => {
     
     const result = await prisma.Lecture.update({
         where:{
-            lecture_id
+            lecture_id : target_id
         },
         data:{
             lecture_name : lecture_name,
