@@ -146,3 +146,38 @@ exports.deleteLecture = asyncWrapper(async(req, res, next) => {
         lecture_id: target_id
     });
 })
+
+
+//강의 수강생 조회
+exports.getLectureStudent = asyncWrapper(async(req, res, next) => {
+    const { lecture_id } = req.params;
+    const target_id = parseInt(lecture_id, 10);
+
+    if (!target_id) {
+        return next(new CustomError(
+            "유효한 lecture_id가 제공되지 않았습니다.",
+            StatusCodes.BAD_REQUEST,
+            StatusCodes.BAD_REQUEST
+        ));
+    }
+
+    const result = await prisma.LectureParticipant.findMany({
+        where:{
+            lecture_id : target_id
+        }
+    })
+
+    if(!result || result.length === 0) {
+        return next(new CustomError(
+            "수강생이 없거나 불러올 수 없습니다.",
+            StatusCodes.NOT_FOUND,
+            StatusCodes.NOT_FOUND
+        ));
+    }
+
+    res.status(StatusCodes.OK).json({
+        message: "수강생을 성공적으로 불러왔습니다.",
+        data : result
+    });
+
+})
