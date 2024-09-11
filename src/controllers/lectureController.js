@@ -153,6 +153,14 @@ exports.getLectureStudent = asyncWrapper(async(req, res, next) => {
     const { lecture_id } = req.params;
     const target_id = parseInt(lecture_id, 10);
 
+    if (!lecture_id) {
+        return next(new CustomError(
+            "유효한 lecture_id가 제공되지 않았습니다.",
+            StatusCodes.BAD_REQUEST,
+            StatusCodes.BAD_REQUEST
+        ));
+    }
+
     if (!target_id) {
         return next(new CustomError(
             "유효한 lecture_id가 제공되지 않았습니다.",
