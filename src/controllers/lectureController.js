@@ -189,3 +189,49 @@ exports.getLectureStudent = asyncWrapper(async(req, res, next) => {
     });
 
 })
+
+//강의 수강생 추가
+exports.createLectureStudent = asyncWrapper(async(req, res, next) => {
+    const { lecture_id } = req.params;
+
+    if (!lecture_id) {
+        return next(new CustomError(
+            "유효한 lecture_id가 제공되지 않았습니다.",
+            StatusCodes.BAD_REQUEST,
+            StatusCodes.BAD_REQUEST
+        ));
+    }
+
+    const { user_id } = req.body;
+
+    if (!user_id) {
+        return next(new CustomError(
+            "유효한 user_id가 제공되지 않았습니다.",
+            StatusCodes.BAD_REQUEST,
+            StatusCodes.BAD_REQUEST
+        ));
+    }
+
+    const target_id = parseInt(lecture_id, 10);
+    
+    try {
+        const result = await prisma.LectureParticipant.create({
+            data: {
+                lecture_id: target_id,
+                user_id: user_id
+            }
+        });
+
+        res.status(StatusCodes.OK).json({
+            message: "수강생을 성공적으로 추가했습니다.",
+            data: result
+        });
+    } catch (error) {
+        return next(new CustomError(
+            "수강생을 추가하는데 실패하였습니다.",
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            StatusCodes.INTERNAL_SERVER_ERROR
+        ));
+    }
+
+})
