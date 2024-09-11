@@ -20,4 +20,8 @@ router.get("/:lecture_id/student", authenticateJWT, lectureController.getLecture
 
 //강의 수강생 추가
 router.post("/:lecture_id/student", authenticateJWT, lectureController.createLectureStudent);
+
+//강의 수강생 제거
+router.delete("/:lecture_id/student", authenticateJWT, lectureController.deleteLectureStudent);
+
 module.exports = router;
