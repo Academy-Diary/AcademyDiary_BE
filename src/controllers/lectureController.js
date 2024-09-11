@@ -140,6 +140,7 @@ exports.deleteLecture = asyncWrapper(async(req, res, next) => {
     });
 
     res.status(StatusCodes.OK).json({
-        message: "삭제가 성공적으로 완료되었습니다."
+        message: "삭제가 성공적으로 완료되었습니다.",
+        lecture_id: target_id
     });
 })
