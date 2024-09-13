@@ -21,11 +21,12 @@ model User {
   image        String   @default("default.png")
 
   // Relations
-  academy      Academy? @relation(fields: [academy_id], references: [academy_id], name: "UserAcademyRelation")
-  chief         Chief_Academy?   @relation("UserChiefRelation")
+  academy          Academy?                     @relation(fields: [academy_id], references: [academy_id], name: "UserAcademyRelation")
+  chief            Chief_Academy?               @relation("UserChiefRelation")
   registrationList AcademyUserRegistrationList? @relation("AcademyUserRegistrationList_User_Relation")
-  lectures      Lecture[] @relation("Teacher_Lecture") //강사-강의 1:N
+  lectures         Lecture[]                    @relation("Teacher_Lecture") //강사-강의 1:N
   registerdLecture LectureParticipant[] //강의-수강생 N:M
+  exam_scores      ExamUserScore[]              @relation("ExamUserScore_User_Relation") // User : ExamUserScore  (M:N relationship with Exam)
 }
 
 model Academy {
@@ -39,16 +40,16 @@ model Academy {
   status        Status  @default(PENDING)
 
   // Relations
-  users User[] @relation("UserAcademyRelation")
-  chief Chief_Academy? @relation("AcademyChiefRelation")
-  registrationList   AcademyUserRegistrationList[] @relation("AcademyUserRegistrationList_Academy_Relation")
-  lectures Lecture[] //학원-강의 1:N
+  users            User[]                        @relation("UserAcademyRelation")
+  chief            Chief_Academy?                @relation("AcademyChiefRelation")
+  registrationList AcademyUserRegistrationList[] @relation("AcademyUserRegistrationList_Academy_Relation")
+  lectures         Lecture[] //학원-강의 1:N
 }
 
 model Chief_Academy {
-  id            String @id @default(uuid()) // 단일 기본키로 설정
-  chief_id      String @unique
-  academy_id    String @unique
+  id         String @id @default(uuid()) // 단일 기본키로 설정
+  chief_id   String @unique
+  academy_id String @unique
 
   // Relations
   user    User    @relation("UserChiefRelation", fields: [chief_id], references: [user_id])
@@ -58,38 +59,79 @@ model Chief_Academy {
 }
 
 model AcademyUserRegistrationList {
-  academy_id String 
+  academy_id String
   user_id    String @unique
   role       Role   @default(STUDENT)
   status     Status @default(PENDING)
 
-  academy   Academy @relation("AcademyUserRegistrationList_Academy_Relation", fields: [academy_id], references: [academy_id])
+  academy Academy @relation("AcademyUserRegistrationList_Academy_Relation", fields: [academy_id], references: [academy_id])
   user    User    @relation("AcademyUserRegistrationList_User_Relation", fields: [user_id], references: [user_id])
 }
 
 model Lecture {
-  lecture_id Int @id @default(autoincrement())
+  lecture_id   Int    @id @default(autoincrement())
   lecture_name String
-  teacher_id  String
-  headcount Int? //수강생 수
-  academy_id String
+  teacher_id   String
+  headcount    Int? //수강생 수
+  academy_id   String
 
   // Relations
-  teacher User @relation("Teacher_Lecture", fields: [teacher_id], references: [user_id])
-  academy Academy @relation(fields: [academy_id], references: [academy_id])
+  teacher     User                 @relation("Teacher_Lecture", fields: [teacher_id], references: [user_id])
+  academy     Academy              @relation(fields: [academy_id], references: [academy_id])
   participant LectureParticipant[]
+  exams       Exam[]               @relation("Lecture_Exam_Relation") // Lecture : Exam = 1:N
+  exam_types  ExamType[]           @relation("Lecture_ExamType_Relation") // Lecture: ExamType = 1 : N
 }
 
 //강의-강사 N:M테이블
 model LectureParticipant {
-  id Int @id @default (autoincrement())
+  id         Int    @id @default(autoincrement())
   lecture_id Int
-  user_id String
+  user_id    String
 
   // Relations
   lecture Lecture @relation(fields: [lecture_id], references: [lecture_id])
-  user User @relation(fields: [user_id], references: [user_id])
+  user    User    @relation(fields: [user_id], references: [user_id])
+
   @@unique([lecture_id, user_id])
+}
+
+model ExamType {
+  exam_type_id   Int    @id @default(autoincrement()) // Primary Key, Auto Increment
+  lecture_id     Int // Foreign Key for Lecture
+  exam_type_name String // ex 단원평가
+
+  // Relations
+  lecture Lecture @relation("Lecture_ExamType_Relation", fields: [lecture_id], references: [lecture_id]) // Lecture : ExamType = 1:N
+  exams   Exam[]  @relation("ExamType_Exam_Relation") // ExamType : Exam = 1:N
+}
+
+model Exam {
+  exam_id       Int      @id @default(autoincrement()) // Primary Key, Auto Increment
+  lecture_id    Int // Foreign Key for Lecture
+  exam_name     String // Exam name
+  high_score    Float    @default(0) // Highest score
+  low_score     Float    @default(0) // Lowest score
+  average_score Float    @default(0) // Average score
+  created_at    DateTime @default(now()) // Created at timestamp
+  exam_type_id  Int // Foreign Key for ExamType
+
+  // Relations
+  exam_type   ExamType        @relation("ExamType_Exam_Relation", fields: [exam_type_id], references: [exam_type_id]) // ExamType : Exam = 1:N
+  lecture     Lecture         @relation("Lecture_Exam_Relation", fields: [lecture_id], references: [lecture_id]) // Lecture : Exam = 1:N
+  exam_scores ExamUserScore[] @relation("ExamUserScore_Exam_Relation") // Exam : ExamUserScore (M:N relationship with User)
+}
+
+model ExamUserScore {
+  exam_id Int
+  user_id String
+  score   Float
+
+  // Relations
+  exam Exam @relation("ExamUserScore_Exam_Relation", fields: [exam_id], references: [exam_id])
+  user User @relation("ExamUserScore_User_Relation", fields: [user_id], references: [user_id])
+
+  @@id([exam_id, user_id]) // Composite Primary Key for the many-to-many relationship
 }
 
 enum Status {
