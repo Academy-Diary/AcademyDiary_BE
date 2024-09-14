@@ -29,4 +29,11 @@ router.get(
   lectureController.getExamType
 );
 
+// 시험 유형 삭제
+router.delete(
+  "/:lecture_id/:exam_type_id",
+  authenticateJWT,
+  lectureController.deleteExamType
+);
+
 module.exports = router;

@@ -246,3 +246,52 @@ exports.getExamType = asyncWrapper(async (req, res, next) => {
     },
   });
 });
+
+exports.deleteExamType = asyncWrapper(async (req, res, next) => {
+  const { lecture_id, exam_type_id } = req.params;
+
+  // 유효성 검사: lecture_id, exam_type_id가 존재하지 않으면 에러 처리
+  if (!lecture_id || !exam_type_id || !exam_type_id.trim()) {
+    return next(
+      new CustomError(
+        "유효한 lecture_id, exam_type_id가 제공되지 않았습니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+  const lecture_id_int = parseInt(lecture_id, 10);
+  const exam_type_id_int = parseInt(exam_type_id, 10);
+
+  const targetExamType = await prisma.ExamType.findUnique({
+    where: {
+      lecture_id: lecture_id_int,
+      exam_type_id: exam_type_id_int,
+    },
+  });
+
+  if (!targetExamType) {
+    return next(
+      new CustomError(
+        "존재하지않는 시험 유형입니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+
+  await prisma.ExamType.delete({
+    where: {
+      exam_type_id: exam_type_id_int,
+    },
+  });
+
+  res.status(StatusCodes.OK).json({
+    message: "시험 유형 삭제가 완료되었습니다.",
+    data: {
+      lecture_id: lecture_id_int,
+      exam_type_name: targetExamType.exam_type_name,
+      exam_type_id: exam_type_id_int,
+    },
+  });
+});
