@@ -14,4 +14,8 @@ router.put("/:lecture_id", authenticateJWT, lectureController.modifyLecture);
 
 //강의 삭제
 router.delete("/:lecture_id", authenticateJWT, lectureController.deleteLecture);
+
+// 시험 유형 생성
+router.post("/:lecture_id/exam-type", authenticateJWT, lectureController.createExamType);
+
 module.exports = router;
