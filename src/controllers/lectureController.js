@@ -205,3 +205,44 @@ exports.createExamType = asyncWrapper(async (req, res, next) => {
     data: examType,
   });
 });
+
+exports.getExamType = asyncWrapper(async (req, res, next) => {
+  const { lecture_id } = req.params;
+
+  // 유효성 검사: lecture_id가 존재하지 않으면 에러 처리
+  if (!lecture_id) {
+    return next(
+      new CustomError(
+        "유효한 lecture_id가 제공되지 않았습니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+  const lecture_id_int = parseInt(lecture_id, 10);
+
+  const examTypeList = await prisma.ExamType.findMany({
+    where: {
+      lecture_id: lecture_id_int,
+    },
+  });
+
+  if (!examTypeList || examTypeList.length === 0) {
+    return next(
+      new CustomError(
+        "현재 개설된 시험 유형이 존재하지 않습니다.",
+        StatusCodes.NOT_FOUND,
+        StatusCodes.NOT_FOUND
+      )
+    );
+  }
+
+  res.status(StatusCodes.OK).json({
+    message: "시험 유형을 성공적으로 불러왔습니다.",
+    data: {
+      lecture_id: lecture_id_int,
+      exam_types: examTypeList,
+      type_cnt: examTypeList.length,
+    },
+  });
+});

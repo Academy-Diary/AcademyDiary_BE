@@ -22,4 +22,11 @@ router.post(
   lectureController.createExamType
 );
 
+// 시험 유형 조회
+router.get(
+  "/:lecture_id/exam-type",
+  authenticateJWT,
+  lectureController.getExamType
+);
+
 module.exports = router;
