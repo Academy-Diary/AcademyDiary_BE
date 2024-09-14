@@ -200,7 +200,7 @@ exports.createExamType = asyncWrapper(async (req, res, next) => {
       lecture_id: lecture_id_int,
     },
   });
-  res.status(StatusCodes.OK).json({
+  res.status(StatusCodes.CREATED).json({
     message: "시험 유형이 성공적으로 생성되었습니다.",
     data: examType,
   });
