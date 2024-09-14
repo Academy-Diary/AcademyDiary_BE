@@ -80,7 +80,7 @@ model Lecture {
   participant LectureParticipant[]
 }
 
-//강의-강사 N:M테이블
+//강의-수강생 N:M테이블
 model LectureParticipant {
   id Int @id @default (autoincrement())
   lecture_id Int
