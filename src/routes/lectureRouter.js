@@ -14,4 +14,14 @@ router.put("/:lecture_id", authenticateJWT, lectureController.modifyLecture);
 
 //강의 삭제
 router.delete("/:lecture_id", authenticateJWT, lectureController.deleteLecture);
+
+//강의 수강생 조회
+router.get("/:lecture_id/student", authenticateJWT, lectureController.getLectureStudent);
+
+//강의 수강생 추가
+router.post("/:lecture_id/student", authenticateJWT, lectureController.createLectureStudent);
+
+//강의 수강생 제거
+router.delete("/:lecture_id/student", authenticateJWT, lectureController.deleteLectureStudent);
+
 module.exports = router;
