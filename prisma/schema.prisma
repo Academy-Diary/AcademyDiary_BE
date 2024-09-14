@@ -83,7 +83,7 @@ model Lecture {
   exam_types  ExamType[]           @relation("Lecture_ExamType_Relation") // Lecture: ExamType = 1 : N
 }
 
-//강의-강사 N:M테이블
+//강의-수강생 N:M테이블
 model LectureParticipant {
   id         Int    @id @default(autoincrement())
   lecture_id Int
