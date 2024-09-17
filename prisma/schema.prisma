@@ -43,6 +43,7 @@ model Academy {
   users            User[]                        @relation("UserAcademyRelation")
   chief            Chief_Academy?                @relation("AcademyChiefRelation")
   registrationList AcademyUserRegistrationList[] @relation("AcademyUserRegistrationList_Academy_Relation")
+  class            Class[] //학원 - 메뉴(Class) 1:N
   lectures         Lecture[] //학원-강의 1:N
 }
 
@@ -81,6 +82,7 @@ model Lecture {
   participant LectureParticipant[]
   exams       Exam[]               @relation("Lecture_Exam_Relation") // Lecture : Exam = 1:N
   exam_types  ExamType[]           @relation("Lecture_ExamType_Relation") // Lecture: ExamType = 1 : N
+  classes     ClassLecture[]
 }
 
 //강의-수강생 N:M테이블
@@ -94,6 +96,33 @@ model LectureParticipant {
   user    User    @relation(fields: [user_id], references: [user_id])
 
   @@unique([lecture_id, user_id])
+}
+
+//메뉴 (Class) (ex.. 이과 종합반, 고등 종합반 등등..)
+model Class {
+  class_id    Int     @id @default(autoincrement()) 
+  class_name  String
+  academy_id  String
+  expense     Int
+  discount    Int?
+  duration    Int
+
+  // Relations
+  academy     Academy @relation(fields: [academy_id], references: [academy_id])
+  lectures    ClassLecture[]
+}
+
+// 메뉴(Class)와 강의의 중간 테이블 (ClassLecture) - N:M 관계
+model ClassLecture {
+  class_id   Int
+  lecture_id Int
+
+  // Relations
+  class   Class   @relation(fields: [class_id], references: [class_id])
+  lecture Lecture @relation(fields: [lecture_id], references: [lecture_id])
+
+  // Primary Key
+  @@id([class_id, lecture_id])
 }
 
 model ExamType {
