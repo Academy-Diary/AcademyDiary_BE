@@ -5,7 +5,8 @@ const ErrorCode = require("../lib/errors/errorCode");
 const { StatusCodes } = require("http-status-codes");
 
 exports.createClass = asyncWrapper(async(req, res, next)=>{
-    const { class_name, academy_id, expense, discount, duration } = req.body;
+    const { academy_id } = req.params;
+    const { class_name, expense, discount, duration } = req.body;
 
     // 1. 입력값 검증
     if (!class_name || !academy_id || expense === undefined || duration === undefined) {
