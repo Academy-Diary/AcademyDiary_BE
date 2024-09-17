@@ -4,7 +4,7 @@ const router = express.Router();
 const expenseController = require("../controllers/expenseController.js");
 
 
-router.post("/expense", authenticateJWT, expenseController.createClass);
+router.post("/", authenticateJWT, expenseController.createClass);
 
 
 module.exports = router;
