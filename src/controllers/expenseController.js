@@ -29,6 +29,21 @@ exports.createClass = asyncWrapper(async(req, res, next)=>{
             ));
     }
 
+    // 3. 중복된 클래스 이름이 같은 학원에 이미 존재하는지 확인
+    const existingClass = await prisma.Class.findFirst({
+        where: {
+            class_name: class_name,
+            academy_id: academy_id
+        }
+    });
+
+    if (existingClass) {
+        return next(new CustomError(
+            "해당 학원에 동일한 이름의 Class가 이미 존재합니다.",
+            StatusCodes.CONFLICT
+        ));
+    }
+
     const result = await prisma.Class.create({
         data: {
             class_name,
@@ -38,6 +53,14 @@ exports.createClass = asyncWrapper(async(req, res, next)=>{
             duration
         }
     });
+
+    if(!result || result.length === 0){
+        return next(new CustomError(
+            "Class를 생성하는데 실패하였습니다.",
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            StatusCodes.INTERNAL_SERVER_ERROR
+        ));
+    }
 
     res.status(StatusCodes.OK).json({
         message: "성공적으로 Class를 생성했습니다.",
