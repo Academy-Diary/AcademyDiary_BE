@@ -46,3 +46,37 @@ exports.createClass = asyncWrapper(async(req, res, next)=>{
 
 
 })
+
+exports.getClass = asyncWrapper(async(req, res, next) => {
+    const { academy_id } = req.params
+
+    // 1. 입력값 검증
+    if (!academy_id) {
+        return next(new CustomError(
+            "유효한 academy_id가 제공되지 않았습니다.", 
+            StatusCodes.BAD_REQUEST,
+            StatusCodes.BAD_REQUEST
+        ));
+    }
+
+    const result = await prisma.Class.findMany({
+        where: {
+            academy_id : academy_id
+        }
+    })
+
+    if(!result || result.length === 0){
+        return next(new CustomError(
+            "Class가 존재하지않아 불러올 수 없습니다.",
+            StatusCodes.NOT_FOUND,
+            StatusCodes.NOT_FOUND
+        ));
+    }
+
+    res.status(StatusCodes.OK).json({
+        message: "성공적으로 Class를 조회했습니다.",
+        data : result
+    });
+
+
+})
