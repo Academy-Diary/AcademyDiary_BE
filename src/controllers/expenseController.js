@@ -41,6 +41,7 @@ exports.createClass = asyncWrapper(async(req, res, next)=>{
     if (existingClass) {
         return next(new CustomError(
             "해당 학원에 동일한 이름의 Class가 이미 존재합니다.",
+            StatusCodes.CONFLICT,
             StatusCodes.CONFLICT
         ));
     }
