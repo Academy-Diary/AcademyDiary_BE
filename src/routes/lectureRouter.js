@@ -31,7 +31,7 @@ router.get(
 
 // 시험 유형 삭제
 router.delete(
-  "/:lecture_id/:exam_type_id",
+  "/:lecture_id/:exam_type_id(\\d+)",
   authenticateJWT,
   lectureController.deleteExamType
 );
