@@ -431,3 +431,53 @@ exports.deleteLectureStudent = asyncWrapper(async(req, res, next) => {
         ));
     }
 })
+
+exports.createExam = asyncWrapper(async(req, res, next) => {
+  const { lecture_id } = req.params;
+  const {exam_name, exam_type_id, exam_date} = req.body;
+
+  // 유효성 검사: lecture_id, exam_type_id가 존재하지 않으면 에러 처리
+  if (!lecture_id || !exam_name|| !exam_name.trim() || !exam_date || !exam_date.trim()||!exam_type_id|| !exam_type_id.trim()) {
+    return next(
+      new CustomError(
+        "유효한 lecture_id, exam_name, exam_type_id, exam_date가 제공되지 않았습니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+  const lecture_id_int = parseInt(lecture_id, 10);
+  const exam_type_id_int = parseInt(exam_type_id, 10);
+
+  // 유효성 검사: 존재하는 exam_type_id인지 확인
+  const exam_type = await prisma.ExamType.findUnique({
+    where: {
+      exam_type_id: exam_type_id_int,
+      lecture_id: lecture_id_int,
+    },
+  });
+
+  if (!exam_type) {
+    return next(
+      new CustomError(
+        "존재하지 않는 시험 유형입니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+
+  const exam = await prisma.Exam.create({
+    data: {
+      lecture_id: lecture_id_int,
+      exam_name: exam_name,
+      exam_date: new Date(exam_date),
+      exam_type_id: exam_type_id_int,
+    },
+  });
+  res.status(StatusCodes.CREATED).json({
+    message: "시험이 성공적으로 생성되었습니다.",
+    data: exam,
+  });
+
+});

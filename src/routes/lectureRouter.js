@@ -45,4 +45,11 @@ router.post("/:lecture_id/student", authenticateJWT, lectureController.createLec
 //강의 수강생 제거
 router.delete("/:lecture_id/student", authenticateJWT, lectureController.deleteLectureStudent);
 
+// 시험 생성
+router.post(
+  "/:lecture_id/exam",
+  authenticateJWT,
+  lectureController.createExam
+);
+
 module.exports = router;
