@@ -156,8 +156,8 @@ model ExamUserScore {
   score   Float
 
   // Relations
-  exam Exam @relation("ExamUserScore_Exam_Relation", fields: [exam_id], references: [exam_id])
-  user User @relation("ExamUserScore_User_Relation", fields: [user_id], references: [user_id])
+  exam Exam @relation("ExamUserScore_Exam_Relation", fields: [exam_id], references: [exam_id], onDelete: Cascade)
+  user User @relation("ExamUserScore_User_Relation", fields: [user_id], references: [user_id], onDelete: Cascade)
 
   @@id([exam_id, user_id]) // Composite Primary Key for the many-to-many relationship
 }

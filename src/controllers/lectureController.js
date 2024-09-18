@@ -578,14 +578,8 @@ exports.deleteExam = asyncWrapper(async (req, res, next) => {
       )
     );
   }
-  // 학생 시험 점수 내역 삭제
-  await prisma.ExamUserScore.deleteMany({
-    where: {
-      exam_id: exam_id_int,
-    },
-  });
 
-  // 시험 삭제
+  // 시험 삭제, 참조된 데이터들(ExamUserScore)도 삭제 - onDelete: CASCADE
   await prisma.Exam.delete({
     where: {
       exam_id: exam_id_int,
