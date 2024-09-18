@@ -52,4 +52,11 @@ router.post(
   lectureController.createExam
 );
 
+// 시험 조회
+router.get(
+  "/:lecture_id/exam",
+  authenticateJWT,
+  lectureController.getExam
+);
+
 module.exports = router;
