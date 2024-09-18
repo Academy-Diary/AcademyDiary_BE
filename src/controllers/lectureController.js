@@ -545,3 +545,58 @@ exports.getExam = asyncWrapper(async (req, res, next) => {
     },
   });
 });
+
+exports.deleteExam = asyncWrapper(async (req, res, next) => {
+  const { lecture_id, exam_id } = req.params;
+
+  // 유효성 검사: lecture_id, exam_id가 존재하지 않으면 에러 처리
+  if (!lecture_id || !exam_id || !exam_id.trim()) {
+    return next(
+      new CustomError(
+        "유효한 lecture_id, exam_id가 제공되지 않았습니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+  const lecture_id_int = parseInt(lecture_id, 10);
+  const exam_id_int = parseInt(exam_id, 10);
+
+  const targetExam = await prisma.Exam.findUnique({
+    where: {
+      lecture_id: lecture_id_int,
+      exam_id: exam_id_int,
+    },
+  });
+
+  if (!targetExam) {
+    return next(
+      new CustomError(
+        "존재하지 않는 시험입니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+  // 학생 시험 점수 내역 삭제
+  await prisma.ExamUserScore.deleteMany({
+    where: {
+      exam_id: exam_id_int,
+    },
+  });
+
+  // 시험 삭제
+  await prisma.Exam.delete({
+    where: {
+      exam_id: exam_id_int,
+    },
+  });
+
+  res.status(StatusCodes.OK).json({
+    message: "시험 삭제가 완료되었습니다.",
+    data: {
+      lecture_id: lecture_id_int,
+      exam: targetExam,
+    },
+  });
+});

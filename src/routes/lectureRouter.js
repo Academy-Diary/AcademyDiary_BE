@@ -59,4 +59,11 @@ router.get(
   lectureController.getExam
 );
 
+// 시험 삭제
+router.delete(
+  "/:lecture_id/exam/:exam_id(\\d+)",
+  authenticateJWT,
+  lectureController.deleteExam
+);
+
 module.exports = router;
