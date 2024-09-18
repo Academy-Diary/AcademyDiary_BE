@@ -296,148 +296,171 @@ exports.deleteExamType = asyncWrapper(async (req, res, next) => {
   });
 });
 
-
 //강의 수강생 조회
-exports.getLectureStudent = asyncWrapper(async(req, res, next) => {
-    const { lecture_id } = req.params;
-    const target_id = parseInt(lecture_id, 10);
+exports.getLectureStudent = asyncWrapper(async (req, res, next) => {
+  const { lecture_id } = req.params;
+  const target_id = parseInt(lecture_id, 10);
 
-    if (!lecture_id) {
-        return next(new CustomError(
-            "유효한 lecture_id가 제공되지 않았습니다.",
-            StatusCodes.BAD_REQUEST,
-            StatusCodes.BAD_REQUEST
-        ));
-    }
+  if (!lecture_id) {
+    return next(
+      new CustomError(
+        "유효한 lecture_id가 제공되지 않았습니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
 
-    if (!target_id) {
-        return next(new CustomError(
-            "유효한 lecture_id가 제공되지 않았습니다.",
-            StatusCodes.BAD_REQUEST,
-            StatusCodes.BAD_REQUEST
-        ));
-    }
+  if (!target_id) {
+    return next(
+      new CustomError(
+        "유효한 lecture_id가 제공되지 않았습니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
 
-    const result = await prisma.LectureParticipant.findMany({
-        where:{
-            lecture_id : target_id
-        }
-    })
+  const result = await prisma.LectureParticipant.findMany({
+    where: {
+      lecture_id: target_id,
+    },
+  });
 
-    if(!result || result.length === 0) {
-        return next(new CustomError(
-            "수강생이 없거나 불러올 수 없습니다.",
-            StatusCodes.NOT_FOUND,
-            StatusCodes.NOT_FOUND
-        ));
-    }
+  if (!result || result.length === 0) {
+    return next(
+      new CustomError(
+        "수강생이 없거나 불러올 수 없습니다.",
+        StatusCodes.NOT_FOUND,
+        StatusCodes.NOT_FOUND
+      )
+    );
+  }
 
-    res.status(StatusCodes.OK).json({
-        message: "수강생을 성공적으로 불러왔습니다.",
-        data : result
-    });
-
-})
+  res.status(StatusCodes.OK).json({
+    message: "수강생을 성공적으로 불러왔습니다.",
+    data: result,
+  });
+});
 
 //강의 수강생 추가
-exports.createLectureStudent = asyncWrapper(async(req, res, next) => {
-    const { lecture_id } = req.params;
+exports.createLectureStudent = asyncWrapper(async (req, res, next) => {
+  const { lecture_id } = req.params;
 
-    if (!lecture_id) {
-        return next(new CustomError(
-            "유효한 lecture_id가 제공되지 않았습니다.",
-            StatusCodes.BAD_REQUEST,
-            StatusCodes.BAD_REQUEST
-        ));
-    }
+  if (!lecture_id) {
+    return next(
+      new CustomError(
+        "유효한 lecture_id가 제공되지 않았습니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
 
-    const { user_id } = req.body;
+  const { user_id } = req.body;
 
-    if (!user_id) {
-        return next(new CustomError(
-            "유효한 user_id가 제공되지 않았습니다.",
-            StatusCodes.BAD_REQUEST,
-            StatusCodes.BAD_REQUEST
-        ));
-    }
+  if (!user_id) {
+    return next(
+      new CustomError(
+        "유효한 user_id가 제공되지 않았습니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
 
-    const target_id = parseInt(lecture_id, 10);
-    
-    try {
-        const result = await prisma.LectureParticipant.create({
-            data: {
-                lecture_id: target_id,
-                user_id: user_id
-            }
-        });
+  const target_id = parseInt(lecture_id, 10);
 
-        res.status(StatusCodes.OK).json({
-            message: "수강생을 성공적으로 추가했습니다.",
-            data: result
-        });
-    } catch (error) {
-        return next(new CustomError(
-            "수강생을 추가하는데 실패하였습니다.",
-            StatusCodes.INTERNAL_SERVER_ERROR,
-            StatusCodes.INTERNAL_SERVER_ERROR
-        ));
-    }
+  try {
+    const result = await prisma.LectureParticipant.create({
+      data: {
+        lecture_id: target_id,
+        user_id: user_id,
+      },
+    });
 
-})
+    res.status(StatusCodes.OK).json({
+      message: "수강생을 성공적으로 추가했습니다.",
+      data: result,
+    });
+  } catch (error) {
+    return next(
+      new CustomError(
+        "수강생을 추가하는데 실패하였습니다.",
+        StatusCodes.INTERNAL_SERVER_ERROR,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      )
+    );
+  }
+});
 
 //강의 수강생 제거
-exports.deleteLectureStudent = asyncWrapper(async(req, res, next) => {
-    const { lecture_id } = req.params;
-
-    if (!lecture_id) {
-        return next(new CustomError(
-            "유효한 lecture_id가 제공되지 않았습니다.",
-            StatusCodes.BAD_REQUEST,
-            StatusCodes.BAD_REQUEST
-        ));
-    }
-
-    const target_id = parseInt(lecture_id, 10);
-
-    const { user_id } = req.body;
-
-    if (!user_id) {
-        return next(new CustomError(
-            "유효한 user_id가 제공되지 않았습니다.",
-            StatusCodes.BAD_REQUEST,
-            StatusCodes.BAD_REQUEST
-        ));
-    }
-
-    try {
-        const result = await prisma.LectureParticipant.delete({
-            where: {
-                lecture_id_user_id:{
-                    lecture_id: target_id,
-                    user_id: user_id
-                }
-            }
-        });
-
-        res.status(StatusCodes.OK).json({
-            message: "수강생을 성공적으로 삭제했습니다.",
-            data: result
-        });
-    } catch (error) {
-        return next(new CustomError(
-            "수강생을 삭제하는데 실패하였습니다.",
-            StatusCodes.INTERNAL_SERVER_ERROR,
-            StatusCodes.INTERNAL_SERVER_ERROR
-        ));
-    }
-})
-
-exports.createExam = asyncWrapper(async(req, res, next) => {
+exports.deleteLectureStudent = asyncWrapper(async (req, res, next) => {
   const { lecture_id } = req.params;
-  const {exam_name, exam_type_id, exam_date} = req.body;
+
+  if (!lecture_id) {
+    return next(
+      new CustomError(
+        "유효한 lecture_id가 제공되지 않았습니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+
+  const target_id = parseInt(lecture_id, 10);
+
+  const { user_id } = req.body;
+
+  if (!user_id) {
+    return next(
+      new CustomError(
+        "유효한 user_id가 제공되지 않았습니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+
+  try {
+    const result = await prisma.LectureParticipant.delete({
+      where: {
+        lecture_id_user_id: {
+          lecture_id: target_id,
+          user_id: user_id,
+        },
+      },
+    });
+
+    res.status(StatusCodes.OK).json({
+      message: "수강생을 성공적으로 삭제했습니다.",
+      data: result,
+    });
+  } catch (error) {
+    return next(
+      new CustomError(
+        "수강생을 삭제하는데 실패하였습니다.",
+        StatusCodes.INTERNAL_SERVER_ERROR,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      )
+    );
+  }
+});
+
+exports.createExam = asyncWrapper(async (req, res, next) => {
+  const { lecture_id } = req.params;
+  const { exam_name, exam_type_id, exam_date } = req.body;
 
   // 유효성 검사: lecture_id, exam_type_id가 존재하지 않으면 에러 처리
-  if (!lecture_id || !exam_name|| !exam_name.trim() || !exam_date || !exam_date.trim()||!exam_type_id|| !exam_type_id.trim()) {
+  if (
+    !lecture_id ||
+    !exam_name ||
+    !exam_name.trim() ||
+    !exam_date ||
+    !exam_date.trim() ||
+    !exam_type_id ||
+    !exam_type_id.trim()
+  ) {
     return next(
       new CustomError(
         "유효한 lecture_id, exam_name, exam_type_id, exam_date가 제공되지 않았습니다.",
@@ -479,5 +502,4 @@ exports.createExam = asyncWrapper(async(req, res, next) => {
     message: "시험이 성공적으로 생성되었습니다.",
     data: exam,
   });
-
 });
