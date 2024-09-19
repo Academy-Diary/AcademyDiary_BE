@@ -598,7 +598,9 @@ exports.deleteExam = asyncWrapper(async (req, res, next) => {
 exports.createScore = asyncWrapper(async (req, res, next) => {
   const { lecture_id, exam_id } = req.params;
   let { scoreList } = req.body;
-
+  let minScore = 100,
+    maxScore = 0,
+    sumScore = 0;
   // 유효성 검사: lecture_id, exam_id, user_id가 존재하지 않으면 에러 처리
   if (!lecture_id || !exam_id || !scoreList || scoreList.length === 0) {
     return next(
@@ -694,7 +696,22 @@ exports.createScore = asyncWrapper(async (req, res, next) => {
         score: scoreList[i].score, // 없으면 새로 생성
       },
     });
+    // 대표값 계산
+    if (minScore > scoreList[i].score) minScore = scoreList[i].score;
+    if (maxScore < scoreList[i].score) maxScore = scoreList[i].score;
+    sumScore += scoreList[i].score;
   }
+  await prisma.Exam.update({
+    where: {
+      exam_id: exam_id_int,
+    },
+    data: {
+      low_score: minScore,
+      high_score: maxScore,
+      average_score: sumScore / scoreList.length,
+      total_score: sumScore,
+    },
+  });
 
   res.status(StatusCodes.CREATED).json({
     message: "성적이 성공적으로 입력되었습니다.",
