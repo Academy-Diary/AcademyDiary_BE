@@ -80,4 +80,11 @@ router.get(
   lectureController.getExamScore
 );
 
+// 시험 성적 수정
+router.put(
+  "/:lecture_id/exam/:exam_id(\\d+)/score",
+  authenticateJWT,
+  lectureController.modifyScore
+);
+
 module.exports = router;

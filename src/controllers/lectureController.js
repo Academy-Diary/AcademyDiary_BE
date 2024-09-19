@@ -3,6 +3,7 @@ const prisma = require("../lib/prisma/index");
 const { CustomError } = require("../lib/errors/customError");
 const ErrorCode = require("../lib/errors/errorCode");
 const { StatusCodes } = require("http-status-codes");
+const { Prisma } = require("@prisma/client"); // Prisma 객체를 가져옵니다.
 
 //학원내의 모든 강의 조회
 exports.getLecture = asyncWrapper(async (req, res, next) => {
@@ -765,6 +766,103 @@ exports.getExamScore = asyncWrapper(async (req, res, next) => {
       exam_id: exam_id_int,
       scoreList: scoreList,
       student_cnt: scoreList.length,
+    },
+  });
+});
+
+exports.modifyScore = asyncWrapper(async (req, res, next) => {
+  const { lecture_id, exam_id } = req.params;
+  const { user_id, score } = req.body;
+
+  // 유효성 검사: lecture_id, exam_id, user_id가 존재하지 않으면 에러 처리
+  if (!lecture_id || !exam_id || !user_id || !user_id.trim()) {
+    return next(
+      new CustomError(
+        "유효한 lecture_id, exam_id, user_id가 제공되지 않았습니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+  const lecture_id_int = parseInt(lecture_id, 10);
+  const exam_id_int = parseInt(exam_id, 10);
+
+  // score가 0~100 사이의 값인지 확인
+  if (score < 0 || score > 100) {
+    return next(
+      new CustomError(
+        `${score}는 유효하지 않은 score입니다.`,
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+  const exam = await prisma.Exam.findUnique({
+    where: {
+      exam_id: exam_id_int,
+    },
+  });
+
+  const currentScore = await prisma.ExamUserScore.findUnique({
+    where: {
+      exam_id_user_id: {
+        exam_id: exam_id_int,
+        user_id: user_id,
+      },
+    },
+  });
+  // 동일한 점수이면 변경하지 않음
+  if (currentScore.score == score) {
+    return res.status(StatusCodes.OK).json({
+      message: "성적이 변경되지 않았습니다.",
+      data: currentScore,
+    });
+  }
+
+  const updatedScore = await prisma.ExamUserScore.update({
+    where: {
+      exam_id_user_id: {
+        exam_id: exam_id_int,
+        user_id: user_id,
+      },
+    },
+    data: {
+      score: score,
+    },
+  });
+
+  // 대표값 계산
+  let minScore = exam.low_score,
+    maxScore = exam.high_score,
+    sumScore = exam.total_score;
+  if (minScore > score) minScore = score;
+  if (maxScore < score) maxScore = score;
+  sumScore -= currentScore.score;
+  sumScore += score;
+  const averageScore = sumScore / exam.headcount;
+
+  await prisma.Exam.update({
+    where: {
+      exam_id: exam_id_int,
+    },
+    data: {
+      low_score: minScore,
+      high_score: maxScore,
+      total_score: sumScore,
+      average_score: new Prisma.Decimal(averageScore),
+    },
+  });
+
+  res.status(StatusCodes.OK).json({
+    message: "성적이 성공적으로 수정되었습니다.",
+    data: {
+      updatedScore: updatedScore,
+      exam: {
+        low_score: minScore,
+        high_score: maxScore,
+        average_score: averageScore,
+        total_score: sumScore,
+      },
     },
   });
 });
