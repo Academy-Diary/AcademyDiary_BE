@@ -140,7 +140,7 @@ model Exam {
   high_score    Decimal  @default(0) @db.Decimal(5, 2) // Highest score
   low_score     Decimal  @default(0) @db.Decimal(5, 2) // Lowest score
   average_score Decimal  @default(0) @db.Decimal(5, 2) // Average score
-  total_score   BigInt   @default(0) // Total score
+  total_score   Int   @default(0) // Total score
   created_at    DateTime @default(now()) // Created at timestamp
   exam_date     DateTime // Exam date
   exam_type_id  Int // Foreign Key for ExamType
