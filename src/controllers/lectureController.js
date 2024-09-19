@@ -628,8 +628,8 @@ exports.createScore = asyncWrapper(async (req, res, next) => {
     return next(
       new CustomError(
         "존재하지 않는 lecture_id, exam_id 입니다.",
-        StatusCodes.BAD_REQUEST,
-        StatusCodes.BAD_REQUEST
+        StatusCodes.NOT_FOUND,
+        StatusCodes.NOT_FOUND
       )
     );
   }
@@ -644,8 +644,8 @@ exports.createScore = asyncWrapper(async (req, res, next) => {
       return next(
         new CustomError(
           `${user_id}는 존재하지 않는 user_id입니다.`,
-          StatusCodes.BAD_REQUEST,
-          StatusCodes.BAD_REQUEST
+          StatusCodes.NOT_FOUND,
+          StatusCodes.NOT_FOUND
         )
       );
     }
@@ -658,8 +658,8 @@ exports.createScore = asyncWrapper(async (req, res, next) => {
       return next(
         new CustomError(
           `${user_id}는 해당 강의에 수강생으로 등록되어 있지 않은 user_id입니다.`,
-          StatusCodes.BAD_REQUEST,
-          StatusCodes.BAD_REQUEST
+          StatusCodes.INTERNAL_SERVER_ERROR,
+          StatusCodes.INTERNAL_SERVER_ERROR
         )
       );
     }
