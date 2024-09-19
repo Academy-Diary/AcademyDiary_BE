@@ -144,6 +144,7 @@ model Exam {
   created_at    DateTime @default(now()) // Created at timestamp
   exam_date     DateTime // Exam date
   exam_type_id  Int // Foreign Key for ExamType
+  headcount     Int      @default(0) // Number of students
 
   // Relations
   exam_type   ExamType        @relation("ExamType_Exam_Relation", fields: [exam_type_id], references: [exam_type_id]) // ExamType : Exam = 1:N

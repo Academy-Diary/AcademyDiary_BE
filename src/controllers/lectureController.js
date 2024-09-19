@@ -710,6 +710,7 @@ exports.createScore = asyncWrapper(async (req, res, next) => {
       high_score: maxScore,
       average_score: sumScore / scoreList.length,
       total_score: sumScore,
+      headcount: scoreList.length,
     },
   });
 
