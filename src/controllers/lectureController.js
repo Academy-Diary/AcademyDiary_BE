@@ -594,3 +594,113 @@ exports.deleteExam = asyncWrapper(async (req, res, next) => {
     },
   });
 });
+
+exports.createScore = asyncWrapper(async (req, res, next) => {
+  const { lecture_id, exam_id } = req.params;
+  let { scoreList } = req.body;
+
+  // 유효성 검사: lecture_id, exam_id, user_id가 존재하지 않으면 에러 처리
+  if (!lecture_id || !exam_id || !scoreList || scoreList.length === 0) {
+    return next(
+      new CustomError(
+        "유효한 lecture_id, exam_id, user_id, score가 제공되지 않았습니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+  const lecture_id_int = parseInt(lecture_id, 10);
+  const exam_id_int = parseInt(exam_id, 10);
+
+  // 유효성 검사: 존재하는 lecture_id, exam_id, user_id인지 확인
+  const lecture = await prisma.Lecture.findUnique({
+    where: {
+      lecture_id: lecture_id_int,
+    },
+  });
+  const exam = await prisma.Exam.findUnique({
+    where: {
+      exam_id: exam_id_int,
+    },
+  });
+
+  if (!lecture || !exam) {
+    return next(
+      new CustomError(
+        "존재하지 않는 lecture_id, exam_id 입니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+
+  // 유효성 검사
+  for (let i = 0; i < scoreList.length; i++) {
+    const { user_id, score } = scoreList[i];
+    // 존재하는 user_id인지 확인
+    if (
+      (await prisma.User.findUnique({ where: { user_id: user_id } })) === null
+    ) {
+      return next(
+        new CustomError(
+          `${user_id}는 존재하지 않는 user_id입니다.`,
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.BAD_REQUEST
+        )
+      );
+    }
+    // 해당 강의에 수강생으로 등록되어 있는 user_id인지 확인
+    if (
+      (await prisma.LectureParticipant.findFirst({
+        where: { lecture_id: lecture_id_int, user_id: user_id },
+      })) === null
+    ) {
+      return next(
+        new CustomError(
+          `${user_id}는 해당 강의에 수강생으로 등록되어 있지 않은 user_id입니다.`,
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.BAD_REQUEST
+        )
+      );
+    }
+    // score가 0~100 사이의 값인지 확인
+    if (!score) {
+      scoreList[0].score = 0;
+    } else if (score < 0 || score > 100) {
+      return next(
+        new CustomError(
+          `${score}는 유효하지 않은 score입니다.`,
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.BAD_REQUEST
+        )
+      );
+    }
+  }
+  // 성적 일괄 입력
+  for (let i = 0; i < scoreList.length; i++) {
+    await prisma.ExamUserScore.upsert({
+      where: {
+        exam_id_user_id: {
+          exam_id: exam_id_int,
+          user_id: scoreList[i].user_id,
+        },
+      },
+      update: {
+        score: scoreList[i].score, // 이미 있으면 업데이트
+      },
+      create: {
+        exam_id: exam_id_int,
+        user_id: scoreList[i].user_id,
+        score: scoreList[i].score, // 없으면 새로 생성
+      },
+    });
+  }
+
+  res.status(StatusCodes.CREATED).json({
+    message: "성적이 성공적으로 입력되었습니다.",
+    data: {
+      exam_id: exam_id_int,
+      scoreList: scoreList,
+    },
+  });
+});

@@ -66,4 +66,11 @@ router.delete(
   lectureController.deleteExam
 );
 
+// 시험 성적 입력
+router.post(
+  "/:lecture_id/exam/:exam_id(\\d+)/score",
+  authenticateJWT,
+  lectureController.createScore
+);
+
 module.exports = router;
