@@ -73,4 +73,11 @@ router.post(
   lectureController.createScore
 );
 
+// 시험 성적 조회
+router.get(
+  "/:lecture_id/exam/:exam_id(\\d+)/score",
+  authenticateJWT,
+  lectureController.getExamScore
+);
+
 module.exports = router;

@@ -721,3 +721,49 @@ exports.createScore = asyncWrapper(async (req, res, next) => {
     },
   });
 });
+
+exports.getExamScore = asyncWrapper(async (req, res, next) => {
+  const { lecture_id, exam_id } = req.params;
+  // 유효성 검사: lecture_id, exam_id, user_id가 존재하지 않으면 에러 처리
+  if (!lecture_id || !exam_id) {
+    return next(
+      new CustomError(
+        "유효한 lecture_id, exam_id가 제공되지 않았습니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+  const exam_id_int = parseInt(exam_id, 10);
+
+  const examUserScore = await prisma.ExamUserScore.findMany({
+    where: {
+      exam_id: exam_id_int,
+    },
+  });
+
+  if (!examUserScore || examUserScore.length === 0) {
+    return next(
+      new CustomError(
+        "성적이 존재하지 않습니다.",
+        StatusCodes.NOT_FOUND,
+        StatusCodes.NOT_FOUND
+      )
+    );
+  }
+
+  const scoreList = examUserScore.map((row) => {
+    return { user_id: row.user_id, score: row.score };
+  });
+
+  console.log(scoreList);
+
+  res.status(StatusCodes.OK).json({
+    message: "성적을 성공적으로 불러왔습니다.",
+    data: {
+      exam_id: exam_id_int,
+      scoreList: scoreList,
+      student_cnt: scoreList.length,
+    },
+  });
+});
