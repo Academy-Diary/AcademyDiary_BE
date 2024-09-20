@@ -615,61 +615,15 @@ exports.createScore = asyncWrapper(async (req, res, next) => {
   const lecture_id_int = parseInt(lecture_id, 10);
   const exam_id_int = parseInt(exam_id, 10);
 
-  // 유효성 검사: 존재하는 lecture_id, exam_id, user_id인지 확인
-  const lecture = await prisma.Lecture.findUnique({
-    where: {
-      lecture_id: lecture_id_int,
-    },
-  });
-  const exam = await prisma.Exam.findUnique({
-    where: {
-      exam_id: exam_id_int,
-    },
-  });
-
-  if (!lecture || !exam) {
-    return next(
-      new CustomError(
-        "존재하지 않는 lecture_id, exam_id 입니다.",
-        StatusCodes.NOT_FOUND,
-        StatusCodes.NOT_FOUND
-      )
-    );
-  }
+  // 아래의 유효성 검사는 삭제했음. 이 함수는 화면단에서 처리된 데이터를 받아서 처리하는 함수이기 때문에.
+  // 존재하는 lecture_id, exam_id, user_id인지 확인  / 해당 강의에 수강생으로 등록되어 있는 user_id인지 확인
 
   // 유효성 검사
   for (let i = 0; i < scoreList.length; i++) {
-    const { user_id, score } = scoreList[i];
-    // 존재하는 user_id인지 확인
-    if (
-      (await prisma.User.findUnique({ where: { user_id: user_id } })) === null
-    ) {
-      return next(
-        new CustomError(
-          `${user_id}는 존재하지 않는 user_id입니다.`,
-          StatusCodes.NOT_FOUND,
-          StatusCodes.NOT_FOUND
-        )
-      );
-    }
-    // 해당 강의에 수강생으로 등록되어 있는 user_id인지 확인
-    if (
-      (await prisma.LectureParticipant.findFirst({
-        where: { lecture_id: lecture_id_int, user_id: user_id },
-      })) === null
-    ) {
-      return next(
-        new CustomError(
-          `${user_id}는 해당 강의에 수강생으로 등록되어 있지 않은 user_id입니다.`,
-          StatusCodes.INTERNAL_SERVER_ERROR,
-          StatusCodes.INTERNAL_SERVER_ERROR
-        )
-      );
-    }
     // score가 0~100 사이의 값인지 확인
-    if (!score) {
-      scoreList[0].score = 0;
-    } else if (score < 0 || score > 100) {
+    if (!scoreList[i].score) {
+      scoreList[i].score = 0;
+    } else if (scoreList[i].score < 0 || scoreList[i].score > 100) {
       return next(
         new CustomError(
           `${score}는 유효하지 않은 score입니다.`,
