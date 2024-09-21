@@ -105,3 +105,28 @@ exports.getClass = asyncWrapper(async(req, res, next) => {
 
 
 })
+
+
+exports.updateClass = asyncWrapper(async(req, res, next) => {
+    const { academy_id } = req.params;
+    const { class_id, updateName, updateExpense, updateDiscount, updateDuration } = req.body;
+
+    const updateData = {};
+    
+    if (updateName) updateData.class_name = updateName;
+    if (updateExpense) updateData.expense = updateExpense;
+    if (updateDiscount) updateData.discount = updateDiscount;
+    if (updateDuration) updateData.duration = updateDuration;
+
+    const targetClass = await prisma.Class.update({
+        where: {
+            class_id: class_id
+        },
+        data: updateData
+    });
+
+    res.status(StatusCodes.OK).json({
+        message: "성공적으로 Class를 수정했습니다.",
+        data : targetClass
+    });
+})
