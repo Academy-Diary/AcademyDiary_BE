@@ -130,3 +130,45 @@ exports.updateClass = asyncWrapper(async(req, res, next) => {
         data : targetClass
     });
 })
+
+
+exports.deleteClass = asyncWrapper(async(req, res, next) => {
+    const { class_id } = req.params;
+
+    if (!class_id) {
+        return next(new CustomError(
+            "class_id를 전달받지 못했습니다.",
+            StatusCodes.BAD_REQUEST,
+            StatusCodes.BAD_REQUEST
+        ));
+    }
+
+    
+    await prisma.Class.delete({
+        where: {
+            class_id: Number(class_id) // class_id가 문자열일 경우를 대비하여 숫자로 변환
+        }
+    })
+    .then((targetClass) => {
+        res.status(StatusCodes.OK).json({
+            message: "성공적으로 Class를 삭제했습니다.",
+            data: targetClass
+        });
+    })
+    .catch((error) => {
+        // 클래스가 존재하지 않는 경우
+        if (error.code === 'P2025') {
+            return next(new CustomError(
+                "해당 class_id에 대한 클래스를 찾을 수 없습니다.",
+                StatusCodes.NOT_FOUND,
+                StatusCodes.NOT_FOUND
+            ));
+        }
+
+        return next(new CustomError(
+            "클래스 삭제 중 오류가 발생했습니다.",
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            StatusCodes.INTERNAL_SERVER_ERROR
+        ));
+    });
+})
