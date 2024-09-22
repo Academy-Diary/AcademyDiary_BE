@@ -656,6 +656,8 @@ exports.createScore = asyncWrapper(async (req, res, next) => {
     if (maxScore < scoreList[i].score) maxScore = scoreList[i].score;
     sumScore += scoreList[i].score;
   }
+
+  // 대표값 업데이트
   await prisma.Exam.update({
     where: {
       exam_id: exam_id_int,
