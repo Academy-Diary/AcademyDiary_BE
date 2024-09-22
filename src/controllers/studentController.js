@@ -121,34 +121,18 @@ exports.getStudentLecture = asyncWrapper(async (req, res, next) => {
     );
   }
 
-  const lecture_ids = await prisma.LectureParticipant.findMany({
-    where: {
-      user_id: user_id,
-    },
-  });
-
-  if (!lecture_ids || lecture_ids.length === 0) {
-    return next(
-      new CustomError(
-        "수강 중인 강의가 없습니다.",
-        StatusCodes.NOT_FOUND,
-        StatusCodes.NOT_FOUND
-      )
-    );
-  }
-  let lectures = await prisma.Lecture.findMany({
-    where: {
-      lecture_id: {
-        in: lecture_ids.map((lecture) => lecture.lecture_id),
+  const rawLectures = await prisma.LectureParticipant.findMany({
+    where: { user_id: user_id },
+    include: {
+      lecture: {
+        select: {
+          lecture_id: true,
+          lecture_name: true,
+        },
       },
     },
   });
-  lectures = lectures.map((lecture) => {
-    return {
-      lecture_id: lecture.lecture_id,
-      lecture_name: lecture.lecture_name,
-    };
-  });
+  const lectures = rawLectures.map((x) => x.lecture);
 
   res.status(StatusCodes.OK).json({
     message: "학생이 수강 중인 강의를 성공적으로 불러왔습니다.",
