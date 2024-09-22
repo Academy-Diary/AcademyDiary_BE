@@ -106,3 +106,38 @@ exports.getStudent = asyncWrapper(async (req, res, next) => {
     data: students,
   });
 });
+
+exports.getStudentLecture = asyncWrapper(async (req, res, next) => {
+  const { user_id } = req.params;
+
+  // 유효성 검사: user_id가 제공되지 않았을 경우
+  if (!user_id || !user_id.trim()) {
+    return next(
+      new CustomError(
+        "유효한 user_id가 제공되지 않았습니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+
+  const rawLectures = await prisma.LectureParticipant.findMany({
+    where: { user_id: user_id },
+    include: {
+      lecture: {
+        select: {
+          lecture_id: true,
+          lecture_name: true,
+        },
+      },
+    },
+  });
+  const lectures = rawLectures.map((x) => x.lecture);
+
+  res.status(StatusCodes.OK).json({
+    message: "학생이 수강 중인 강의를 성공적으로 불러왔습니다.",
+    data: {
+      lectures: lectures,
+    },
+  });
+});

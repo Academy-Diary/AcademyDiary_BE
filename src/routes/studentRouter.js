@@ -9,4 +9,11 @@ router.delete("/:user_id", authenticateJWT("CHIEF"), studentController.deleteStu
 // 모든 원생 조회
 router.get("/", authenticateJWT("CHIEF"), studentController.getStudent);
 
+// 학생이 듣는 강의 내역 조회
+router.get(
+  "/:user_id/lecture",
+  authenticateJWT,
+  studentController.getStudentLecture
+);
+
 module.exports = router;
