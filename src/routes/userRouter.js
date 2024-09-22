@@ -11,7 +11,7 @@ router.post(`/signup`, userController.createUser);
 router.post("/login", userController.createJWT);
 
 // 로그아웃
-router.post("/logout", authenticateJWT, userController.removeJWT);
+router.post("/logout", authenticateJWT("ADMIN", "CHIEF", "TEACHER", "STUDENT", "PARENT"), userController.removeJWT);
 
 // 리프레시 토큰을 사용하여 액세스 토큰 갱신
 router.post("/refresh-token", userController.refreshToken);
@@ -26,33 +26,33 @@ router.post("/find-id", userController.findUserId);
 router.post("/reset-password", userController.resetUserPassword);
 
 // 회원 탈퇴
-router.delete("/:user_id", authenticateJWT, userController.deleteUser);
+router.delete("/:user_id", authenticateJWT("ADMIN", "CHIEF", "TEACHER", "STUDENT", "PARENT"), userController.deleteUser);
 
 // 사용자 이미지 정보 API
 router.get(
   "/:user_id/image-info",
-  authenticateJWT,
+  authenticateJWT("ADMIN", "CHIEF", "TEACHER", "STUDENT", "PARENT"),
   userController.getUserImageInfo
 );
 
 // 사용자 정보 API
 router.get(
   "/:user_id/basic-info",
-  authenticateJWT,
+  authenticateJWT("ADMIN", "CHIEF", "TEACHER", "STUDENT", "PARENT"),
   userController.getUserBasicInfo
 );
 
 // 사용자 기본 정보 수정 API
 router.put(
   "/:user_id/basic-info",
-  authenticateJWT,
+  authenticateJWT("ADMIN", "CHIEF", "TEACHER", "STUDENT", "PARENT"),
   userController.updateUserBasicInfo
 );
 
 // 사용자 이미지 정보 수정 API
 router.put(
   "/:user_id/image-info",
-  authenticateJWT,
+  authenticateJWT("ADMIN", "CHIEF", "TEACHER", "STUDENT", "PARENT"),
   uploadImage.single("file"),
   userController.updateUserImageInfo
 );
