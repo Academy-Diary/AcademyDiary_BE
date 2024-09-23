@@ -302,14 +302,26 @@ exports.deleteUser = asyncWrapper(async (req, res, next) => {
   res.status(StatusCodes.OK).json({ message: "회원 탈퇴가 완료되었습니다." });
 });
 
+// userController.js
 // 회원 기본 정보 조회
 exports.getUserBasicInfo = asyncWrapper(async (req, res, next) => {
   const user_id = req.params["user_id"];
 
   const user = await findUserByCriteria({ user_id });
 
-  res.status(StatusCodes.OK).json({
-    message: "회원 정보 조회가 완료되었습니다.",
+  let family = null; // family 변수를 if 블록 밖에서 선언
+
+  if (user.role === "STUDENT" || user.role === "PARENT") {
+    family = await prisma.Family.findFirst({
+      where: {
+        ...(user.role === "STUDENT"
+          ? { student_id: user_id }
+          : { parent_id: user_id }),
+      },
+    });
+  }
+
+  const user_data = {
     user_id: user.user_id,
     academy_id: user.academy_id,
     email: user.email,
@@ -318,6 +330,17 @@ exports.getUserBasicInfo = asyncWrapper(async (req, res, next) => {
     phone_number: user.phone_number,
     role: user.role,
     image: user.image,
+    family:
+      family && user.role === "STUDENT"
+        ? family.parent_id
+        : family && user.role === "PARENT"
+        ? family.student_id
+        : null, // family가 없으면 null을 반환
+  };
+
+  res.status(StatusCodes.OK).json({
+    message: "회원 정보 조회가 완료되었습니다.",
+    data: user_data,
   });
 });
 
