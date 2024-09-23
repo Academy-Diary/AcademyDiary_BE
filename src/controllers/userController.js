@@ -13,7 +13,7 @@ const {
 const jwt = require("jsonwebtoken");
 const path = require("path");
 const multer = require("multer");
-const { secretKey, gmailID, gmailPW } = require("../config/secret.js")
+const { secretKey, gmailID, gmailPW } = require("../config/secret.js");
 
 exports.createUser = asyncWrapper(async (req, res, next) => {
   const {
@@ -87,10 +87,10 @@ exports.createJWT = asyncWrapper(async (req, res) => {
   // 검사2:비밀번호가 일치하는지 확인
   const isMatch = bcrypt.compareSync(password, user.password);
   if (isMatch) {
-    const payload = { 
+    const payload = {
       user_id: user_id,
       role: user.role,
-      academy_id: user.academy_id
+      academy_id: user.academy_id,
     };
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
@@ -473,3 +473,38 @@ function generateRandomPassword(temp_pw_lenngth = 8) {
     chars.charAt(Math.floor(Math.random() * chars.length))
   ).join("");
 }
+
+exports.setFamily = asyncWrapper(async (req, res, next) => {
+  const { parent_id, student_id } = req.body;
+
+  if (!parent_id || !parent_id.trim() || !student_id || !student_id.trim()) {
+    throw new CustomError(
+      "유효한 parent_id, student_id을 입력해주세요.",
+      StatusCodes.BAD_REQUEST,
+      StatusCodes.BAD_REQUEST
+    );
+  }
+
+  const student = await prisma.User.findUnique({
+    where: { user_id: student_id, role: "STUDENT" },
+  });
+  if (!student) {
+    throw new CustomError(
+      `${student_id}는 User DB에 없는 학생입니다.`,
+      StatusCodes.NOT_FOUND,
+      StatusCodes.NOT_FOUND
+    );
+  }
+
+  const family = await prisma.Family.create({
+    data: {
+      parent_id: parent_id,
+      student_id: student_id,
+    },
+  });
+
+  res.status(StatusCodes.CREATED).json({
+    message: "학생-부모 관계가 설정되었습니다.",
+    data: family,
+  });
+});
