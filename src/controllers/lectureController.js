@@ -822,3 +822,106 @@ exports.modifyScore = asyncWrapper(async (req, res, next) => {
     },
   });
 });
+exports.getExamTypeScore = asyncWrapper(async (req, res, next) => {
+  const { lecture_id } = req.params;
+  const user_id = req.query.user_id;
+  const exam_type_id = req.query.exam_type;
+  const asc = req.query.asc;
+
+  if (!lecture_id || !user_id || !exam_type_id) {
+    return next(
+      new CustomError(
+        "유효한 lecture_id, user_id, exam_type_id가 제공되지 않았습니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+  console.log(typeof exam_type_id);
+  const lecture_id_int = parseInt(lecture_id, 10);
+  const exam_type_id_int = parseInt(exam_type_id, 10);
+
+  // ExamType과 관련된 Exam 데이터를 include로 가져옴
+  const exams_info = await prisma.ExamType.findUnique({
+    where: {
+      exam_type_id: exam_type_id_int,
+    },
+    include: {
+      exams: {
+        where: {
+          // lecture_id가 0이면  exam_type_id만으로(전과목) 검색, 아니면 둘 다 검색
+          ...(lecture_id_int === 0
+            ? { exam_type_id: exam_type_id_int }
+            : {
+                lecture_id: lecture_id_int,
+                exam_type_id: exam_type_id_int,
+              }),
+        },
+        select: {
+          exam_id: true,
+          exam_name: true,
+          exam_date: true,
+          // 전과목 검색 시 lecture_id도 가져옴
+          ...(lecture_id_int === 0
+            ? {
+                lecture_id: true,
+              }
+            : {}),
+        },
+        orderBy: {
+          exam_date: asc === "true" ? "asc" : "desc",
+        },
+      },
+    },
+  });
+
+  if (!exams_info || !exams_info.exams.length) {
+    return next(
+      new CustomError(
+        "해당 시험 유형의 성적을 찾을 수 없습니다.",
+        StatusCodes.NOT_FOUND,
+        StatusCodes.NOT_FOUND
+      )
+    );
+  }
+
+  // Promise.all로 모든 비동기 작업을 처리
+  const exams_data = await Promise.all(
+    exams_info.exams.map(async (exam) => {
+      const exam_score = await prisma.ExamUserScore.findFirst({
+        where: {
+          exam_id: exam.exam_id,
+          user_id: user_id,
+        },
+      });
+
+      return {
+        exam_id: exam.exam_id,
+        exam_name: exam.exam_name,
+        exam_date: exam.exam_date,
+        score: exam_score ? exam_score.score : null,
+        ...(lecture_id_int === 0
+          ? {
+              lecture_id : exam.lecture_id,
+            }
+          : {}),
+      };
+    })
+  );
+
+  res.status(StatusCodes.OK).json({
+    message: `${user_id}의 성적을 성공적으로 불러왔습니다.`,
+    data: {
+      user_id: user_id,
+      lecture_id: lecture_id_int,
+      asc: asc === "true",
+      exam_data: {
+        exam_type: {
+          exam_type_id: exam_type_id_int,
+          exam_type_name: exams_info.exam_type_name,
+        },
+        exam_list: exams_data,
+      },
+    },
+  });
+});
