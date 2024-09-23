@@ -108,8 +108,20 @@ exports.getClass = asyncWrapper(async(req, res, next) => {
 
 
 exports.updateClass = asyncWrapper(async(req, res, next) => {
-    const { academy_id } = req.params;
-    const { class_id, updateName, updateExpense, updateDiscount, updateDuration } = req.body;
+    const { academy_id, class_id } = req.params;
+    const { updateName, updateExpense, updateDiscount, updateDuration } = req.body;
+
+    // JWT에서 academy_id를 추출 (인증 미들웨어를 통해 토큰을 디코드하고 req.user에 저장되어있음)
+    const userAcademyId = req.user.academy_id;  // JWT 토큰에서 가져온 academy_id
+
+    // 사용자가 다른 학원의 수업을 수정하려고 하는지 체크
+    if (userAcademyId !== academy_id) {
+        return next(new CustomError(
+            "해당 학원에 대한 수정 권한이 없습니다.",
+            StatusCodes.FORBIDDEN,
+            StatusCodes.FORBIDDEN
+        ));
+    }
 
     const updateData = {};
     
@@ -120,7 +132,8 @@ exports.updateClass = asyncWrapper(async(req, res, next) => {
 
     const targetClass = await prisma.Class.update({
         where: {
-            class_id: class_id
+            class_id: Number(class_id),
+            academy_id : academy_id
         },
         data: updateData
     });
@@ -133,7 +146,19 @@ exports.updateClass = asyncWrapper(async(req, res, next) => {
 
 
 exports.deleteClass = asyncWrapper(async(req, res, next) => {
-    const { class_id } = req.params;
+    const { academy_id, class_id } = req.params;
+
+    // JWT에서 academy_id를 추출 (인증 미들웨어를 통해 토큰을 디코드하고 req.user에 저장되어있음)
+    const userAcademyId = req.user.academy_id;  // JWT 토큰에서 가져온 academy_id
+
+    // 사용자가 다른 학원의 수업을 삭제하려고 하는지 체크
+    if (userAcademyId !== academy_id) {
+        return next(new CustomError(
+            "해당 학원에 대한 삭제 권한이 없습니다.",
+            StatusCodes.FORBIDDEN,
+            StatusCodes.FORBIDDEN
+        ));
+    }
 
     if (!class_id) {
         return next(new CustomError(
@@ -146,7 +171,8 @@ exports.deleteClass = asyncWrapper(async(req, res, next) => {
     
     await prisma.Class.delete({
         where: {
-            class_id: Number(class_id) // class_id가 문자열일 경우를 대비하여 숫자로 변환
+            class_id: Number(class_id), // class_id가 문자열일 경우를 대비하여 숫자로 변환
+            academy_id : academy_id
         }
     })
     .then((targetClass) => {
