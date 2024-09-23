@@ -87,7 +87,10 @@ exports.createJWT = asyncWrapper(async (req, res) => {
   // 검사2:비밀번호가 일치하는지 확인
   const isMatch = bcrypt.compareSync(password, user.password);
   if (isMatch) {
-    const payload = { user_id: user_id };
+    const payload = { 
+      user_id: user_id,
+      role: user.role
+    };
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
 

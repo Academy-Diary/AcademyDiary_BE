@@ -4,8 +4,8 @@ const teacherController = require('../controllers/teacherController');
 const { authenticateJWT } = require('../lib/middlewares/auth.js');
 
 
-router.delete("/:id", authenticateJWT, teacherController.deleteTeacher);
+router.delete("/:id", authenticateJWT("CHIEF"), teacherController.deleteTeacher);
 
-router.get("/", authenticateJWT, teacherController.getTeacher);
+router.get("/", authenticateJWT("CHIEF"), teacherController.getTeacher);
 
 module.exports = router;
