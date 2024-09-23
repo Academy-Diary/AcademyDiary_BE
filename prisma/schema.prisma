@@ -43,8 +43,8 @@ model Academy {
   users            User[]                        @relation("UserAcademyRelation")
   chief            Chief_Academy?                @relation("AcademyChiefRelation")
   registrationList AcademyUserRegistrationList[] @relation("AcademyUserRegistrationList_Academy_Relation")
+  class            Class[] //학원 - 메뉴(Class) 1:N
   lectures         Lecture[] //학원-강의 1:N
-  Class            Class[]
 }
 
 model Chief_Academy {

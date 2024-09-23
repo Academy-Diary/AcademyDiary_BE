@@ -89,7 +89,8 @@ exports.createJWT = asyncWrapper(async (req, res) => {
   if (isMatch) {
     const payload = { 
       user_id: user_id,
-      role: user.role
+      role: user.role,
+      academy_id: user.academy_id
     };
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
