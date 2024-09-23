@@ -137,12 +137,14 @@ model Exam {
   exam_id       Int      @id @default(autoincrement()) // Primary Key, Auto Increment
   lecture_id    Int // Foreign Key for Lecture
   exam_name     String // Exam name
-  high_score    Float    @default(0) // Highest score
-  low_score     Float    @default(0) // Lowest score
-  average_score Float    @default(0) // Average score
+  high_score    Int      @default(0) // Highest score
+  low_score     Int      @default(0)
+  average_score Decimal  @default(0) @db.Decimal(5, 2) // Average score
+  total_score   Int      @default(0) // Total score
   created_at    DateTime @default(now()) // Created at timestamp
   exam_date     DateTime // Exam date
   exam_type_id  Int // Foreign Key for ExamType
+  headcount     Int      @default(0) // Number of students
 
   // Relations
   exam_type   ExamType        @relation("ExamType_Exam_Relation", fields: [exam_type_id], references: [exam_type_id]) // ExamType : Exam = 1:N
@@ -153,7 +155,7 @@ model Exam {
 model ExamUserScore {
   exam_id Int
   user_id String
-  score   Float
+  score   Int    @default(0)
 
   // Relations
   exam Exam @relation("ExamUserScore_Exam_Relation", fields: [exam_id], references: [exam_id], onDelete: Cascade)
