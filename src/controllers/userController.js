@@ -26,22 +26,10 @@ exports.createUser = asyncWrapper(async (req, res, next) => {
     role,
   } = req.body;
 
-  // 이미 존재하는 유저인지
-  const user = await prisma.user.findUnique({
-    where: { user_id },
-  });
-  if (user) {
-    throw new CustomError(
-      "이미 존재하는 아이디입니다.",
-      StatusCodes.CONFLICT,
-      StatusCodes.CONFLICT
-    );
-  }
-
   //bcrypt라이브러리로 비밀번호 해싱
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  const newUser = await prisma.user
+  await prisma.user
     .create({
       data: {
         user_id,
@@ -53,19 +41,39 @@ exports.createUser = asyncWrapper(async (req, res, next) => {
         role,
       },
     })
+    .then((newUser) => {
+      res
+        .status(StatusCodes.CREATED)
+        .json({ message: "회원가입이 완료되었습니다." });
+    })
     .catch((err) => {
-      console.log(err);
+      // Prisma의 고유성 제약 조건 에러 처리 (이메일 또는 아이디 중복)
+      if (err.code === 'P2002') {
+        const duplicatedField = err.meta.target[0]; // 중복된 필드를 확인
+        let errorMessage = "중복된 값이 있습니다.";
 
-      throw new CustomError(
-        "Prisma Error accrued!",
-        ErrorCode.INTERNAL_SERVER_PRISMA_ERROR,
+        if (duplicatedField === 'email') {
+          errorMessage = "이미 사용 중인 이메일입니다.";
+        } else if (duplicatedField === 'user_id') {
+          errorMessage = "이미 존재하는 아이디입니다.";
+        } else if (duplicatedField === 'phone_number') {
+          errorMessage = "이미 존재하는 휴대폰 번호 입니다.";
+        }
+
+        return next(new CustomError(
+          errorMessage,
+          StatusCodes.CONFLICT,
+          StatusCodes.CONFLICT
+        ));
+      }
+
+      // 그 외의 에러 처리
+      return next(new CustomError(
+        "회원가입 중 오류가 발생했습니다.",
+        StatusCodes.INTERNAL_SERVER_ERROR,
         StatusCodes.INTERNAL_SERVER_ERROR
-      );
+      ));
     });
-
-  res
-    .status(StatusCodes.CREATED)
-    .json({ message: "회원가입이 완료되었습니다." });
 });
 
 exports.createJWT = asyncWrapper(async (req, res) => {
