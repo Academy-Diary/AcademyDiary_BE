@@ -73,11 +73,20 @@ exports.registerUser = asyncWrapper(async(req, res, next) =>{
                 );
               }
         })
-
+        
+        // 유효성 검사 -> User DB에 user_id가 존재하는지 검사
+        if(await prisma.user.findUnique({where : {user_id:user_id, role:role}}) === null) {
+            return next(new CustomError(
+                "해당하는 유저가 존재하지 않습니다. 또는 역할이 잘못되었습니다.",
+                StatusCodes.NOT_FOUND,
+                StatusCodes.NOT_FOUND
+            ));
+        }
         //학원 유저 신청 목록DB에 user_id가 이미 있는지 검사
         const checkUser = await prisma.AcademyUserRegistrationList.findUnique({
-            where : { user_id }
+            where : { user_id: user_id, role: role}
         })
+
         if (checkUser) {
             throw new CustomError(
                 "이미 등록요청된 유저입니다.",
