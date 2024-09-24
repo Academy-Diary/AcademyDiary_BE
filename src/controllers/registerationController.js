@@ -153,8 +153,9 @@ exports.decideUserStatus = asyncWrapper(async(req, res, next) =>{
 })
 
 exports.listUser = asyncWrapper(async (req, res, next) => {
-    const { req_role, academy_id } = req.body;
-
+    const role = req.query.role;
+    const academy_id = req.query.academy_id;
+    
     try {
         let result;
         // 유효성검사 : 학원 존재여부 확인
@@ -166,7 +167,7 @@ exports.listUser = asyncWrapper(async (req, res, next) => {
             ));
         }
 
-        if (req_role === "TEACHER") {
+        if (role === "TEACHER") {
             result = await prisma.AcademyUserRegistrationList.findMany({
                 where: {
                     academy_id : academy_id,
@@ -174,7 +175,7 @@ exports.listUser = asyncWrapper(async (req, res, next) => {
                     status: "PENDING"
                 }
             });
-        } else if (req_role === "STUDENT") {
+        } else if (role === "STUDENT") {
             result = await prisma.AcademyUserRegistrationList.findMany({
                 where: {
                     academy_id : academy_id,
@@ -182,7 +183,7 @@ exports.listUser = asyncWrapper(async (req, res, next) => {
                     status: "PENDING"
                 }
             });
-        } else {
+        } else { // 유효하지 않은 역할일 경우
             return next(new CustomError(
                 "유효하지 않은 역할입니다.",
                 StatusCodes.BAD_REQUEST,
@@ -190,6 +191,7 @@ exports.listUser = asyncWrapper(async (req, res, next) => {
             ));
         }
 
+        // 등록요청한 유저가 없을 경우
         if (!result || result.length === 0) {
             return next(new CustomError(
                 "해당 조건에 맞는 사용자가 없습니다.",
