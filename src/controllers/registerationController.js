@@ -157,6 +157,14 @@ exports.listUser = asyncWrapper(async (req, res, next) => {
 
     try {
         let result;
+        // 유효성검사 : 학원 존재여부 확인
+        if(await prisma.academy.findUnique({where : {academy_id}}) === null) {
+            return next(new CustomError(
+                `id가 ${academy_id}에 해당하는 학원이 존재하지 않습니다.`,
+                StatusCodes.NOT_FOUND,
+                StatusCodes.NOT_FOUND
+            ));
+        }
 
         if (req_role === "TEACHER") {
             result = await prisma.AcademyUserRegistrationList.findMany({
