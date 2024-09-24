@@ -103,13 +103,46 @@ exports.registerUser = asyncWrapper(async(req, res, next) =>{
                 status: "PENDING"
             }
         });
+        
+        // 학생의 경우 부모도 등록. response할 때 부모의 user_id도 같이 보내줌.
+        let parent = null;
+        if (newUser.role === "STUDENT") {
+            parent = await prisma.Family.findFirst({
+              where: { student_id: user_id },
+            });
+            console.log(`parent : `);
+            console.log(parent);
+            if (parent) {
 
+                // 부모가 등록되지 않은 경우에만 추가
+                await prisma.AcademyUserRegistrationList.create({
+                    data: {
+                    user_id: parent.parent_id,
+                    academy_id: searchAcademy.academy_id,
+                    role: "PARENT",
+                    status: "PENDING",
+                    },
+                });
+            } 
+          }
+        
+        const resData = {
+            user_id: newUser.user_id,
+            academy_id: newUser.academy_id,
+            role: newUser.role,
+            status: newUser.status,
+            parent_id: (newUser.role === "STUDENT" && parent) ? parent.parent_id : null,
+        };
+        
         res.status(StatusCodes.CREATED).json({
             message: '등록요청이 성공적으로 완료되었습니다.',
-            data: newUser
-        })
-    
+            data: resData
+        });
+        
+        
     } catch(error) {
+        console.error("Error during registration: ", error.message); // 에러 메시지 출력
+
         throw new CustomError(
             "사용자 등록 요청 중 오류가 발생했습니다.",
             StatusCodes.INTERNAL_SERVER_ERROR,
