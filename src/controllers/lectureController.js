@@ -7,7 +7,19 @@ const { Prisma } = require("@prisma/client"); // Prisma 객체를 가져옵니�
 
 //학원내의 모든 강의 조회
 exports.getLecture = asyncWrapper(async (req, res, next) => {
-  const { academy_id } = req.body;
+  const { academy_id } = req.params;
+
+  // JWT에서 academy_id를 추출 (인증 미들웨어를 통해 토큰을 디코드하고 req.user에 저장되어있음)
+  const userAcademyId = req.user.academy_id;  // JWT 토큰에서 가져온 academy_id
+
+  // 사용자가 다른 학원의 수업을 접근하려고 하는지 체크
+  if (userAcademyId !== academy_id) {
+      return next(new CustomError(
+          "해당 학원에 대한 접근 권한이 없습니다.",
+          StatusCodes.FORBIDDEN,
+          StatusCodes.FORBIDDEN
+      ));
+  }
 
   if (!academy_id) {
     return next(
