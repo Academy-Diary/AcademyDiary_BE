@@ -143,25 +143,25 @@ exports.createJWT = asyncWrapper(async (req, res) => {
 });
 
 //
-exports.removeJWT = asyncWrapper(async (req, res) => {
+exports.removeJWT = asyncWrapper(async (req, res, next) => {
   const refreshToken = req.cookies.refreshToken;
   // 검사1: 토큰이 없을 경우
   if (!refreshToken) {
-    throw new CustomError(
+    return next(new CustomError(
       "리프레시 토큰이 쿠키에 존재하지 않습니다.",
       StatusCodes.BAD_REQUEST,
       StatusCodes.BAD_REQUEST
-    );
+    ));
   }
   // 검사 2: 토큰이 정상적인 토큰이 아닌 경우
   try {
     jwt.verify(refreshToken, secretKey); // 토큰 유효성 검증
   } catch (err) {
-    throw new CustomError(
+    return next(new CustomError(
       "잘못된 리프레시 토큰입니다.",
       StatusCodes.BAD_REQUEST,
       StatusCodes.BAD_REQUEST
-    );
+    ));
   }
 
   // 쿠키 삭제
@@ -172,22 +172,22 @@ exports.removeJWT = asyncWrapper(async (req, res) => {
 // 리프레시 토큰을 사용하여 액세스 토큰 갱신
 exports.refreshToken = asyncWrapper(async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
-
+  
   if (!refreshToken) {
-    throw new CustomError(
+    return next(new CustomError(
       "리프레시 토큰이 쿠키에 존재하지 않습니다.",
       StatusCodes.BAD_REQUEST,
       StatusCodes.BAD_REQUEST
-    );
+    ));
   }
   const newAccessToken = refreshAccessToken(refreshToken);
 
   if (!newAccessToken) {
-    throw new CustomError(
+    return next(new CustomError(
       "유효하지 않거나 만료된 리프레시 토큰입니다. 다시 로그인 해주세요.",
       StatusCodes.FORBIDDEN,
       StatusCodes.FORBIDDEN
-    );
+    ));
   }
 
   res.status(StatusCodes.CREATED).json({
@@ -201,11 +201,11 @@ exports.checkIdDuplicated = asyncWrapper(async (req, res, next) => {
 
   // user_id가 공백인 경우
   if (user_id === null || !user_id.trim()) {
-    throw new CustomError(
+    return next(new CustomError(
       "아이디를 입력해 주세요.",
       StatusCodes.BAD_REQUEST,
       StatusCodes.BAD_REQUEST
-    );
+    ));
   }
 
   const user = await prisma.user
@@ -214,19 +214,19 @@ exports.checkIdDuplicated = asyncWrapper(async (req, res, next) => {
     })
     .catch((err) => {
       // Prisma 에러가 발생하면 CustomError로 처리하여 미들웨어 체인에 전달
-      throw new CustomError(
+      return next(new CustomError(
         "Prisma Error occurred!",
         ErrorCode.INTERNAL_SERVER_PRISMA_ERROR,
         StatusCodes.INTERNAL_SERVER_ERROR
-      );
+      ));
     });
 
   if (user) {
-    throw new CustomError(
+    return next(new CustomError(
       "이미 존재하는 아이디입니다.",
       StatusCodes.CONFLICT,
       StatusCodes.CONFLICT
-    );
+    ));
   } else {
     return res
       .status(StatusCodes.OK)
