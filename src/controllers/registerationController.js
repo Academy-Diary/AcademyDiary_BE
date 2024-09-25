@@ -153,46 +153,49 @@ exports.decideUserStatus = asyncWrapper(async(req, res, next) =>{
 })
 
 exports.listUser = asyncWrapper(async (req, res, next) => {
-    const role = req.query.role;
-    const academy_id = req.query.academy_id;
+    const { role, academy_id } = req.query;
     
     try {
-        let result;
-        // 유효성검사 : 학원 존재여부 확인
-        if(await prisma.academy.findUnique({where : {academy_id}}) === null) {
+        // 학원 존재여부 확인
+        const academy = await prisma.academy.findUnique({ where: { academy_id } });
+        if (!academy) {
             return next(new CustomError(
-                `id가 ${academy_id}에 해당하는 학원이 존재하지 않습니다.`,
+                `ID가 ${academy_id}인 학원이 존재하지 않습니다.`,
                 StatusCodes.NOT_FOUND,
                 StatusCodes.NOT_FOUND
             ));
         }
 
-        if (role === "TEACHER") {
-            result = await prisma.AcademyUserRegistrationList.findMany({
-                where: {
-                    academy_id : academy_id,
-                    role: "TEACHER",
-                    status: "PENDING"
-                }
-            });
-        } else if (role === "STUDENT") {
-            result = await prisma.AcademyUserRegistrationList.findMany({
-                where: {
-                    academy_id : academy_id,
-                    role: "STUDENT",
-                    status: "PENDING"
-                }
-            });
-        } else { // 유효하지 않은 역할일 경우
+        // 유효하지 않은 역할일 경우 처리
+        if (role !== "TEACHER" && role !== "STUDENT") {
             return next(new CustomError(
-                "유효하지 않은 역할입니다.",
+                "유효하지 않은 역할입니다. TEACHER 또는 STUDENT만 가능합니다.",
                 StatusCodes.BAD_REQUEST,
                 StatusCodes.BAD_REQUEST
             ));
         }
 
-        // 등록요청한 유저가 없을 경우
-        if (!result || result.length === 0) {
+        // 조건에 맞는 사용자 검색 (User 정보 포함)
+        const result = await prisma.AcademyUserRegistrationList.findMany({
+            where: {
+                academy_id,
+                role,
+                status: "PENDING"
+            },
+            include: {
+                user: {
+                    select: {
+                        user_id: true,
+                        user_name: true,
+                        email: true,
+                        phone_number: true
+                    }
+                }
+            }
+        });
+
+        // 등록 요청한 유저가 없을 경우 처리
+        if (result.length === 0) {
             return next(new CustomError(
                 "해당 조건에 맞는 사용자가 없습니다.",
                 StatusCodes.NOT_FOUND,
@@ -200,16 +203,29 @@ exports.listUser = asyncWrapper(async (req, res, next) => {
             ));
         }
 
-        res.status(StatusCodes.OK).json({ data: result });
+        // 사용자 목록 반환 (user 정보 포함)
+        const formattedResult = result.map(registration => ({
+            academy_id: registration.academy_id,
+            role: registration.role,
+            status: registration.status,
+            user: {
+                user_id: registration.user.user_id,
+                user_name: registration.user.user_name,
+                email: registration.user.email,
+                phone_number: registration.user.phone_number
+            }
+        }));
+
+        res.status(StatusCodes.OK).json({ data: formattedResult });
 
     } catch (error) {
         next(new CustomError(
-            "불러오는 중에 오류가 발생했습니다.",
+            "사용자 목록을 불러오는 중 오류가 발생했습니다.",
             StatusCodes.INTERNAL_SERVER_ERROR,
             StatusCodes.INTERNAL_SERVER_ERROR
         ));
     }
-})
+});
 
 exports.listAcademy = asyncWrapper(async(req, res, next) => {
     try {
