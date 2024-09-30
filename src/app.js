@@ -38,6 +38,7 @@ const studentRouter = require("./routes/studentRouter");
 const teacherRouter = require("./routes/teacherRouter");
 const lectureRouter = require("./routes/lectureRouter");
 const expenseRouter = require("./routes/expenseRouter");
+const examTypeRouter = require("./routes/examTypeRouter");
 
 app.use("/", indexRouter);
 app.use("/user", userRouter);
@@ -46,6 +47,7 @@ app.use("/student", studentRouter);
 app.use("/teacher", teacherRouter);
 app.use("/lecture", lectureRouter);
 app.use("/expense", expenseRouter);
+app.use("/exam-type", examTypeRouter);
 
 // error handler
 const errorHandler = require("./lib/middlewares/errorHandler");
