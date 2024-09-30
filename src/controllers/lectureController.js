@@ -10,15 +10,17 @@ exports.getLecture = asyncWrapper(async (req, res, next) => {
   const { academy_id } = req.params;
 
   // JWT에서 academy_id를 추출 (인증 미들웨어를 통해 토큰을 디코드하고 req.user에 저장되어있음)
-  const userAcademyId = req.user.academy_id;  // JWT 토큰에서 가져온 academy_id
+  const userAcademyId = req.user.academy_id; // JWT 토큰에서 가져온 academy_id
 
   // 사용자가 다른 학원의 수업을 접근하려고 하는지 체크
   if (userAcademyId !== academy_id) {
-      return next(new CustomError(
-          "해당 학원에 대한 접근 권한이 없습니다.",
-          StatusCodes.FORBIDDEN,
-          StatusCodes.FORBIDDEN
-      ));
+    return next(
+      new CustomError(
+        "해당 학원에 대한 접근 권한이 없습니다.",
+        StatusCodes.FORBIDDEN,
+        StatusCodes.FORBIDDEN
+      )
+    );
   }
 
   if (!academy_id) {
@@ -218,25 +220,8 @@ exports.createExamType = asyncWrapper(async (req, res, next) => {
 });
 
 exports.getExamType = asyncWrapper(async (req, res, next) => {
-  const { lecture_id } = req.params;
 
-  // 유효성 검사: lecture_id가 존재하지 않으면 에러 처리
-  if (!lecture_id) {
-    return next(
-      new CustomError(
-        "유효한 lecture_id가 제공되지 않았습니다.",
-        StatusCodes.BAD_REQUEST,
-        StatusCodes.BAD_REQUEST
-      )
-    );
-  }
-  const lecture_id_int = parseInt(lecture_id, 10);
-
-  const examTypeList = await prisma.ExamType.findMany({
-    where: {
-      lecture_id: lecture_id_int,
-    },
-  });
+  const examTypeList = await prisma.ExamType.findMany();
 
   if (!examTypeList || examTypeList.length === 0) {
     return next(
@@ -251,7 +236,6 @@ exports.getExamType = asyncWrapper(async (req, res, next) => {
   res.status(StatusCodes.OK).json({
     message: "시험 유형을 성공적으로 불러왔습니다.",
     data: {
-      lecture_id: lecture_id_int,
       exam_types: examTypeList,
       type_cnt: examTypeList.length,
     },
@@ -910,7 +894,7 @@ exports.getExamTypeScore = asyncWrapper(async (req, res, next) => {
         score: exam_score ? exam_score.score : null,
         ...(lecture_id_int === 0
           ? {
-              lecture_id : exam.lecture_id,
+              lecture_id: exam.lecture_id,
             }
           : {}),
       };

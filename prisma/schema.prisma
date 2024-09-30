@@ -21,12 +21,14 @@ model User {
   image        String   @default("default.png")
 
   // Relations
-  academy          Academy?                     @relation(fields: [academy_id], references: [academy_id], name: "UserAcademyRelation")
-  chief            Chief_Academy?               @relation("UserChiefRelation")
-  registrationList AcademyUserRegistrationList? @relation("AcademyUserRegistrationList_User_Relation")
-  lectures         Lecture[]                    @relation("Teacher_Lecture") //강사-강의 1:N
-  registerdLecture LectureParticipant[] //강의-수강생 N:M
-  exam_scores      ExamUserScore[]              @relation("ExamUserScore_User_Relation") // User : ExamUserScore  (M:N relationship with Exam)
+  academy           Academy?                     @relation(fields: [academy_id], references: [academy_id], name: "UserAcademyRelation")
+  chief             Chief_Academy?               @relation("UserChiefRelation")
+  registrationList  AcademyUserRegistrationList? @relation("AcademyUserRegistrationList_User_Relation")
+  lectures          Lecture[]                    @relation("Teacher_Lecture") //강사-강의 1:N
+  registerdLecture  LectureParticipant[] //강의-수강생 N:M
+  exam_scores       ExamUserScore[]              @relation("ExamUserScore_User_Relation") // User : ExamUserScore  (M:N relationship with Exam)
+  familiesAsStudent Family[]                     @relation("StudentFamilyRelation") // Family 테이블에서 student_id로 연결
+  familiesAsParent  Family[]                     @relation("ParentFamilyRelation") // Family 테이블에서 parent_id로 연결
 }
 
 model Academy {
@@ -159,6 +161,17 @@ model ExamUserScore {
   user User @relation("ExamUserScore_User_Relation", fields: [user_id], references: [user_id], onDelete: Cascade)
 
   @@id([exam_id, user_id]) // Composite Primary Key for the many-to-many relationship
+}
+
+model Family {
+  student_id String
+  parent_id  String
+
+  // Relations
+  student User @relation("StudentFamilyRelation", fields: [student_id], references: [user_id], onDelete: Cascade)
+  parent  User @relation("ParentFamilyRelation", fields: [parent_id], references: [user_id], onDelete: Cascade)
+
+  @@id([student_id, parent_id]) // 복합 기본 키 설정 (학생과 부모의 관계가 유일하도록)
 }
 
 enum Status {
