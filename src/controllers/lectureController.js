@@ -177,20 +177,18 @@ exports.deleteLecture = asyncWrapper(async (req, res, next) => {
 });
 
 exports.createExamType = asyncWrapper(async (req, res, next) => {
-  const { lecture_id } = req.params;
   const { exam_type_name } = req.body;
 
-  // 유효성 검사1: lecture_id, exam_type_name이 존재하지 않으면 에러 처리
-  if (!lecture_id || !exam_type_name || !exam_type_name.trim()) {
+  // 유효성 검사1:  exam_type_name이 존재하지 않으면 에러 처리
+  if (!exam_type_name || !exam_type_name.trim()) {
     return next(
       new CustomError(
-        "lecture_id, exam_type_name 모두 입력해주세요.",
+        "exam_type_name 모두 입력해주세요.",
         StatusCodes.BAD_REQUEST,
         StatusCodes.BAD_REQUEST
       )
     );
   }
-  const lecture_id_int = parseInt(lecture_id, 10);
 
   // 유효성 검사2: 이미 존재하는 exam_type_name인지 확인
   const isExist = await prisma.ExamType.findFirst({
@@ -243,10 +241,10 @@ exports.getExamType = asyncWrapper(async (req, res, next) => {
 });
 
 exports.deleteExamType = asyncWrapper(async (req, res, next) => {
-  const { lecture_id, exam_type_id } = req.params;
+  const { exam_type_id } = req.params;
 
   // 유효성 검사: lecture_id, exam_type_id가 존재하지 않으면 에러 처리
-  if (!lecture_id || !exam_type_id || !exam_type_id.trim()) {
+  if (!exam_type_id || !exam_type_id.trim()) {
     return next(
       new CustomError(
         "유효한 lecture_id, exam_type_id가 제공되지 않았습니다.",
@@ -255,7 +253,6 @@ exports.deleteExamType = asyncWrapper(async (req, res, next) => {
       )
     );
   }
-  const lecture_id_int = parseInt(lecture_id, 10);
   const exam_type_id_int = parseInt(exam_type_id, 10);
 
   const targetExamType = await prisma.ExamType.findUnique({
@@ -283,7 +280,6 @@ exports.deleteExamType = asyncWrapper(async (req, res, next) => {
   res.status(StatusCodes.OK).json({
     message: "시험 유형 삭제가 완료되었습니다.",
     data: {
-      lecture_id: lecture_id_int,
       exam_type_name: targetExamType.exam_type_name,
       exam_type_id: exam_type_id_int,
     },
