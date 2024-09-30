@@ -81,7 +81,6 @@ model Lecture {
   academy      Academy              @relation(fields: [academy_id], references: [academy_id])
   participant  LectureParticipant[]
   exams        Exam[]               @relation("Lecture_Exam_Relation") // Lecture : Exam = 1:N
-  exam_types   ExamType[]           @relation("Lecture_ExamType_Relation") // Lecture: ExamType = 1 : N
   ClassLecture ClassLecture[]
 }
 
@@ -125,12 +124,10 @@ model ClassLecture {
 
 model ExamType {
   exam_type_id   Int    @id @default(autoincrement()) // Primary Key, Auto Increment
-  lecture_id     Int // Foreign Key for Lecture
   exam_type_name String // ex 단원평가
 
   // Relations
-  lecture Lecture @relation("Lecture_ExamType_Relation", fields: [lecture_id], references: [lecture_id]) // Lecture : ExamType = 1:N
-  exams   Exam[]  @relation("ExamType_Exam_Relation") // ExamType : Exam = 1:N
+  exams Exam[] @relation("ExamType_Exam_Relation") // ExamType : Exam = 1:N
 }
 
 model Exam {
