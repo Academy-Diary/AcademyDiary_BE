@@ -72,9 +72,34 @@ exports.deleteStudent = asyncWrapper(async (req, res, next) => {
     },
   });
 
+  const family = await prisma.family.findFirst({
+    where: {
+      student_id: user_id,
+    },
+  });
+  const parent_id = family ? family.parent_id : null;
+  
+  if (parent_id) {
+    //학생의 academy_id를 NULL로 업데이트
+    await prisma.user.update({
+      where: {
+        user_id: parent_id,
+      },
+      data: {
+        academy_id: null,
+      },
+    });
+    //AcademyUserRegistrationList에서 해당 부모 행 삭제
+    await prisma.AcademyUserRegistrationList.delete({
+      where: {
+        user_id: parent_id,
+      },
+    });
+  }
+
   // 성공 응답
-  res.status(StatusCodes.OK).json({
-    message: `학생 ID ${user_id}의 academy_id가 성공적으로 NULL로 설정되었고, 등록 목록에서 삭제되었습니다.`,
+  return res.status(StatusCodes.OK).json({
+    message: `학생 ID ${user_id}, 학부모 ID ${parent_id} 의 academy_id가 성공적으로 NULL로 설정되었고, 등록 목록에서 삭제되었습니다.`,
   });
 });
 
