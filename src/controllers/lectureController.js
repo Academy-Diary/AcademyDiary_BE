@@ -194,7 +194,6 @@ exports.createExamType = asyncWrapper(async (req, res, next) => {
   const isExist = await prisma.ExamType.findFirst({
     where: {
       exam_type_name,
-      lecture_id: lecture_id_int,
     },
   });
   if (isExist) {
@@ -210,7 +209,6 @@ exports.createExamType = asyncWrapper(async (req, res, next) => {
   const examType = await prisma.ExamType.create({
     data: {
       exam_type_name,
-      lecture_id: lecture_id_int,
     },
   });
   res.status(StatusCodes.CREATED).json({
@@ -278,7 +276,6 @@ exports.deleteExamType = asyncWrapper(async (req, res, next) => {
 
   const targetExamType = await prisma.ExamType.findUnique({
     where: {
-      lecture_id: lecture_id_int,
       exam_type_id: exam_type_id_int,
     },
   });
@@ -489,7 +486,6 @@ exports.createExam = asyncWrapper(async (req, res, next) => {
   const exam_type = await prisma.ExamType.findUnique({
     where: {
       exam_type_id: exam_type_id_int,
-      lecture_id: lecture_id_int,
     },
   });
 
