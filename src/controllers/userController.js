@@ -14,6 +14,7 @@ const jwt = require("jsonwebtoken");
 const path = require("path");
 const multer = require("multer");
 const { secretKey, gmailID, gmailPW } = require("../config/secret.js");
+const { stat } = require("fs");
 
 exports.createUser = asyncWrapper(async (req, res, next) => {
   const {
@@ -526,7 +527,38 @@ exports.setFamily = asyncWrapper(async (req, res, next) => {
     },
   });
 
-  res.status(StatusCodes.CREATED).json({
+  const isRegistered = await prisma.AcademyUserRegistrationList.findFirst({
+    where: { user_id: student.user_id },
+  });
+
+  let status = null;
+  // 만약 학생이 이미 등록된 상태라면, 부모의 상태를 학생의 상태로 설정
+  if (isRegistered) {
+    if (isRegistered.status === "APPROVED") {
+      status = "APPROVED";
+    } else if (isRegistered.status === "REJECTED") {
+      status = "REJECTED";
+    } else {
+      status = "PENDING";
+    }
+
+    await prisma.AcademyUserRegistrationList.create({
+      data: {
+        user_id: parent_id,
+        academy_id: isRegistered.academy_id,
+        role: "PARENT",
+        status: status,
+      },
+    });
+  }
+  const resData = {
+    parent_id: family.parent_id,
+    student_id: family.student_id,
+    academy_id: student.academy_id,
+    status: status,
+  };
+
+  return res.status(StatusCodes.CREATED).json({
     message: "학생-부모 관계가 설정되었습니다.",
     data: family,
   });
