@@ -12,7 +12,7 @@ router.get("/", authenticateJWT("CHIEF"), studentController.getStudent);
 // 학생이 듣는 강의 내역 조회
 router.get(
   "/:user_id/lecture",
-  authenticateJWT,
+  authenticateJWT("CHIEF", "STUDENT", "TEACHER", "PARENT"),
   studentController.getStudentLecture
 );
 

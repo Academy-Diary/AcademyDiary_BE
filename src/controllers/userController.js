@@ -13,7 +13,8 @@ const {
 const jwt = require("jsonwebtoken");
 const path = require("path");
 const multer = require("multer");
-const { secretKey, gmailID, gmailPW } = require("../config/secret.js")
+const { secretKey, gmailID, gmailPW } = require("../config/secret.js");
+const { stat } = require("fs");
 
 exports.createUser = asyncWrapper(async (req, res, next) => {
   const {
@@ -95,10 +96,10 @@ exports.createJWT = asyncWrapper(async (req, res) => {
   // 검사2:비밀번호가 일치하는지 확인
   const isMatch = bcrypt.compareSync(password, user.password);
   if (isMatch) {
-    const payload = { 
+    const payload = {
       user_id: user_id,
       role: user.role,
-      academy_id: user.academy_id
+      academy_id: user.academy_id,
     };
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
@@ -310,14 +311,26 @@ exports.deleteUser = asyncWrapper(async (req, res, next) => {
   res.status(StatusCodes.OK).json({ message: "회원 탈퇴가 완료되었습니다." });
 });
 
+// userController.js
 // 회원 기본 정보 조회
 exports.getUserBasicInfo = asyncWrapper(async (req, res, next) => {
   const user_id = req.params["user_id"];
 
   const user = await findUserByCriteria({ user_id });
 
-  res.status(StatusCodes.OK).json({
-    message: "회원 정보 조회가 완료되었습니다.",
+  let family = null; // family 변수를 if 블록 밖에서 선언
+
+  if (user.role === "STUDENT" || user.role === "PARENT") {
+    family = await prisma.Family.findFirst({
+      where: {
+        ...(user.role === "STUDENT"
+          ? { student_id: user_id }
+          : { parent_id: user_id }),
+      },
+    });
+  }
+
+  const user_data = {
     user_id: user.user_id,
     academy_id: user.academy_id,
     email: user.email,
@@ -326,6 +339,17 @@ exports.getUserBasicInfo = asyncWrapper(async (req, res, next) => {
     phone_number: user.phone_number,
     role: user.role,
     image: user.image,
+    family:
+      family && user.role === "STUDENT"
+        ? family.parent_id
+        : family && user.role === "PARENT"
+        ? family.student_id
+        : null, // family가 없으면 null을 반환
+  };
+
+  res.status(StatusCodes.OK).json({
+    message: "회원 정보 조회가 완료되었습니다.",
+    data: user_data,
   });
 });
 
@@ -481,3 +505,69 @@ function generateRandomPassword(temp_pw_lenngth = 8) {
     chars.charAt(Math.floor(Math.random() * chars.length))
   ).join("");
 }
+
+exports.setFamily = asyncWrapper(async (req, res, next) => {
+  const { parent_id, student_id } = req.body;
+
+  if (!parent_id || !parent_id.trim() || !student_id || !student_id.trim()) {
+    throw new CustomError(
+      "유효한 parent_id, student_id을 입력해주세요.",
+      StatusCodes.BAD_REQUEST,
+      StatusCodes.BAD_REQUEST
+    );
+  }
+
+  const student = await prisma.User.findUnique({
+    where: { user_id: student_id, role: "STUDENT" },
+  });
+  if (!student) {
+    throw new CustomError(
+      `${student_id}는 User DB에 없는 학생입니다.`,
+      StatusCodes.NOT_FOUND,
+      StatusCodes.NOT_FOUND
+    );
+  }
+
+  const family = await prisma.Family.create({
+    data: {
+      parent_id: parent_id,
+      student_id: student_id,
+    },
+  });
+
+  const isRegistered = await prisma.AcademyUserRegistrationList.findFirst({
+    where: { user_id: student.user_id },
+  });
+
+  let status = null;
+  // 만약 학생이 이미 등록된 상태라면, 부모의 상태를 학생의 상태로 설정
+  if (isRegistered) {
+    if (isRegistered.status === "APPROVED") {
+      status = "APPROVED";
+    } else if (isRegistered.status === "REJECTED") {
+      status = "REJECTED";
+    } else {
+      status = "PENDING";
+    }
+
+    await prisma.AcademyUserRegistrationList.create({
+      data: {
+        user_id: parent_id,
+        academy_id: isRegistered.academy_id,
+        role: "PARENT",
+        status: status,
+      },
+    });
+  }
+  const resData = {
+    parent_id: family.parent_id,
+    student_id: family.student_id,
+    academy_id: student.academy_id,
+    status: status,
+  };
+
+  return res.status(StatusCodes.CREATED).json({
+    message: "학생-부모 관계가 설정되었습니다.",
+    data: family,
+  });
+});

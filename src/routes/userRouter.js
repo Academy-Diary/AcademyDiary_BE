@@ -11,7 +11,11 @@ router.post(`/signup`, userController.createUser);
 router.post("/login", userController.createJWT);
 
 // 로그아웃
-router.post("/logout", authenticateJWT("ADMIN", "CHIEF", "TEACHER", "STUDENT", "PARENT"), userController.removeJWT);
+router.post(
+  "/logout",
+  authenticateJWT("ADMIN", "CHIEF", "TEACHER", "STUDENT", "PARENT"),
+  userController.removeJWT
+);
 
 // 리프레시 토큰을 사용하여 액세스 토큰 갱신
 router.post("/refresh-token", userController.refreshToken);
@@ -26,7 +30,11 @@ router.post("/find-id", userController.findUserId);
 router.post("/reset-password", userController.resetUserPassword);
 
 // 회원 탈퇴
-router.delete("/:user_id", authenticateJWT("ADMIN", "CHIEF", "TEACHER", "STUDENT", "PARENT"), userController.deleteUser);
+router.delete(
+  "/:user_id",
+  authenticateJWT("ADMIN", "CHIEF", "TEACHER", "STUDENT", "PARENT"),
+  userController.deleteUser
+);
 
 // 사용자 이미지 정보 API
 router.get(
@@ -56,6 +64,9 @@ router.put(
   uploadImage.single("file"),
   userController.updateUserImageInfo
 );
+
+// 학생 학부모 관계설정 API
+router.post("/family", userController.setFamily);
 
 // 보호된 라우트 예시
 // router.get("/protected", authenticateJWT, (req, res) => {
