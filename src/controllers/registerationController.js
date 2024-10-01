@@ -181,6 +181,17 @@ exports.decideUserStatus = asyncWrapper(async (req, res, next) => {
         data: { status: newStatus },
     });
 
+    if(newStatus === 'APPROVED') {
+        await prisma.user.update({
+            where: {
+                user_id: user_id,
+            },
+            data: {
+                academy_id: academy_id,
+            },
+        });
+    }
+
     let parent = null;
     if (searchUser.role === "STUDENT") {
         parent = await prisma.Family.findFirst({ where: { student_id: user_id } });
@@ -193,6 +204,17 @@ exports.decideUserStatus = asyncWrapper(async (req, res, next) => {
                 },
                 data: { status: newStatus },
             });
+
+            if(newStatus === 'APPROVED') {
+                await prisma.user.update({
+                    where: {
+                        user_id: parent.parent_id,
+                    },
+                    data: {
+                        academy_id: academy_id,
+                    },
+                });
+            }
         }
     }
 
