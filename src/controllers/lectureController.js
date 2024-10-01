@@ -69,13 +69,18 @@ exports.createLecture = asyncWrapper(async (req, res, next) => {
     );
   }
 
+  // time은 "14:00"형식으로 입력받음(String)
+  const [hours, minutes] = time.split[':'];
+  const lectureTime = new Date();
+  lectureTime.setHours(hours, minutes, 0, 0);
+
   const result = await prisma.Lecture.create({
     data: {
       lecture_name,
       teacher_id: user_id,
       academy_id,
       day,
-      time
+      time : lectureTime
     },
   });
 
@@ -108,10 +113,15 @@ exports.modifyLecture = asyncWrapper(async (req, res, next) => {
     );
   }
 
+  // time은 "14:00"형식으로 입력받음(String)
+  const [hours, minutes] = time.split[':'];
+  const lectureTime = new Date();
+  lectureTime.setHours(hours, minutes, 0, 0);
+
   if(!lecture_name) lecture_name = targetLecture.lecture_name;
   if(!teacher_id) teacher_id = targetLecture.teacher_id;
   if(!day) day = targetLecture.day;
-  if(!time) time = targetLecture.time;
+  time ? time = targetLecture.time : time = lectureTime;
 
   const result = await prisma.Lecture.update({
     where: {
