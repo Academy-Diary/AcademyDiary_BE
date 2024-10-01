@@ -49,7 +49,7 @@ exports.getLecture = asyncWrapper(async (req, res, next) => {
     );
   }
 
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: "강의를 성공적으로 불러왔습니다.",
     data: LectureList,
   });
@@ -57,9 +57,9 @@ exports.getLecture = asyncWrapper(async (req, res, next) => {
 
 //강의 생성
 exports.createLecture = asyncWrapper(async (req, res, next) => {
-  const { lecture_name, user_id, academy_id } = req.body;
+  const { lecture_name, user_id, academy_id, day, time } = req.body;
 
-  if (!lecture_name || lecture_name.length === 0 || !user_id || !academy_id) {
+  if (!lecture_name || lecture_name.length === 0 || !user_id || !academy_id || !day || !time) {
     return next(
       new CustomError(
         "유효하지 않은 입력입니다!",
@@ -74,10 +74,12 @@ exports.createLecture = asyncWrapper(async (req, res, next) => {
       lecture_name,
       teacher_id: user_id,
       academy_id,
+      day,
+      time
     },
   });
 
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: "새로운 강의가 생성되었습니다!",
     lecture: result,
   });
@@ -86,16 +88,18 @@ exports.createLecture = asyncWrapper(async (req, res, next) => {
 //강의 수정
 exports.modifyLecture = asyncWrapper(async (req, res, next) => {
   const { lecture_id } = req.params;
-  const { lecture_name, teacher_id } = req.body;
+  const { lecture_name, teacher_id , day, time} = req.body;
 
-  if (!lecture_id || !lecture_name || !teacher_id) {
-    return next(
-      new CustomError(
-        "유효하지 않은 입력입니다.",
-        StatusCodes.BAD_REQUEST,
-        StatusCodes.BAD_REQUEST
-      )
-    );
+  // JWT에서 academy_id를 추출 (인증 미들웨어를 통해 토큰을 디코드하고 req.user에 저장되어있음)
+  const userAcademyId = req.user.academy_id;  // JWT 토큰에서 가져온 academy_id
+
+  // 사용자가 다른 학원의 수업을 수정하려고 하는지 체크
+  if (userAcademyId !== academy_id) {
+      return next(new CustomError(
+          "해당 학원강의에 대한 수정 권한이 없습니다.",
+          StatusCodes.FORBIDDEN,
+          StatusCodes.FORBIDDEN
+      ));
   }
 
   const target_id = parseInt(lecture_id, 10);
@@ -116,6 +120,11 @@ exports.modifyLecture = asyncWrapper(async (req, res, next) => {
     );
   }
 
+  if(!lecture_name) lecture_name = targetLecture.lecture_name;
+  if(!teacher_id) teacher_id = targetLecture.teacher_id;
+  if(!day) day = targetLecture.day;
+  if(!time) time = targetLecture.time;
+
   const result = await prisma.Lecture.update({
     where: {
       lecture_id: target_id,
@@ -123,10 +132,12 @@ exports.modifyLecture = asyncWrapper(async (req, res, next) => {
     data: {
       lecture_name: lecture_name,
       teacher_id: teacher_id,
+      day: day,
+      time: time
     },
   });
 
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: "수정이 성공적으로 완료되었습니다.",
     data: result,
   });
