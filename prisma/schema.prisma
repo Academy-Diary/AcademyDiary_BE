@@ -138,7 +138,7 @@ model Exam {
   lecture_id    Int // Foreign Key for Lecture
   exam_name     String // Exam name
   high_score    Int      @default(0) // Highest score
-  low_score     Int      @default(0)
+  low_score     Int      @default(100)
   average_score Decimal  @default(0) @db.Decimal(5, 2) // Average score
   total_score   Int      @default(0) // Total score
   created_at    DateTime @default(now()) // Created at timestamp
