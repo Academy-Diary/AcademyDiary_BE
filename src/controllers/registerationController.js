@@ -16,38 +16,37 @@ exports.registerAcademy = asyncWrapper(async(req, res, next) => {
     req.body;
 
     const inviteKey = generateInviteKey();
-    try {
-        const newAcademy = await prisma.academy.create({
-            data: {
-                academy_id,
-                academy_key : inviteKey,
-                academy_name,
-                academy_email,
-                address,
-                phone_number,
-                status: "PENDING" // 학원의 상태를 "PENDING"로 설정합니다.
-            }
-        });
 
+    const newAcademy = await prisma.academy.create({
+        data: {
+            academy_id,
+            academy_key : inviteKey,
+            academy_name,
+            academy_email,
+            address,
+            phone_number,
+            status: "PENDING" // 학원의 상태를 "PENDING"로 설정합니다.
+        }
+    }).then((newAcademy) => {
         res.status(StatusCodes.CREATED).json({
             message: '학원 등록이 성공적으로 완료되었습니다.',
             data: newAcademy
         });
-    } catch (error) {
+    }).catch((error) => {
         if (error.code === 'P2002') { // Prisma의 unique constraint 오류 코드
-            throw new CustomError(
+            return next(new CustomError(
                 "이미 존재하는 학원 ID나 이메일입니다.",
                 StatusCodes.DUPLICATE_ENTRY,
                 StatusCodes.DUPLICATE_ENTRY
-            );
+            ));
         } else {
-            throw new CustomError(
+            return next(new CustomError(
                 "학원 등록 중 오류가 발생했습니다.",
                 StatusCodes.INTERNAL_SERVER_ERROR,
                 StatusCodes.INTERNAL_SERVER_ERROR
-            );
+            ));
         }
-    }
+    });
 })
 
 exports.registerUser = asyncWrapper(async(req, res, next) =>{
@@ -320,17 +319,11 @@ exports.listUser = asyncWrapper(async (req, res, next) => {
                     }
                 };
             }
-        }).then((formattedResult) => {
-            res.status(StatusCodes.OK).json({ 
-                message : "성공적으로 강사 목록을 불러왔습니다.",
-                data: formattedResult 
-            });
-        }).catch((error) => {
-            return next(new CustomError(
-                "강사 목록을 불러오는 중 오류가 발생했습니다.",
-                StatusCodes.INTERNAL_SERVER_ERROR,
-                StatusCodes.INTERNAL_SERVER_ERROR
-            ));
+        })
+
+        res.status(StatusCodes.OK).json({ 
+            message : "성공적으로 강사 목록을 불러왔습니다.",
+            data: formattedResult 
         });
     
 });
