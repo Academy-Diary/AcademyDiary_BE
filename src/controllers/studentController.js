@@ -80,7 +80,7 @@ exports.deleteStudent = asyncWrapper(async (req, res, next) => {
   const parent_id = family ? family.parent_id : null;
   
   if (parent_id) {
-    //학생의 academy_id를 NULL로 업데이트
+    //부모의 academy_id를 NULL로 업데이트
     await prisma.user.update({
       where: {
         user_id: parent_id,
