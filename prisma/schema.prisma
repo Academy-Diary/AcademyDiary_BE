@@ -78,6 +78,8 @@ model Lecture {
   teacher_id   String
   headcount    Int? //수강생 수
   academy_id   String
+  day          Day //수업요일
+  time         DateTime // 수업시간 // 시간 정보만 사용
 
   // Relations
   teacher      User                 @relation("Teacher_Lecture", fields: [teacher_id], references: [user_id])
@@ -188,4 +190,14 @@ enum Role {
   PARENT
   STUDENT
   ADMIN
+}
+
+enum Day {
+  SUNDAY
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
 }
