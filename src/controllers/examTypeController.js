@@ -104,12 +104,23 @@ exports.getExamType = asyncWrapper(async (req, res, next) => {
 
 exports.deleteExamType = asyncWrapper(async (req, res, next) => {
   const { exam_type_id } = req.params;
+  const { academy_id } = req.body;
 
-  // 유효성 검사: lecture_id, exam_type_id가 존재하지 않으면 에러 처리
+  // 유효성 검사1: academy_id가 다른 학원이면 에러 처리
+  if (academy_id !== req.user.academy_id) {
+    return next(
+      new CustomError(
+        "다른 학원에는 접근할 수 없습니다.",
+        StatusCodes.FORBIDDEN,
+        StatusCodes.FORBIDDEN
+      )
+    );
+  }
+  // 유효성 검사2: exam_type_id가 존재하지 않으면 에러 처리
   if (!exam_type_id || !exam_type_id.trim()) {
     return next(
       new CustomError(
-        "유효한 lecture_id, exam_type_id가 제공되지 않았습니다.",
+        "유효한 exam_type_id가 제공되지 않았습니다.",
         StatusCodes.BAD_REQUEST,
         StatusCodes.BAD_REQUEST
       )
@@ -117,33 +128,31 @@ exports.deleteExamType = asyncWrapper(async (req, res, next) => {
   }
   const exam_type_id_int = parseInt(exam_type_id, 10);
 
-  const targetExamType = await prisma.ExamType.findUnique({
+  // examType 삭제, 실패 시 에러 처리
+  const deletedExamType = await prisma.ExamType.delete({
     where: {
+      academy_id: academy_id,
       exam_type_id: exam_type_id_int,
     },
-  });
-
-  if (!targetExamType) {
-    return next(
-      new CustomError(
+  }).catch((err) => {
+    // console.log(err);
+    if (err.code === "P2025") {
+      throw new CustomError(
         "존재하지않는 시험 유형입니다.",
         StatusCodes.BAD_REQUEST,
         StatusCodes.BAD_REQUEST
-      )
-    );
-  }
-
-  await prisma.ExamType.delete({
-    where: {
-      exam_type_id: exam_type_id_int,
-    },
+      );
+    } else {
+      throw new CustomError(
+        "시험 유형 삭제에 실패했습니다.",
+        StatusCodes.INTERNAL_SERVER_ERROR,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
+    }
   });
 
   return res.status(StatusCodes.OK).json({
     message: "시험 유형 삭제가 완료되었습니다.",
-    data: {
-      exam_type_name: targetExamType.exam_type_name,
-      exam_type_id: exam_type_id_int,
-    },
+    data: deletedExamType,
   });
 });
