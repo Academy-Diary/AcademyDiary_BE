@@ -12,7 +12,7 @@ router.post(
 
 // 시험 유형 조회
 router.get(
-  "/",
+  "/academy/:academy_id",
   authenticateJWT("CHIEF", "TEACHER"),
   examTypeController.getExamType
 );

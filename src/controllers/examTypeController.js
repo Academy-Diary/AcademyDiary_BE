@@ -7,6 +7,7 @@ const { StatusCodes } = require("http-status-codes");
 exports.createExamType = asyncWrapper(async (req, res, next) => {
   const { academy_id, exam_type_name } = req.body;
 
+  // 유효성 검사1: academy_id가 다른 학원이면 에러 처리
   if (academy_id !== req.user.academy_id) {
     return next(
       new CustomError(
@@ -16,7 +17,7 @@ exports.createExamType = asyncWrapper(async (req, res, next) => {
       )
     );
   }
-  // 유효성 검사1:  exam_type_name이 존재하지 않으면 에러 처리
+  // 유효성 검사2:  exam_type_name이 존재하지 않으면 에러 처리
   if (!exam_type_name || !exam_type_name.trim()) {
     return next(
       new CustomError(
@@ -27,7 +28,7 @@ exports.createExamType = asyncWrapper(async (req, res, next) => {
     );
   }
 
-  // 유효성 검사2: 이미 존재하는 exam_type_name인지 확인
+  // 유효성 검사3: 이미 존재하는 exam_type_name인지 확인
   const isExist = await prisma.ExamType.findFirst({
     where: {
       academy_id: academy_id,
@@ -57,8 +58,26 @@ exports.createExamType = asyncWrapper(async (req, res, next) => {
 });
 
 exports.getExamType = asyncWrapper(async (req, res, next) => {
-  const examTypeList = await prisma.ExamType.findMany();
+  const { academy_id } = req.params;
 
+  // 유효성 검사1: academy_id가 다른 학원이면 에러 처리
+  if (academy_id !== req.user.academy_id) {
+    return next(
+      new CustomError(
+        "다른 학원에는 접근할 수 없습니다.",
+        StatusCodes.FORBIDDEN,
+        StatusCodes.FORBIDDEN
+      )
+    );
+  }
+
+  const examTypeList = await prisma.ExamType.findMany({
+    where: {
+      academy_id: academy_id,
+    },
+  });
+
+  // 유효성 검사2: examTypeList가 존재하지 않으면 에러 처리
   if (!examTypeList || examTypeList.length === 0) {
     return next(
       new CustomError(
@@ -68,12 +87,17 @@ exports.getExamType = asyncWrapper(async (req, res, next) => {
       )
     );
   }
+  const examTypes = examTypeList.map((x) => ({
+    exam_type_name: x.exam_type_name,
+    exam_type_id: x.exam_type_id,
+  }));
 
   return res.status(StatusCodes.OK).json({
     message: "시험 유형을 성공적으로 불러왔습니다.",
     data: {
-      exam_types: examTypeList,
+      academy_id: academy_id,
       type_cnt: examTypeList.length,
+      exam_types: examTypes,
     },
   });
 });
