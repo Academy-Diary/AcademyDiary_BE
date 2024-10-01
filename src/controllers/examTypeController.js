@@ -5,8 +5,17 @@ const ErrorCode = require("../lib/errors/errorCode");
 const { StatusCodes } = require("http-status-codes");
 
 exports.createExamType = asyncWrapper(async (req, res, next) => {
-  const { exam_type_name } = req.body;
+  const { academy_id, exam_type_name } = req.body;
 
+  if (academy_id !== req.user.academy_id) {
+    return next(
+      new CustomError(
+        "다른 학원에는 접근할 수 없습니다.",
+        StatusCodes.FORBIDDEN,
+        StatusCodes.FORBIDDEN
+      )
+    );
+  }
   // 유효성 검사1:  exam_type_name이 존재하지 않으면 에러 처리
   if (!exam_type_name || !exam_type_name.trim()) {
     return next(
@@ -21,7 +30,8 @@ exports.createExamType = asyncWrapper(async (req, res, next) => {
   // 유효성 검사2: 이미 존재하는 exam_type_name인지 확인
   const isExist = await prisma.ExamType.findFirst({
     where: {
-      exam_type_name,
+      academy_id: academy_id,
+      exam_type_name: exam_type_name,
     },
   });
   if (isExist) {
@@ -36,7 +46,8 @@ exports.createExamType = asyncWrapper(async (req, res, next) => {
 
   const examType = await prisma.ExamType.create({
     data: {
-      exam_type_name,
+      academy_id: academy_id,
+      exam_type_name: exam_type_name,
     },
   });
   return res.status(StatusCodes.CREATED).json({
