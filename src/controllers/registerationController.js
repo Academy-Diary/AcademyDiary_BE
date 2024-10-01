@@ -17,22 +17,25 @@ exports.registerAcademy = asyncWrapper(async(req, res, next) => {
 
     const inviteKey = generateInviteKey();
 
-    const newAcademy = await prisma.academy.create({
-        data: {
-            academy_id,
-            academy_key : inviteKey,
-            academy_name,
-            academy_email,
-            address,
-            phone_number,
-            status: "PENDING" // 학원의 상태를 "PENDING"로 설정합니다.
-        }
-    }).then((newAcademy) => {
-        res.status(StatusCodes.CREATED).json({
+    try{
+        const newAcademy = await prisma.academy.create({
+            data: {
+                academy_id,
+                academy_key : inviteKey,
+                academy_name,
+                academy_email,
+                address,
+                phone_number,
+                status: "PENDING" // 학원의 상태를 "PENDING"로 설정합니다.
+            }
+        });
+
+        return res.status(StatusCodes.CREATED).json({
             message: '학원 등록이 성공적으로 완료되었습니다.',
             data: newAcademy
         });
-    }).catch((error) => {
+
+    } catch(error) {
         if (error.code === 'P2002') { // Prisma의 unique constraint 오류 코드
             return next(new CustomError(
                 "이미 존재하는 학원 ID나 이메일입니다.",
@@ -46,7 +49,7 @@ exports.registerAcademy = asyncWrapper(async(req, res, next) => {
                 StatusCodes.INTERNAL_SERVER_ERROR
             ));
         }
-    });
+    }
 })
 
 exports.registerUser = asyncWrapper(async(req, res, next) =>{
@@ -59,17 +62,17 @@ exports.registerUser = asyncWrapper(async(req, res, next) =>{
         }).catch((error) => {
             if (error.code === "P2018" || error.code === "P2025") {
                 // prisma not found error code
-                throw new CustomError(
+                return next(new CustomError(
                   "학원을 찾을 수 없습니다.",
                   StatusCodes.NOT_FOUND,
                   StatusCodes.NOT_FOUND
-                );
+                ));
               } else {
-                throw new CustomError(
+                return next(new CustomError(
                   "Prisma Error occurred!",
                   ErrorCode.INTERNAL_SERVER_PRISMA_ERROR,
                   StatusCodes.INTERNAL_SERVER_ERROR
-                );
+                ));
               }
         })
         
@@ -87,11 +90,11 @@ exports.registerUser = asyncWrapper(async(req, res, next) =>{
         })
 
         if (checkUser) {
-            throw new CustomError(
+            return next(new CustomError(
                 "이미 등록요청된 유저입니다.",
                 StatusCodes.CONFLICT,
                 StatusCodes.CONFLICT
-            );
+            ));
         }
         //없다면 DB에 req.body내용 추가
         const newUser = await prisma.AcademyUserRegistrationList.create({
@@ -142,11 +145,11 @@ exports.registerUser = asyncWrapper(async(req, res, next) =>{
     } catch(error) {
         console.error("Error during registration: ", error.message); // 에러 메시지 출력
 
-        throw new CustomError(
+        return next(new CustomError(
             "사용자 등록 요청 중 오류가 발생했습니다.",
             StatusCodes.INTERNAL_SERVER_ERROR,
             StatusCodes.INTERNAL_SERVER_ERROR
-        );
+        ));
     }
 })
 exports.decideUserStatus = asyncWrapper(async (req, res, next) => {
@@ -161,7 +164,11 @@ exports.decideUserStatus = asyncWrapper(async (req, res, next) => {
     });
 
     if (!searchUser) {
-        return res.status(StatusCodes.NOT_FOUND).json({ message: "해당하는 유저가 존재하지 않습니다." });
+        return next(new CustomError(
+            "해당하는 유저가 존재하지 않습니다.",
+            StatusCodes.NOT_FOUND,
+            StatusCodes.NOT_FOUND
+        ));
     }
 
     const newStatus = agreed ? 'APPROVED' : 'REJECTED';
@@ -317,7 +324,7 @@ exports.listUser = asyncWrapper(async (req, res, next) => {
             }
         })
 
-        res.status(StatusCodes.OK).json({ 
+        return res.status(StatusCodes.OK).json({ 
             message : `성공적으로 ${role} 목록을 불러왔습니다.`,
             data: {
                 academy_id,
@@ -347,7 +354,7 @@ exports.listAcademy = asyncWrapper(async(req, res, next) => {
         res.status(StatusCodes.OK).json({ data: result });
 
     } catch(error) {
-        next(new CustomError(
+        return next(new CustomError(
             "아카데미 목록을 불러오는 중에 오류가 발생했습니다.",
             StatusCodes.INTERNAL_SERVER_ERROR,
             StatusCodes.INTERNAL_SERVER_ERROR
