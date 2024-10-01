@@ -816,11 +816,20 @@ exports.modifyScore = asyncWrapper(async (req, res, next) => {
   });
 
   // 대표값 계산
-  let minScore = exam.low_score,
-    maxScore = exam.high_score,
-    sumScore = exam.total_score;
-  if (minScore > score) minScore = score;
-  if (maxScore < score) maxScore = score;
+  const minScore = await prisma.ExamUserScore.findFirst({ 
+    where: { exam_id: exam_id_int },
+    select: { score: true },
+    orderBy: { score: "asc" },
+  });
+  
+  const maxScore = await prisma.ExamUserScore.findFirst({
+    where: { exam_id: exam_id_int },
+    select: { score: true },
+    orderBy: { score: "desc" },
+  });
+  console.log(minScore, maxScore);
+  let sumScore = exam.total_score;
+
   sumScore -= currentScore.score;
   sumScore += score;
   const averageScore = sumScore / exam.headcount;
@@ -830,8 +839,8 @@ exports.modifyScore = asyncWrapper(async (req, res, next) => {
       exam_id: exam_id_int,
     },
     data: {
-      low_score: minScore,
-      high_score: maxScore,
+      low_score: minScore.score,
+      high_score: maxScore.score,
       total_score: sumScore,
       average_score: new Prisma.Decimal(averageScore),
     },
