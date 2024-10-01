@@ -228,6 +228,48 @@ exports.listUser = asyncWrapper(async (req, res, next) => {
             ));
         }
 
+        if(role === 'STUDENT') {
+
+        }
+            
+
+    // 조건에 따라 include 동적 설정
+    const includeUser = role === 'STUDENT' ? {
+        user: {
+            select: { //학생일때
+                user_id: true,
+                user_name: true,
+                email: true,
+                phone_number: true,
+                familiesAsStudent: {  // Student로서의 Family 관계를 가져옴
+                    select: {
+                        parent: {  // 부모의 정보를 가져옴
+                            select: {
+                                user_id: true,
+                                user_name: true
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    } : {
+        user: { //강사일때
+            select: {
+                user_id: true,
+                user_name: true,
+                email: true,
+                phone_number: true,
+                lectures: {
+                    select: {
+                        lecture_id: true,
+                        lecture_name: true
+                    }
+                }
+            }
+        }
+    };
+
         // 조건에 맞는 사용자 검색 (User 정보 포함)
         const result = await prisma.AcademyUserRegistrationList.findMany({
             where: {
@@ -235,16 +277,7 @@ exports.listUser = asyncWrapper(async (req, res, next) => {
                 role,
                 status: "PENDING"
             },
-            include: {
-                user: {
-                    select: {
-                        user_id: true,
-                        user_name: true,
-                        email: true,
-                        phone_number: true
-                    }
-                }
-            }
+            include: includeUser
         });
 
         // 등록 요청한 유저가 없을 경우 처리
@@ -257,17 +290,42 @@ exports.listUser = asyncWrapper(async (req, res, next) => {
         }
 
         // 사용자 목록 반환 (user 정보 포함)
-        const formattedResult = result.map(registration => ({
-            academy_id: registration.academy_id,
-            role: registration.role,
-            status: registration.status,
-            user: {
-                user_id: registration.user.user_id,
-                user_name: registration.user.user_name,
-                email: registration.user.email,
-                phone_number: registration.user.phone_number
+        const formattedResult = result.map(registration => {
+            const user = registration.user;
+            if (role === 'STUDENT') {
+                return {
+                    academy_id: registration.academy_id,
+                    role: registration.role,
+                    status: registration.status,
+                    user: {
+                        user_id: user.user_id,
+                        user_name: user.user_name,
+                        email: user.email,
+                        phone_number: user.phone_number,
+                        parent: user.familiesAsStudent.length > 0 ? {
+                            user_id: user.familiesAsStudent[0].parent.user_id,
+                            user_name: user.familiesAsStudent[0].parent.user_name
+                        } : null
+                    }
+                };
+            } else {
+                return {
+                    academy_id: registration.academy_id,
+                    role: registration.role,
+                    status: registration.status,
+                    user: {
+                        user_id: user.user_id,
+                        user_name: user.user_name,
+                        email: user.email,
+                        phone_number: user.phone_number,
+                        lectures: user.lectures.map(lecture => ({
+                            lecture_id: lecture.lecture_id,
+                            lecture_name: lecture.lecture_name
+                        }))
+                    }
+                };
             }
-        }));
+        });
 
         res.status(StatusCodes.OK).json({ data: formattedResult });
 
