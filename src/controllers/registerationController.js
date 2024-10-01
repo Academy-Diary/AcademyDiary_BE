@@ -207,8 +207,7 @@ exports.decideUserStatus = asyncWrapper(async (req, res, next) => {
 
 exports.listUser = asyncWrapper(async (req, res, next) => {
     const { role, academy_id } = req.query;
-    
-    try {
+
         // 학원 존재여부 확인
         const academy = await prisma.academy.findUnique({ where: { academy_id } });
         if (!academy) {
@@ -226,10 +225,6 @@ exports.listUser = asyncWrapper(async (req, res, next) => {
                 StatusCodes.BAD_REQUEST,
                 StatusCodes.BAD_REQUEST
             ));
-        }
-
-        if(role === 'STUDENT') {
-
         }
             
 
@@ -325,17 +320,19 @@ exports.listUser = asyncWrapper(async (req, res, next) => {
                     }
                 };
             }
+        }).then((formattedResult) => {
+            res.status(StatusCodes.OK).json({ 
+                message : "성공적으로 강사 목록을 불러왔습니다.",
+                data: formattedResult 
+            });
+        }).catch((error) => {
+            return next(new CustomError(
+                "강사 목록을 불러오는 중 오류가 발생했습니다.",
+                StatusCodes.INTERNAL_SERVER_ERROR,
+                StatusCodes.INTERNAL_SERVER_ERROR
+            ));
         });
-
-        res.status(StatusCodes.OK).json({ data: formattedResult });
-
-    } catch (error) {
-        next(new CustomError(
-            "사용자 목록을 불러오는 중 오류가 발생했습니다.",
-            StatusCodes.INTERNAL_SERVER_ERROR,
-            StatusCodes.INTERNAL_SERVER_ERROR
-        ));
-    }
+    
 });
 
 exports.listAcademy = asyncWrapper(async(req, res, next) => {
