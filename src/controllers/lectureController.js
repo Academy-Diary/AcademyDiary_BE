@@ -10,15 +10,17 @@ exports.getLecture = asyncWrapper(async (req, res, next) => {
   const { academy_id } = req.params;
 
   // JWT에서 academy_id를 추출 (인증 미들웨어를 통해 토큰을 디코드하고 req.user에 저장되어있음)
-  const userAcademyId = req.user.academy_id;  // JWT 토큰에서 가져온 academy_id
+  const userAcademyId = req.user.academy_id; // JWT 토큰에서 가져온 academy_id
 
   // 사용자가 다른 학원의 수업을 접근하려고 하는지 체크
   if (userAcademyId !== academy_id) {
-      return next(new CustomError(
-          "해당 학원에 대한 접근 권한이 없습니다.",
-          StatusCodes.FORBIDDEN,
-          StatusCodes.FORBIDDEN
-      ));
+    return next(
+      new CustomError(
+        "해당 학원에 대한 접근 권한이 없습니다.",
+        StatusCodes.FORBIDDEN,
+        StatusCodes.FORBIDDEN
+      )
+    );
   }
 
   if (!academy_id) {
@@ -611,9 +613,7 @@ exports.deleteExam = asyncWrapper(async (req, res, next) => {
 exports.createScore = asyncWrapper(async (req, res, next) => {
   const { lecture_id, exam_id } = req.params;
   let { scoreList } = req.body;
-  let minScore = 100,
-    maxScore = 0,
-    sumScore = 0;
+  let minScore, maxScore, sumScore;
   // 유효성 검사: lecture_id, exam_id, user_id가 존재하지 않으면 에러 처리
   if (!lecture_id || !exam_id || !scoreList || scoreList.length === 0) {
     return next(
@@ -626,6 +626,15 @@ exports.createScore = asyncWrapper(async (req, res, next) => {
   }
   const lecture_id_int = parseInt(lecture_id, 10);
   const exam_id_int = parseInt(exam_id, 10);
+
+  const exam = await prisma.Exam.findUnique({
+    where: {
+      exam_id: exam_id_int,
+    },
+  });
+  minScore = exam.low_score;
+  maxScore = exam.high_score;
+  sumScore = exam.total_score;
 
   // 아래의 유효성 검사는 삭제했음. 이 함수는 화면단에서 처리된 데이터를 받아서 처리하는 함수이기 때문에.
   // 존재하는 lecture_id, exam_id, user_id인지 확인  / 해당 강의에 수강생으로 등록되어 있는 user_id인지 확인
@@ -669,6 +678,13 @@ exports.createScore = asyncWrapper(async (req, res, next) => {
     sumScore += scoreList[i].score;
   }
 
+  // ExamUserScore에서 해당 시험의 응시 인원수 계산
+  const newHeadcount = await prisma.ExamUserScore.count({
+    where: {
+      exam_id: exam_id_int,
+    },
+  });
+
   // 대표값 업데이트
   await prisma.Exam.update({
     where: {
@@ -677,9 +693,9 @@ exports.createScore = asyncWrapper(async (req, res, next) => {
     data: {
       low_score: minScore,
       high_score: maxScore,
-      average_score: sumScore / scoreList.length,
+      average_score: sumScore / (newHeadcount || 1),
       total_score: sumScore,
-      headcount: scoreList.length,
+      headcount: newHeadcount,
     },
   });
 
@@ -914,7 +930,7 @@ exports.getExamTypeScore = asyncWrapper(async (req, res, next) => {
         score: exam_score ? exam_score.score : null,
         ...(lecture_id_int === 0
           ? {
-              lecture_id : exam.lecture_id,
+              lecture_id: exam.lecture_id,
             }
           : {}),
       };
