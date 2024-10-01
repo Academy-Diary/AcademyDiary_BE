@@ -15,27 +15,6 @@ router.put("/:lecture_id", authenticateJWT("CHIEF", "TEACHER"), lectureControlle
 //강의 삭제
 router.delete("/:lecture_id", authenticateJWT("CHIEF", "TEACHER"), lectureController.deleteLecture);
 
-// 시험 유형 생성
-router.post(
-  "/:lecture_id/exam-type",
-  authenticateJWT("CHIEF", "TEACHER"),
-  lectureController.createExamType
-);
-
-// 시험 유형 조회
-router.get(
-  "/:lecture_id/exam-type",
-  authenticateJWT("CHIEF", "TEACHER"),
-  lectureController.getExamType
-);
-
-// 시험 유형 삭제
-router.delete(
-  "/:lecture_id/:exam_type_id(\\d+)",
-  authenticateJWT("CHIEF", "TEACHER"),
-  lectureController.deleteExamType
-);
-
 
 router.get("/:lecture_id/student", authenticateJWT("CHIEF", "TEACHER"), lectureController.getLectureStudent);
 
