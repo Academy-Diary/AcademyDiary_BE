@@ -84,6 +84,20 @@ exports.getTeacher = asyncWrapper(async(req, res, next) => {
                 academy_id : academy_id,
                 role : "TEACHER",
                 status : "APPROVED"
+            },
+            include : {
+                user : {
+                    select : {
+                        email : true,
+                        phone_number : true,
+                        lectures : {
+                            select : {
+                                lecture_id : true,
+                                lecture_name : true
+                            }
+                        }
+                    }
+                }
             }
         });
 
