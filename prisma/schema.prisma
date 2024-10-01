@@ -47,6 +47,7 @@ model Academy {
   registrationList AcademyUserRegistrationList[] @relation("AcademyUserRegistrationList_Academy_Relation")
   class            Class[] //학원 - 메뉴(Class) 1:N
   lectures         Lecture[] //학원-강의 1:N
+  exam_types       ExamType[]                    @relation("Academy_ExamType_Relation") //학원-시험 유형 1:N
 }
 
 model Chief_Academy {
@@ -125,11 +126,12 @@ model ClassLecture {
 }
 
 model ExamType {
-  exam_type_id   Int    @id @default(autoincrement()) // Primary Key, Auto Increment
+  academy_id     String? // Foreign Key for Academy
+  exam_type_id   Int      @id @default(autoincrement()) // Primary Key, Auto Increment
   exam_type_name String // ex 단원평가
-
   // Relations
-  exams Exam[] @relation("ExamType_Exam_Relation") // ExamType : Exam = 1:N
+  exams          Exam[]   @relation("ExamType_Exam_Relation") // ExamType : Exam = 1:N
+  academy        Academy? @relation("Academy_ExamType_Relation", fields: [academy_id], references: [academy_id]) // Academy : ExamType = 1:N
 }
 
 model Exam {
