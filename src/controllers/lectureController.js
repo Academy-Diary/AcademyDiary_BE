@@ -90,18 +90,6 @@ exports.modifyLecture = asyncWrapper(async (req, res, next) => {
   const { lecture_id } = req.params;
   const { lecture_name, teacher_id , day, time} = req.body;
 
-  // JWT에서 academy_id를 추출 (인증 미들웨어를 통해 토큰을 디코드하고 req.user에 저장되어있음)
-  const userAcademyId = req.user.academy_id;  // JWT 토큰에서 가져온 academy_id
-
-  // 사용자가 다른 학원의 수업을 수정하려고 하는지 체크
-  if (userAcademyId !== academy_id) {
-      return next(new CustomError(
-          "해당 학원강의에 대한 수정 권한이 없습니다.",
-          StatusCodes.FORBIDDEN,
-          StatusCodes.FORBIDDEN
-      ));
-  }
-
   const target_id = parseInt(lecture_id, 10);
 
   const targetLecture = await prisma.Lecture.findUnique({
@@ -181,7 +169,7 @@ exports.deleteLecture = asyncWrapper(async (req, res, next) => {
     },
   });
 
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: "삭제가 성공적으로 완료되었습니다.",
     lecture_id: target_id,
   });
@@ -229,7 +217,7 @@ exports.getLectureStudent = asyncWrapper(async (req, res, next) => {
     );
   }
 
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: "수강생을 성공적으로 불러왔습니다.",
     data: result,
   });
@@ -271,18 +259,16 @@ exports.createLectureStudent = asyncWrapper(async (req, res, next) => {
       },
     });
 
-    res.status(StatusCodes.OK).json({
+    return res.status(StatusCodes.OK).json({
       message: "수강생을 성공적으로 추가했습니다.",
       data: result,
     });
   } catch (error) {
-    return next(
-      new CustomError(
+    throw new CustomError(
         "수강생을 추가하는데 실패하였습니다.",
         StatusCodes.INTERNAL_SERVER_ERROR,
         StatusCodes.INTERNAL_SERVER_ERROR
-      )
-    );
+      );
   }
 });
 
@@ -324,18 +310,16 @@ exports.deleteLectureStudent = asyncWrapper(async (req, res, next) => {
       },
     });
 
-    res.status(StatusCodes.OK).json({
+    return res.status(StatusCodes.OK).json({
       message: "수강생을 성공적으로 삭제했습니다.",
       data: result,
     });
   } catch (error) {
-    return next(
-      new CustomError(
+    throw new CustomError(
         "수강생을 삭제하는데 실패하였습니다.",
         StatusCodes.INTERNAL_SERVER_ERROR,
         StatusCodes.INTERNAL_SERVER_ERROR
-      )
-    );
+      );
   }
 });
 
@@ -389,7 +373,7 @@ exports.createExam = asyncWrapper(async (req, res, next) => {
       exam_type_id: exam_type_id_int,
     },
   });
-  res.status(StatusCodes.CREATED).json({
+  return res.status(StatusCodes.CREATED).json({
     message: "시험이 성공적으로 생성되었습니다.",
     data: exam,
   });
@@ -427,7 +411,7 @@ exports.getExam = asyncWrapper(async (req, res, next) => {
     );
   }
 
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: "시험을 성공적으로 불러왔습니다.",
     data: {
       lecture_id: lecture_id_int,
@@ -477,7 +461,7 @@ exports.deleteExam = asyncWrapper(async (req, res, next) => {
     },
   });
 
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: "시험 삭제가 완료되었습니다.",
     data: {
       lecture_id: lecture_id_int,
@@ -575,7 +559,7 @@ exports.createScore = asyncWrapper(async (req, res, next) => {
     },
   });
 
-  res.status(StatusCodes.CREATED).json({
+  return res.status(StatusCodes.CREATED).json({
     message: "성적이 성공적으로 입력되었습니다.",
     data: {
       exam_id: exam_id_int,
@@ -620,7 +604,7 @@ exports.getExamScore = asyncWrapper(async (req, res, next) => {
 
   console.log(scoreList);
 
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: "성적을 성공적으로 불러왔습니다.",
     data: {
       exam_id: exam_id_int,
@@ -722,7 +706,7 @@ exports.modifyScore = asyncWrapper(async (req, res, next) => {
     },
   });
 
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: "성적이 성공적으로 수정되었습니다.",
     data: {
       updatedScore: updatedScore,
@@ -822,7 +806,7 @@ exports.getExamTypeScore = asyncWrapper(async (req, res, next) => {
     })
   );
 
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: `${user_id}의 성적을 성공적으로 불러왔습니다.`,
     data: {
       user_id: user_id,
