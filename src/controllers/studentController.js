@@ -153,6 +153,8 @@ exports.getStudentLecture = asyncWrapper(async (req, res, next) => {
         select: {
           lecture_id: true,
           lecture_name: true,
+          day : true,
+          time : true
         },
       },
     },
