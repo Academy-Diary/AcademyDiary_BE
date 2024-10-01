@@ -3,7 +3,7 @@ const prisma = require("../lib/prisma/index");
 const { CustomError } = require("../lib/errors/customError");
 const ErrorCode = require("../lib/errors/errorCode");
 const { StatusCodes } = require("http-status-codes");
-const { Status } = require("@prisma/client");
+const { Status, Role } = require("@prisma/client");
 const crypto = require("crypto");
 const { error } = require("console");
 
@@ -288,8 +288,6 @@ exports.listUser = asyncWrapper(async (req, res, next) => {
             const user = registration.user;
             if (role === 'STUDENT') {
                 return {
-                    academy_id: registration.academy_id,
-                    role: registration.role,
                     status: registration.status,
                     user: {
                         user_id: user.user_id,
@@ -304,8 +302,6 @@ exports.listUser = asyncWrapper(async (req, res, next) => {
                 };
             } else {
                 return {
-                    academy_id: registration.academy_id,
-                    role: registration.role,
                     status: registration.status,
                     user: {
                         user_id: user.user_id,
@@ -322,8 +318,12 @@ exports.listUser = asyncWrapper(async (req, res, next) => {
         })
 
         res.status(StatusCodes.OK).json({ 
-            message : "성공적으로 강사 목록을 불러왔습니다.",
-            data: formattedResult 
+            message : `성공적으로 ${role} 목록을 불러왔습니다.`,
+            data: {
+                academy_id,
+                role,
+                formattedResult 
+            }
         });
     
 });
