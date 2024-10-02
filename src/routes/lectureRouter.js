@@ -7,13 +7,13 @@ const lectureController = require("../controllers/lectureController.js");
 router.get("/:academy_id", authenticateJWT("CHIEF"), lectureController.getLecture);
 
 //강의 생성
-router.post("/", authenticateJWT("CHIEF", "TEACHER"), lectureController.createLecture);
+router.post("/", authenticateJWT("CHIEF"), lectureController.createLecture);
 
 //강의 수정
-router.put("/:lecture_id", authenticateJWT("CHIEF", "TEACHER"), lectureController.modifyLecture);
+router.put("/:lecture_id", authenticateJWT("CHIEF"), lectureController.modifyLecture);
 
 //강의 삭제
-router.delete("/:lecture_id", authenticateJWT("CHIEF", "TEACHER"), lectureController.deleteLecture);
+router.delete("/:lecture_id", authenticateJWT("CHIEF"), lectureController.deleteLecture);
 
 
 router.get("/:lecture_id/student", authenticateJWT("CHIEF", "TEACHER"), lectureController.getLectureStudent);
