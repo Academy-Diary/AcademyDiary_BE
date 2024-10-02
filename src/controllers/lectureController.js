@@ -122,7 +122,7 @@ exports.createLecture = asyncWrapper(async (req, res, next) => {
 //강의 수정
 exports.modifyLecture = asyncWrapper(async (req, res, next) => {
   const { lecture_id } = req.params;
-  const { lecture_name, teacher_id , day, time} = req.body;
+  const { lecture_name, teacher_id , day, start_time, end_time} = req.body;
 
   const target_id = parseInt(lecture_id, 10);
 
@@ -143,14 +143,19 @@ exports.modifyLecture = asyncWrapper(async (req, res, next) => {
   }
 
   // time은 "14:00"형식으로 입력받음(String)
-  const [hours, minutes] = time.split[':'];
-  const lectureTime = new Date();
-  lectureTime.setHours(hours, minutes, 0, 0);
+  // time은 "14:00"형식으로 입력받음(String)
+  const [start_hours, start_minutes] = start_time.split(':');
+  const [end_hours, end_minutes] = end_time.split(':');
+  const lectureStartTime = new Date();
+  const lectureEndTime = new Date();
+  lectureStartTime.setHours(start_hours, start_minutes, 0, 0);
+  lectureEndTime.setHours(end_hours, end_minutes, 0, 0);
 
   if(!lecture_name) lecture_name = targetLecture.lecture_name;
   if(!teacher_id) teacher_id = targetLecture.teacher_id;
   if(!day) day = targetLecture.day;
-  time ? time = targetLecture.time : time = lectureTime;
+  start_time ? start_time = targetLecture.start_time : start_time = lectureStartTime;
+  end_time ? end_time = targetLecture.end_time : end_time = lectureEndTime;
 
   const result = await prisma.Lecture.update({
     where: {
@@ -160,7 +165,8 @@ exports.modifyLecture = asyncWrapper(async (req, res, next) => {
       lecture_name: lecture_name,
       teacher_id: teacher_id,
       day: day,
-      time: time
+      start_time: start_time,
+      end_time : end_time
     },
   });
 
