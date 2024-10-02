@@ -57,9 +57,9 @@ exports.getLecture = asyncWrapper(async (req, res, next) => {
 
 //강의 생성
 exports.createLecture = asyncWrapper(async (req, res, next) => {
-  const { lecture_name, user_id, academy_id, day, time } = req.body;
+  const { lecture_name, user_id, academy_id, day, start_time, end_time } = req.body;
 
-  if (!lecture_name || lecture_name.length === 0 || !user_id || !academy_id || !day || !time) {
+  if (!lecture_name || lecture_name.length === 0 || !user_id || !academy_id || !day || !start_time || !end_time) {
     return next(
       new CustomError(
         "유효하지 않은 입력입니다!",
@@ -68,20 +68,36 @@ exports.createLecture = asyncWrapper(async (req, res, next) => {
       )
     );
   }
-
+ 
   // time은 "14:00"형식으로 입력받음(String)
-  const [hours, minutes] = time.split[':'];
-  const lectureTime = new Date();
-  lectureTime.setHours(hours, minutes, 0, 0);
+  const [start_hours, start_minutes] = start_time.split(':');
+  const [end_hours, end_minutes] = end_time.split(':');
+  const lectureStartTime = new Date();
+  const lectureEndTime = new Date();
+  lectureStartTime.setHours(start_hours, start_minutes, 0, 0);
+  lectureEndTime.setHours(end_hours, end_minutes, 0, 0);
+
 
   const result = await prisma.Lecture.create({
     data: {
       lecture_name,
       teacher_id: user_id,
       academy_id,
-      day,
-      time : lectureTime
+      days : {
+        create : day.map(day => ({
+          day : day, // days 배열의 각 요소를 LectureDay에 저장
+        }))
+      },
+      start_time : lectureStartTime,
+      end_time : lectureEndTime
     },
+    include: { // days 관계도 포함하여 응답
+      days: {
+        select : {
+          day : true  
+        }
+      }
+    }
   });
 
   return res.status(StatusCodes.OK).json({
