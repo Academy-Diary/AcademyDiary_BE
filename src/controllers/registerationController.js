@@ -214,24 +214,26 @@ exports.decideUserStatus = asyncWrapper(async (req, res, next) => {
 exports.listUser = asyncWrapper(async (req, res, next) => {
     const { role, academy_id } = req.query;
 
-        // 학원 존재여부 확인
-        const academy = await prisma.academy.findUnique({ where: { academy_id } });
-        if (!academy) {
-            return next(new CustomError(
-                `ID가 ${academy_id}인 학원이 존재하지 않습니다.`,
-                StatusCodes.NOT_FOUND,
-                StatusCodes.NOT_FOUND
-            ));
-        }
+    // JWT에서 academy_id를 추출 (인증 미들웨어를 통해 토큰을 디코드하고 req.user에 저장되어있음)
+    const userAcademyId = req.user.academy_id;  // JWT 토큰에서 가져온 academy_id
 
-        // 유효하지 않은 역할일 경우 처리
-        if (role !== "TEACHER" && role !== "STUDENT") {
-            return next(new CustomError(
-                "유효하지 않은 역할입니다. TEACHER 또는 STUDENT만 가능합니다.",
-                StatusCodes.BAD_REQUEST,
-                StatusCodes.BAD_REQUEST
-            ));
-        }
+    // 사용자가 다른 학원의 수업을 수정하려고 하는지 체크
+    if (userAcademyId !== academy_id) {
+        return next(new CustomError(
+            "해당 학원에 대한 접근 권한이 없습니다.",
+            StatusCodes.FORBIDDEN,
+            StatusCodes.FORBIDDEN
+        ));
+    }
+
+    // 유효하지 않은 역할일 경우 처리
+    if (role !== "TEACHER" && role !== "STUDENT") {
+        return next(new CustomError(
+            "유효하지 않은 역할입니다. TEACHER 또는 STUDENT만 가능합니다.",
+            StatusCodes.BAD_REQUEST,
+            StatusCodes.BAD_REQUEST
+        ));
+    }
             
 
     // 조건에 따라 include 동적 설정
