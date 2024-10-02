@@ -28,7 +28,7 @@ router.delete("/:lecture_id/student", authenticateJWT("CHIEF", "TEACHER"), lectu
 router.post("/:lecture_id/exam", authenticateJWT("CHIEF", "TEACHER"), lectureController.createExam);
 
 // 시험 조회
-router.get("/:lecture_id/exam", authenticateJWT("CHIEF", "TEACHER"), lectureController.getExam);
+router.get("/:lecture_id/exam", authenticateJWT("CHIEF", "TEACHER", "STUDENT", "PARENT"), lectureController.getExam);
 
 // 시험 삭제
 router.delete(
