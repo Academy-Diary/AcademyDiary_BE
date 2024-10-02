@@ -113,9 +113,14 @@ exports.createLecture = asyncWrapper(async (req, res, next) => {
     }
   });
 
+  const formattedDays = result.days.map(dayObj => dayObj.day)
+
   return res.status(StatusCodes.OK).json({
     message: "새로운 강의가 생성되었습니다!",
-    lecture: result,
+    lecture: {
+      ...result,
+      days : formattedDays
+    }
   });
 });
 
