@@ -153,16 +153,25 @@ exports.getStudentLecture = asyncWrapper(async (req, res, next) => {
         select: {
           lecture_id: true,
           lecture_name: true,
+          days : {
+            select : {
+              day : true
+            }
+          },
+          start_time : true,
+          end_time : true
         },
       },
     },
   });
-  const lectures = rawLectures.map((x) => x.lecture);
+  // 각 강의에서 day 필드를 추출하여 가공
+  const lectures = rawLectures.map((x) => ({
+    ...x.lecture,
+    days: x.lecture.days.map(dayObj => dayObj.day) // 각 강의의 day 값만 추출
+  }));
 
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: "학생이 수강 중인 강의를 성공적으로 불러왔습니다.",
-    data: {
-      lectures: lectures,
-    },
+      lectures: lectures
   });
 });

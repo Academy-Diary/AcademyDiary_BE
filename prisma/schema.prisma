@@ -78,6 +78,8 @@ model Lecture {
   teacher_id   String
   headcount    Int? //수강생 수
   academy_id   String
+  start_time   DateTime @default(now())// 수업시간 // 시간 정보만 사용
+  end_time     DateTime @default(now())// 수업시간 // 시간 정보만 사용
 
   // Relations
   teacher      User                 @relation("Teacher_Lecture", fields: [teacher_id], references: [user_id])
@@ -85,6 +87,15 @@ model Lecture {
   participant  LectureParticipant[]
   exams        Exam[]               @relation("Lecture_Exam_Relation") // Lecture : Exam = 1:N
   ClassLecture ClassLecture[]
+  days         LectureDay[]         //Lecture와 Day의 N:M
+}
+
+//강의-Day N:M 중간테이블
+model LectureDay {
+  id        Int   @id @default(autoincrement())
+  day       Day
+  lecture_id Int
+  lecture   Lecture @relation(fields: [lecture_id], references: [lecture_id])
 }
 
 //강의-수강생 N:M테이블
@@ -188,4 +199,14 @@ enum Role {
   PARENT
   STUDENT
   ADMIN
+}
+
+enum Day {
+  SUNDAY
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
 }

@@ -37,7 +37,20 @@ exports.getLecture = asyncWrapper(async (req, res, next) => {
     where: {
       academy_id: academy_id,
     },
+    include : {
+      days : {
+        select : {
+          day : true
+        }
+      }
+    }
   });
+
+  // 각 강의에 대해 days에서 day 값만 추출하여 새로운 객체 배열 생성
+  const formattedLectureList = LectureList.map(lecture => ({
+    ...lecture,
+    days: lecture.days.map(dayObj => dayObj.day)  // days에서 day 값만 추출
+  }));
 
   if (!LectureList || LectureList.length === 0) {
     return next(
@@ -49,17 +62,17 @@ exports.getLecture = asyncWrapper(async (req, res, next) => {
     );
   }
 
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: "강의를 성공적으로 불러왔습니다.",
-    data: LectureList,
+    data: formattedLectureList
   });
 });
 
 //강의 생성
 exports.createLecture = asyncWrapper(async (req, res, next) => {
-  const { lecture_name, user_id, academy_id } = req.body;
+  const { lecture_name, user_id, academy_id, day, start_time, end_time } = req.body;
 
-  if (!lecture_name || lecture_name.length === 0 || !user_id || !academy_id) {
+  if (!lecture_name || lecture_name.length === 0 || !user_id || !academy_id || !day || !start_time || !end_time) {
     return next(
       new CustomError(
         "유효하지 않은 입력입니다!",
@@ -68,35 +81,53 @@ exports.createLecture = asyncWrapper(async (req, res, next) => {
       )
     );
   }
+ 
+  // time은 "14:00"형식으로 입력받음(String)
+  const [start_hours, start_minutes] = start_time.split(':');
+  const [end_hours, end_minutes] = end_time.split(':');
+  const lectureStartTime = new Date();
+  const lectureEndTime = new Date();
+  lectureStartTime.setHours(start_hours, start_minutes, 0, 0);
+  lectureEndTime.setHours(end_hours, end_minutes, 0, 0);
+
 
   const result = await prisma.Lecture.create({
     data: {
       lecture_name,
       teacher_id: user_id,
       academy_id,
+      days : {
+        create : day.map(day => ({
+          day : day, // days 배열의 각 요소를 LectureDay에 저장
+        }))
+      },
+      start_time : lectureStartTime,
+      end_time : lectureEndTime
     },
+    include: { // days 관계도 포함하여 응답
+      days: {
+        select : {
+          day : true  
+        }
+      }
+    }
   });
 
-  res.status(StatusCodes.OK).json({
+  const formattedDays = result.days.map(dayObj => dayObj.day)
+
+  return res.status(StatusCodes.OK).json({
     message: "새로운 강의가 생성되었습니다!",
-    lecture: result,
+    lecture: {
+      ...result,
+      days : formattedDays
+    }
   });
 });
 
 //강의 수정
 exports.modifyLecture = asyncWrapper(async (req, res, next) => {
   const { lecture_id } = req.params;
-  const { lecture_name, teacher_id } = req.body;
-
-  if (!lecture_id || !lecture_name || !teacher_id) {
-    return next(
-      new CustomError(
-        "유효하지 않은 입력입니다.",
-        StatusCodes.BAD_REQUEST,
-        StatusCodes.BAD_REQUEST
-      )
-    );
-  }
+  const { lecture_name, teacher_id , day, start_time, end_time} = req.body;
 
   const target_id = parseInt(lecture_id, 10);
 
@@ -116,6 +147,21 @@ exports.modifyLecture = asyncWrapper(async (req, res, next) => {
     );
   }
 
+  // time은 "14:00"형식으로 입력받음(String)
+  // time은 "14:00"형식으로 입력받음(String)
+  const [start_hours, start_minutes] = start_time.split(':');
+  const [end_hours, end_minutes] = end_time.split(':');
+  const lectureStartTime = new Date();
+  const lectureEndTime = new Date();
+  lectureStartTime.setHours(start_hours, start_minutes, 0, 0);
+  lectureEndTime.setHours(end_hours, end_minutes, 0, 0);
+
+  if(!lecture_name) lecture_name = targetLecture.lecture_name;
+  if(!teacher_id) teacher_id = targetLecture.teacher_id;
+  if(!day) day = targetLecture.day;
+  start_time ? start_time = targetLecture.start_time : start_time = lectureStartTime;
+  end_time ? end_time = targetLecture.end_time : end_time = lectureEndTime;
+
   const result = await prisma.Lecture.update({
     where: {
       lecture_id: target_id,
@@ -123,10 +169,13 @@ exports.modifyLecture = asyncWrapper(async (req, res, next) => {
     data: {
       lecture_name: lecture_name,
       teacher_id: teacher_id,
+      day: day,
+      start_time: start_time,
+      end_time : end_time
     },
   });
 
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: "수정이 성공적으로 완료되었습니다.",
     data: result,
   });
@@ -170,7 +219,7 @@ exports.deleteLecture = asyncWrapper(async (req, res, next) => {
     },
   });
 
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: "삭제가 성공적으로 완료되었습니다.",
     lecture_id: target_id,
   });
@@ -218,7 +267,7 @@ exports.getLectureStudent = asyncWrapper(async (req, res, next) => {
     );
   }
 
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: "수강생을 성공적으로 불러왔습니다.",
     data: result,
   });
@@ -260,18 +309,16 @@ exports.createLectureStudent = asyncWrapper(async (req, res, next) => {
       },
     });
 
-    res.status(StatusCodes.OK).json({
+    return res.status(StatusCodes.OK).json({
       message: "수강생을 성공적으로 추가했습니다.",
       data: result,
     });
   } catch (error) {
-    return next(
-      new CustomError(
+    throw new CustomError(
         "수강생을 추가하는데 실패하였습니다.",
         StatusCodes.INTERNAL_SERVER_ERROR,
         StatusCodes.INTERNAL_SERVER_ERROR
-      )
-    );
+      );
   }
 });
 
@@ -313,18 +360,16 @@ exports.deleteLectureStudent = asyncWrapper(async (req, res, next) => {
       },
     });
 
-    res.status(StatusCodes.OK).json({
+    return res.status(StatusCodes.OK).json({
       message: "수강생을 성공적으로 삭제했습니다.",
       data: result,
     });
   } catch (error) {
-    return next(
-      new CustomError(
+    throw new CustomError(
         "수강생을 삭제하는데 실패하였습니다.",
         StatusCodes.INTERNAL_SERVER_ERROR,
         StatusCodes.INTERNAL_SERVER_ERROR
-      )
-    );
+      );
   }
 });
 
@@ -378,7 +423,7 @@ exports.createExam = asyncWrapper(async (req, res, next) => {
       exam_type_id: exam_type_id_int,
     },
   });
-  res.status(StatusCodes.CREATED).json({
+  return res.status(StatusCodes.CREATED).json({
     message: "시험이 성공적으로 생성되었습니다.",
     data: exam,
   });
@@ -416,7 +461,7 @@ exports.getExam = asyncWrapper(async (req, res, next) => {
     );
   }
 
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: "시험을 성공적으로 불러왔습니다.",
     data: {
       lecture_id: lecture_id_int,
@@ -466,7 +511,7 @@ exports.deleteExam = asyncWrapper(async (req, res, next) => {
     },
   });
 
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: "시험 삭제가 완료되었습니다.",
     data: {
       lecture_id: lecture_id_int,
@@ -564,7 +609,7 @@ exports.createScore = asyncWrapper(async (req, res, next) => {
     },
   });
 
-  res.status(StatusCodes.CREATED).json({
+  return res.status(StatusCodes.CREATED).json({
     message: "성적이 성공적으로 입력되었습니다.",
     data: {
       exam_id: exam_id_int,
@@ -609,7 +654,7 @@ exports.getExamScore = asyncWrapper(async (req, res, next) => {
 
   console.log(scoreList);
 
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: "성적을 성공적으로 불러왔습니다.",
     data: {
       exam_id: exam_id_int,
@@ -711,7 +756,7 @@ exports.modifyScore = asyncWrapper(async (req, res, next) => {
     },
   });
 
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: "성적이 성공적으로 수정되었습니다.",
     data: {
       updatedScore: updatedScore,
@@ -811,7 +856,7 @@ exports.getExamTypeScore = asyncWrapper(async (req, res, next) => {
     })
   );
 
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: `${user_id}의 성적을 성공적으로 불러왔습니다.`,
     data: {
       user_id: user_id,
