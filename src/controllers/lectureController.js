@@ -37,7 +37,20 @@ exports.getLecture = asyncWrapper(async (req, res, next) => {
     where: {
       academy_id: academy_id,
     },
+    include : {
+      days : {
+        select : {
+          day : true
+        }
+      }
+    }
   });
+
+  // 각 강의에 대해 days에서 day 값만 추출하여 새로운 객체 배열 생성
+  const formattedLectureList = LectureList.map(lecture => ({
+    ...lecture,
+    days: lecture.days.map(dayObj => dayObj.day)  // days에서 day 값만 추출
+  }));
 
   if (!LectureList || LectureList.length === 0) {
     return next(
@@ -51,7 +64,7 @@ exports.getLecture = asyncWrapper(async (req, res, next) => {
 
   return res.status(StatusCodes.OK).json({
     message: "강의를 성공적으로 불러왔습니다.",
-    data: LectureList,
+    data: formattedLectureList
   });
 });
 
