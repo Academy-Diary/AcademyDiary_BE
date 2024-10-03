@@ -1,23 +1,32 @@
 const swaggerUi = require("swagger-ui-express")
 const swaggerJsdoc = require("swagger-jsdoc")
 
-const options = {
-  swaggerDefinition: {
-    openapi: "3.0.0",
-    info: {
-      version: "1.0.0",
-      title: "Academy Diary API",
-      description:
-        "프로젝트 설명 Node.js Swagger swagger-jsdoc 방식 RestFul API 클라이언트 UI",
-    },
-    servers: [
-      {
-        url: "http://localhost:8000", // 요청 URL
+
+const swaggerOptions = {
+    swaggerDefinition: {
+      openapi: "3.0.0", // Swagger 3.0 사용
+      info: {
+        title: "Academy Diary API",
+        version: "1.0.0",
+        description: "API documentation for the Academy Diary",
       },
-    ],
-  },
-  apis: ["./src/routes/*.js"] //Swagger 파일 연동
-}
-const specs = swaggerJsdoc(options)
+      components: {
+        securitySchemes: {
+          bearerAuth: {
+            type: "http",
+            scheme: "bearer",
+            bearerFormat: "JWT",
+          },
+        },
+      },
+      security: [
+        {
+          bearerAuth: [],
+        },
+      ],
+    },
+    apis: ["./src/routes/*.js"], // 주석이 포함된 라우트 파일 경로
+  };
+const specs = swaggerJsdoc(swaggerOptions)
 
 module.exports = { swaggerUi, specs }
