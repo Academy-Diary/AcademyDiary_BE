@@ -90,6 +90,18 @@ exports.getStudent = asyncWrapper(async (req, res, next) => {
     },
   });
 
+  // JWT에서 academy_id를 추출 (인증 미들웨어를 통해 토큰을 디코드하고 req.user에 저장되어있음)
+  const userAcademyId = req.user.academy_id;  // JWT 토큰에서 가져온 academy_id
+
+  // 사용자가 다른 학원의 수업을 수정하려고 하는지 체크
+  if (userAcademyId !== academy_id) {
+      return next(new CustomError(
+          "해당 학원에 대한 접근 권한이 없습니다.",
+          StatusCodes.FORBIDDEN,
+          StatusCodes.FORBIDDEN
+      ));
+  }
+
   if (!students || students.length === 0) {
     return next(
       new CustomError(
