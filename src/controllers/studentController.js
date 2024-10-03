@@ -79,7 +79,7 @@ exports.deleteStudent = asyncWrapper(async (req, res, next) => {
 });
 
 exports.getStudent = asyncWrapper(async (req, res, next) => {
-  const { academy_id } = req.body;
+  const { academy_id } = req.params;
 
   // 나중에 User DB에서 가져오게끔 수정.
   const students = await prisma.AcademyUserRegistrationList.findMany({
