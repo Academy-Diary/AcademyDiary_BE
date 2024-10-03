@@ -5,9 +5,13 @@ const morgan = require("morgan");
 require("dotenv").config();
 const app = express();
 const port = 8000;
-const { swaggerUi, specs } = require("./swagger/swagger")
+const { swaggerUi, specs } = require("./swagger/swagger");
 
-const whitelist = ["http://localhost:5173", "http://127.0.0.1:5173"];
+const whitelist = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:8000",
+];
 
 const corsOptions = {
   credentials: true, // Allow credentials
