@@ -127,13 +127,20 @@ exports.createLecture = asyncWrapper(async (req, res, next) => {
 //강의 수정
 exports.modifyLecture = asyncWrapper(async (req, res, next) => {
   const { lecture_id } = req.params;
-  const { lecture_name, teacher_id , day, start_time, end_time} = req.body;
+  let { lecture_name, teacher_id , day, start_time, end_time} = req.body;
 
   const target_id = parseInt(lecture_id, 10);
 
   const targetLecture = await prisma.Lecture.findUnique({
     where: {
       lecture_id: target_id,
+    },
+    include: {
+      days : {
+        select : {
+          day : true
+        }
+      }
     },
   });
 
@@ -147,21 +154,34 @@ exports.modifyLecture = asyncWrapper(async (req, res, next) => {
     );
   }
 
-  // time은 "14:00"형식으로 입력받음(String)
-  // time은 "14:00"형식으로 입력받음(String)
-  const [start_hours, start_minutes] = start_time.split(':');
-  const [end_hours, end_minutes] = end_time.split(':');
-  const lectureStartTime = new Date();
-  const lectureEndTime = new Date();
-  lectureStartTime.setHours(start_hours, start_minutes, 0, 0);
-  lectureEndTime.setHours(end_hours, end_minutes, 0, 0);
-
+  // 전달되지 않은 필드에 대해 기본값 설정
   if(!lecture_name) lecture_name = targetLecture.lecture_name;
   if(!teacher_id) teacher_id = targetLecture.teacher_id;
-  if(!day) day = targetLecture.day;
-  start_time ? start_time = targetLecture.start_time : start_time = lectureStartTime;
-  end_time ? end_time = targetLecture.end_time : end_time = lectureEndTime;
+  if(!day) day = targetLecture.days.map(dayObj => dayObj.day); // days가 없으면 기존 days 사용
 
+  // 시간 처리
+  // time은 "14:00"형식으로 입력받음(String)
+  if(!start_time){ start_time = targetLecture.start_time;}
+  else{
+    const [start_hours, start_minutes] = start_time.split(':');
+    start_time = new Date();
+    start_time.setHours(start_hours, start_minutes, 0, 0);
+  }
+  if(!end_time){ end_time = targetLecture.end_time;}
+  else{
+    const [end_hours, end_minutes] = end_time.split(':');
+    end_time = new Date();
+    end_time.setHours(end_hours, end_minutes, 0, 0);
+  }
+
+  // 해당 강의에 연결된 모든 LectureDay 삭제
+  await prisma.LectureDay.deleteMany({
+    where: {
+      lecture_id: target_id,
+    },
+  });
+
+// 강의 수정 및 새로운 LectureDay 관계 생성
   const result = await prisma.Lecture.update({
     where: {
       lecture_id: target_id,
@@ -169,10 +189,17 @@ exports.modifyLecture = asyncWrapper(async (req, res, next) => {
     data: {
       lecture_name: lecture_name,
       teacher_id: teacher_id,
-      day: day,
       start_time: start_time,
-      end_time : end_time
+      end_time : end_time,
+      days: {
+        create: day.map(dayValue => ({
+          day: dayValue, // 새로운 LectureDay 데이터를 생성
+        }))
+      }
     },
+    include: {
+      days: true, // 업데이트된 days 반환
+    }
   });
 
   return res.status(StatusCodes.OK).json({
