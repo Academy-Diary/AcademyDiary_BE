@@ -32,9 +32,6 @@ if (process.env.NODE_ENV === "prod") {
 }
 
 
-//swagger
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs))
-
 
 // routes
 const indexRouter = require("./routes/index");
@@ -54,6 +51,9 @@ app.use("/teacher", teacherRouter);
 app.use("/lecture", lectureRouter);
 app.use("/expense", expenseRouter);
 app.use("/exam-type", examTypeRouter);
+
+//swagger
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs))
 
 // error handler
 const errorHandler = require("./lib/middlewares/errorHandler");
