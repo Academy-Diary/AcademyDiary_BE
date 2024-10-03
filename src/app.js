@@ -5,6 +5,7 @@ const morgan = require("morgan");
 require("dotenv").config();
 const app = express();
 const port = 8000;
+const { swaggerUi, specs } = require("./swagger/swagger")
 
 const whitelist = ["http://localhost:5173", "http://127.0.0.1:5173"];
 
@@ -29,6 +30,11 @@ if (process.env.NODE_ENV === "prod") {
 } else {
   app.use(morgan("dev"));
 }
+
+
+//swagger
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs))
+
 
 // routes
 const indexRouter = require("./routes/index");
