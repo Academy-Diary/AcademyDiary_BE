@@ -530,11 +530,17 @@ router.delete(
  *             example:
  *               message: "시험이 성공적으로 생성되었습니다."
  *               data:
- *                 exam_id: 1
- *                 lecture_id: 1001
- *                 exam_name: "Midterm Exam"
- *                 exam_type_id: 101
- *                 exam_date: "2024-01-01"
+ *                 exam_id: 9,
+ *                 lecture_id: 129
+ *                 exam_name: "단원평가2"
+ *                 high_score: 0
+ *                 low_score: 100
+ *                 average_score: "0"
+ *                 total_score: 0
+ *                 created_at: "2024-10-03T17:00:40.048Z"
+ *                 exam_date: "2024-12-01T00:00:00.000Z"
+ *                 exam_type_id: 1
+ *                 headcount: 0
  *       400:
  *         description: 유효하지 않은 입력
  *         content:
@@ -602,9 +608,17 @@ router.post(
  *               data:
  *                 lecture_id: 1001
  *                 exams:
- *                   - exam_id: 1
- *                     exam_name: "Midterm Exam"
- *                     exam_date: "2024-01-01"
+ *                   - exam_id: 9,
+ *                     lecture_id: 129
+ *                     exam_name: "단원평가2"
+ *                     high_score: 0
+ *                     low_score: 100
+ *                     average_score: "0"
+ *                     total_score: 0
+ *                     created_at: "2024-10-03T17:00:40.048Z"
+ *                     exam_date: "2024-12-01T00:00:00.000Z"
+ *                     exam_type_id: 1
+ *                     headcount: 0
  *                 exam_cnt: 1
  *       404:
  *         description: 시험이 존재하지 않음
@@ -667,7 +681,18 @@ router.get(
  *               message: "시험 삭제가 완료되었습니다."
  *               data:
  *                 lecture_id: 1001
- *                 exam_id: 1
+ *                 exams: 
+ *                  exam_id: 9,
+ *                  lecture_id: 129
+ *                  exam_name: "단원평가2"
+ *                  high_score: 0
+ *                  low_score: 100
+ *                  average_score: "0"
+ *                  total_score: 0
+ *                  created_at: "2024-10-03T17:00:40.048Z"
+ *                  exam_date: "2024-12-01T00:00:00.000Z"
+ *                  exam_type_id: 1
+ *                  headcount: 0
  *       400:
  *         description: 유효하지 않은 시험 ID 또는 강의 ID
  *         content:
