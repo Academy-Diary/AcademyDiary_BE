@@ -73,7 +73,7 @@ exports.deleteStudent = asyncWrapper(async (req, res, next) => {
   });
 
   // 성공 응답
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: `학생 ID ${user_id}의 academy_id가 성공적으로 NULL로 설정되었고, 등록 목록에서 삭제되었습니다.`,
   });
 });
@@ -101,7 +101,7 @@ exports.getStudent = asyncWrapper(async (req, res, next) => {
   }
 
   // 성공 응답
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: "학생를 성공적으로 불러왔습니다.",
     data: students,
   });
@@ -134,7 +134,7 @@ exports.getStudentLecture = asyncWrapper(async (req, res, next) => {
   });
   const lectures = rawLectures.map((x) => x.lecture);
 
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: "학생이 수강 중인 강의를 성공적으로 불러왔습니다.",
     data: {
       lectures: lectures,
