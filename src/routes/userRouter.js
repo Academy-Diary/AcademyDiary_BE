@@ -93,11 +93,11 @@ router.post(`/signup`, userController.createUser);
  *               user_id:
  *                 type: string
  *                 description: "유저 아이디"
- *                 example: "testuser"
+ *                 example: "chief_seonu"
  *               password:
  *                 type: string
  *                 description: "유저 비밀번호"
- *                 example: "password123"
+ *                 example: "test_pw"
  *     responses:
  *       201:
  *         description: "로그인 성공, JWT 토큰 발급"
