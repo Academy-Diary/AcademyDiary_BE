@@ -788,8 +788,8 @@ exports.modifyScore = asyncWrapper(async (req, res, next) => {
     data: {
       updatedScore: updatedScore,
       exam: {
-        low_score: minScore,
-        high_score: maxScore,
+        low_score: minScore.score,
+        high_score: maxScore.score,
         average_score: averageScore,
         total_score: sumScore,
       },
