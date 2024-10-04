@@ -5,8 +5,13 @@ const morgan = require("morgan");
 require("dotenv").config();
 const app = express();
 const port = 8000;
+const { swaggerUi, specs } = require("./swagger/swagger");
 
-const whitelist = ["http://localhost:5173", "http://127.0.0.1:5173"];
+const whitelist = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:8000",
+];
 
 const corsOptions = {
   credentials: true, // Allow credentials
@@ -30,6 +35,8 @@ if (process.env.NODE_ENV === "prod") {
   app.use(morgan("dev"));
 }
 
+
+
 // routes
 const indexRouter = require("./routes/index");
 const userRouter = require("./routes/userRouter");
@@ -48,6 +55,9 @@ app.use("/teacher", teacherRouter);
 app.use("/lecture", lectureRouter);
 app.use("/expense", expenseRouter);
 app.use("/exam-type", examTypeRouter);
+
+//swagger
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs))
 
 // error handler
 const errorHandler = require("./lib/middlewares/errorHandler");
