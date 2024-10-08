@@ -29,6 +29,7 @@ model User {
   exam_scores       ExamUserScore[]              @relation("ExamUserScore_User_Relation") // User : ExamUserScore  (M:N relationship with Exam)
   familiesAsStudent Family[]                     @relation("StudentFamilyRelation") // Family 테이블에서 student_id로 연결
   familiesAsParent  Family[]                     @relation("ParentFamilyRelation") // Family 테이블에서 parent_id로 연결
+  notice            Notice[]                     @relation("UserToNotice_Relation") // 1:N 관계 (User to Notice)
 }
 
 model Academy {
@@ -48,6 +49,7 @@ model Academy {
   class            Class[] //학원 - 메뉴(Class) 1:N
   lectures         Lecture[] //학원-강의 1:N
   exam_types       ExamType[]                    @relation("Academy_ExamType_Relation") //학원-시험 유형 1:N
+  notice           Notice[]                      @relation("AcademyToNotice_Relation") // 1:N 관계
 }
 
 model Chief_Academy {
@@ -88,6 +90,7 @@ model Lecture {
   exams        Exam[]               @relation("Lecture_Exam_Relation") // Lecture : Exam = 1:N
   ClassLecture ClassLecture[]
   days         LectureDay[] //Lecture와 Day의 N:M
+  notice       Notice[]             @relation("LectureToNotice_Relation")
 }
 
 //강의-Day N:M 중간테이블
@@ -185,6 +188,35 @@ model Family {
   parent  User @relation("ParentFamilyRelation", fields: [parent_id], references: [user_id], onDelete: Cascade)
 
   @@id([student_id, parent_id]) // 복합 기본 키 설정 (학생과 부모의 관계가 유일하도록)
+}
+
+model Notice {
+  id         Int      @id @default(autoincrement()) // PK
+  notice_id  String   @unique
+  notice_num Int // 학원과 강의 별로 공지를 보기 위해서
+  title      String
+  content    String
+  created_at DateTime @default(now())
+  edited_at  DateTime @default(now())
+  user_id    String // FK from User 1: N
+  academy_id String // FK from Academy 1:N 
+  lecture_id Int // FK from Lecture 1:N
+  views      Int      @default(0) // 공지 조회수 
+
+  // Relations
+  files   NoticeFile[] @relation("NoticeToNoticeFiles_Relation") // 1:N 관계 (Notice to NoticeFile)
+  user    User?        @relation("UserToNotice_Relation", fields: [user_id], references: [user_id])
+  academy Academy?     @relation("AcademyToNotice_Relation", fields: [academy_id], references: [academy_id])
+  lecture Lecture?     @relation("LectureToNotice_Relation", fields: [lecture_id], references: [lecture_id])
+}
+
+model NoticeFile {
+  id        Int    @id @default(autoincrement()) // PK
+  notice_id String // Fk from Notice
+  file      String // 이미지 경로
+
+  // Relations
+  notice Notice @relation("NoticeToNoticeFiles_Relation", fields: [notice_id], references: [notice_id]) // Notice 모델과의 관계 설정
 }
 
 enum Status {
