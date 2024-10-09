@@ -193,7 +193,7 @@ model Family {
 model Notice {
   id         Int      @id @default(autoincrement()) // PK
   notice_id  String   @unique
-  notice_num Int // 학원과 강의 별로 공지를 보기 위해서
+  notice_num Int // 그냥 업로드한 파일 폴더별로 쉽게 관리할려고
   title      String
   content    String
   created_at DateTime @default(now())
