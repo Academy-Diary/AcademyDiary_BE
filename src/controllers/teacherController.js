@@ -55,7 +55,7 @@ exports.deleteTeacher = asyncWrapper(async(req, res, next) => {
             message: `강사 ID ${id}의 academy_id가 성공적으로 NULL로 설정되었고, 등록 목록에서 삭제되었습니다.`,
         });
     } catch(error) {
-        next(new CustomError(
+        return next(new CustomError(
             "강사 정보 업데이트 중 오류가 발생했습니다.",
             StatusCodes.INTERNAL_SERVER_ERROR,
             StatusCodes.INTERNAL_SERVER_ERROR
@@ -84,6 +84,20 @@ exports.getTeacher = asyncWrapper(async(req, res, next) => {
                 academy_id : academy_id,
                 role : "TEACHER",
                 status : "APPROVED"
+            },
+            include : {
+                user : {
+                    select : {
+                        email : true,
+                        phone_number : true,
+                        lectures : {
+                            select : {
+                                lecture_id : true,
+                                lecture_name : true
+                            }
+                        }
+                    }
+                }
             }
         });
 
@@ -101,7 +115,7 @@ exports.getTeacher = asyncWrapper(async(req, res, next) => {
             data: getTeacher
         });
     } catch(error) {
-        next(new CustomError(
+        return next(new CustomError(
             "강사 목록을 불러오는 중 오류가 발생했습니다.",
             StatusCodes.INTERNAL_SERVER_ERROR,
             StatusCodes.INTERNAL_SERVER_ERROR

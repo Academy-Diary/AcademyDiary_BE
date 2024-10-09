@@ -72,9 +72,34 @@ exports.deleteStudent = asyncWrapper(async (req, res, next) => {
     },
   });
 
+  const family = await prisma.family.findFirst({
+    where: {
+      student_id: user_id,
+    },
+  });
+  const parent_id = family ? family.parent_id : null;
+  
+  if (parent_id) {
+    //부모의 academy_id를 NULL로 업데이트
+    await prisma.user.update({
+      where: {
+        user_id: parent_id,
+      },
+      data: {
+        academy_id: null,
+      },
+    });
+    //AcademyUserRegistrationList에서 해당 부모 행 삭제
+    await prisma.AcademyUserRegistrationList.delete({
+      where: {
+        user_id: parent_id,
+      },
+    });
+  }
+
   // 성공 응답
   return res.status(StatusCodes.OK).json({
-    message: `학생 ID ${user_id}의 academy_id가 성공적으로 NULL로 설정되었고, 등록 목록에서 삭제되었습니다.`,
+    message: `학생 ID ${user_id}, 학부모 ID ${parent_id} 의 academy_id가 성공적으로 NULL로 설정되었고, 등록 목록에서 삭제되었습니다.`,
   });
 });
 
@@ -140,16 +165,25 @@ exports.getStudentLecture = asyncWrapper(async (req, res, next) => {
         select: {
           lecture_id: true,
           lecture_name: true,
+          days : {
+            select : {
+              day : true
+            }
+          },
+          start_time : true,
+          end_time : true
         },
       },
     },
   });
-  const lectures = rawLectures.map((x) => x.lecture);
+  // 각 강의에서 day 필드를 추출하여 가공
+  const lectures = rawLectures.map((x) => ({
+    ...x.lecture,
+    days: x.lecture.days.map(dayObj => dayObj.day) // 각 강의의 day 값만 추출
+  }));
 
   return res.status(StatusCodes.OK).json({
     message: "학생이 수강 중인 강의를 성공적으로 불러왔습니다.",
-    data: {
-      lectures: lectures,
-    },
+      lectures: lectures
   });
 });

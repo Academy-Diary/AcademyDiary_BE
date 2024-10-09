@@ -21,12 +21,14 @@ model User {
   image        String   @default("default.png")
 
   // Relations
-  academy          Academy?                     @relation(fields: [academy_id], references: [academy_id], name: "UserAcademyRelation")
-  chief            Chief_Academy?               @relation("UserChiefRelation")
-  registrationList AcademyUserRegistrationList? @relation("AcademyUserRegistrationList_User_Relation")
-  lectures         Lecture[]                    @relation("Teacher_Lecture") //강사-강의 1:N
-  registerdLecture LectureParticipant[] //강의-수강생 N:M
-  exam_scores      ExamUserScore[]              @relation("ExamUserScore_User_Relation") // User : ExamUserScore  (M:N relationship with Exam)
+  academy           Academy?                     @relation(fields: [academy_id], references: [academy_id], name: "UserAcademyRelation")
+  chief             Chief_Academy?               @relation("UserChiefRelation")
+  registrationList  AcademyUserRegistrationList? @relation("AcademyUserRegistrationList_User_Relation")
+  lectures          Lecture[]                    @relation("Teacher_Lecture") //강사-강의 1:N
+  registerdLecture  LectureParticipant[] //강의-수강생 N:M
+  exam_scores       ExamUserScore[]              @relation("ExamUserScore_User_Relation") // User : ExamUserScore  (M:N relationship with Exam)
+  familiesAsStudent Family[]                     @relation("StudentFamilyRelation") // Family 테이블에서 student_id로 연결
+  familiesAsParent  Family[]                     @relation("ParentFamilyRelation") // Family 테이블에서 parent_id로 연결
 }
 
 model Academy {
@@ -45,6 +47,7 @@ model Academy {
   registrationList AcademyUserRegistrationList[] @relation("AcademyUserRegistrationList_Academy_Relation")
   class            Class[] //학원 - 메뉴(Class) 1:N
   lectures         Lecture[] //학원-강의 1:N
+  exam_types       ExamType[]                    @relation("Academy_ExamType_Relation") //학원-시험 유형 1:N
 }
 
 model Chief_Academy {
@@ -70,19 +73,29 @@ model AcademyUserRegistrationList {
 }
 
 model Lecture {
-  lecture_id   Int    @id @default(autoincrement())
+  lecture_id   Int      @id @default(autoincrement())
   lecture_name String
   teacher_id   String
   headcount    Int? //수강생 수
   academy_id   String
+  start_time   DateTime @default(now()) // 수업시간 // 시간 정보만 사용
+  end_time     DateTime @default(now()) // 수업시간 // 시간 정보만 사용
 
   // Relations
   teacher      User                 @relation("Teacher_Lecture", fields: [teacher_id], references: [user_id])
   academy      Academy              @relation(fields: [academy_id], references: [academy_id])
   participant  LectureParticipant[]
   exams        Exam[]               @relation("Lecture_Exam_Relation") // Lecture : Exam = 1:N
-  exam_types   ExamType[]           @relation("Lecture_ExamType_Relation") // Lecture: ExamType = 1 : N
   ClassLecture ClassLecture[]
+  days         LectureDay[] //Lecture와 Day의 N:M
+}
+
+//강의-Day N:M 중간테이블
+model LectureDay {
+  id         Int     @id @default(autoincrement())
+  day        Day
+  lecture_id Int
+  lecture    Lecture @relation(fields: [lecture_id], references: [lecture_id], onDelete: Cascade)
 }
 
 //강의-수강생 N:M테이블
@@ -124,13 +137,12 @@ model ClassLecture {
 }
 
 model ExamType {
-  exam_type_id   Int    @id @default(autoincrement()) // Primary Key, Auto Increment
-  lecture_id     Int // Foreign Key for Lecture
+  academy_id     String? // Foreign Key for Academy
+  exam_type_id   Int      @id @default(autoincrement()) // Primary Key, Auto Increment
   exam_type_name String // ex 단원평가
-
   // Relations
-  lecture Lecture @relation("Lecture_ExamType_Relation", fields: [lecture_id], references: [lecture_id]) // Lecture : ExamType = 1:N
-  exams   Exam[]  @relation("ExamType_Exam_Relation") // ExamType : Exam = 1:N
+  exams          Exam[]   @relation("ExamType_Exam_Relation") // ExamType : Exam = 1:N
+  academy        Academy? @relation("Academy_ExamType_Relation", fields: [academy_id], references: [academy_id]) // Academy : ExamType = 1:N
 }
 
 model Exam {
@@ -138,7 +150,7 @@ model Exam {
   lecture_id    Int // Foreign Key for Lecture
   exam_name     String // Exam name
   high_score    Int      @default(0) // Highest score
-  low_score     Int      @default(0)
+  low_score     Int      @default(100)
   average_score Decimal  @default(0) @db.Decimal(5, 2) // Average score
   total_score   Int      @default(0) // Total score
   created_at    DateTime @default(now()) // Created at timestamp
@@ -164,6 +176,17 @@ model ExamUserScore {
   @@id([exam_id, user_id]) // Composite Primary Key for the many-to-many relationship
 }
 
+model Family {
+  student_id String
+  parent_id  String
+
+  // Relations
+  student User @relation("StudentFamilyRelation", fields: [student_id], references: [user_id], onDelete: Cascade)
+  parent  User @relation("ParentFamilyRelation", fields: [parent_id], references: [user_id], onDelete: Cascade)
+
+  @@id([student_id, parent_id]) // 복합 기본 키 설정 (학생과 부모의 관계가 유일하도록)
+}
+
 enum Status {
   PENDING
   APPROVED
@@ -176,4 +199,14 @@ enum Role {
   PARENT
   STUDENT
   ADMIN
+}
+
+enum Day {
+  SUNDAY
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
 }

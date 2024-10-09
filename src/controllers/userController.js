@@ -13,7 +13,8 @@ const {
 const jwt = require("jsonwebtoken");
 const path = require("path");
 const multer = require("multer");
-const { secretKey, gmailID, gmailPW } = require("../config/secret.js")
+const { secretKey, gmailID, gmailPW } = require("../config/secret.js");
+const { stat } = require("fs");
 
 exports.createUser = asyncWrapper(async (req, res, next) => {
   const {
@@ -26,22 +27,10 @@ exports.createUser = asyncWrapper(async (req, res, next) => {
     role,
   } = req.body;
 
-  // 이미 존재하는 유저인지
-  const user = await prisma.user.findUnique({
-    where: { user_id },
-  });
-  if (user) {
-    throw new CustomError(
-      "이미 존재하는 아이디입니다.",
-      StatusCodes.CONFLICT,
-      StatusCodes.CONFLICT
-    );
-  }
-
   //bcrypt라이브러리로 비밀번호 해싱
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  const newUser = await prisma.user
+  await prisma.user
     .create({
       data: {
         user_id,
@@ -53,19 +42,39 @@ exports.createUser = asyncWrapper(async (req, res, next) => {
         role,
       },
     })
+    .then((newUser) => {
+      res
+        .status(StatusCodes.CREATED)
+        .json({ message: "회원가입이 완료되었습니다." });
+    })
     .catch((err) => {
-      console.log(err);
+      // Prisma의 고유성 제약 조건 에러 처리 (이메일 또는 아이디 중복)
+      if (err.code === 'P2002') {
+        const duplicatedField = err.meta.target[0]; // 중복된 필드를 확인
+        let errorMessage = "중복된 값이 있습니다.";
 
-      throw new CustomError(
-        "Prisma Error accrued!",
-        ErrorCode.INTERNAL_SERVER_PRISMA_ERROR,
+        if (duplicatedField === 'email') {
+          errorMessage = "이미 사용 중인 이메일입니다.";
+        } else if (duplicatedField === 'user_id') {
+          errorMessage = "이미 존재하는 아이디입니다.";
+        } else if (duplicatedField === 'phone_number') {
+          errorMessage = "이미 존재하는 휴대폰 번호 입니다.";
+        }
+
+        return next(new CustomError(
+          errorMessage,
+          StatusCodes.CONFLICT,
+          StatusCodes.CONFLICT
+        ));
+      }
+
+      // 그 외의 에러 처리
+      return next(new CustomError(
+        "회원가입 중 오류가 발생했습니다.",
+        StatusCodes.INTERNAL_SERVER_ERROR,
         StatusCodes.INTERNAL_SERVER_ERROR
-      );
+      ));
     });
-
-  res
-    .status(StatusCodes.CREATED)
-    .json({ message: "회원가입이 완료되었습니다." });
 });
 
 exports.createJWT = asyncWrapper(async (req, res) => {
@@ -87,10 +96,10 @@ exports.createJWT = asyncWrapper(async (req, res) => {
   // 검사2:비밀번호가 일치하는지 확인
   const isMatch = bcrypt.compareSync(password, user.password);
   if (isMatch) {
-    const payload = { 
+    const payload = {
       user_id: user_id,
       role: user.role,
-      academy_id: user.academy_id
+      academy_id: user.academy_id,
     };
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
@@ -135,25 +144,25 @@ exports.createJWT = asyncWrapper(async (req, res) => {
 });
 
 //
-exports.removeJWT = asyncWrapper(async (req, res) => {
+exports.removeJWT = asyncWrapper(async (req, res, next) => {
   const refreshToken = req.cookies.refreshToken;
   // 검사1: 토큰이 없을 경우
   if (!refreshToken) {
-    throw new CustomError(
+    return next(new CustomError(
       "리프레시 토큰이 쿠키에 존재하지 않습니다.",
       StatusCodes.BAD_REQUEST,
       StatusCodes.BAD_REQUEST
-    );
+    ));
   }
   // 검사 2: 토큰이 정상적인 토큰이 아닌 경우
   try {
     jwt.verify(refreshToken, secretKey); // 토큰 유효성 검증
   } catch (err) {
-    throw new CustomError(
+    return next(new CustomError(
       "잘못된 리프레시 토큰입니다.",
       StatusCodes.BAD_REQUEST,
       StatusCodes.BAD_REQUEST
-    );
+    ));
   }
 
   // 쿠키 삭제
@@ -164,22 +173,22 @@ exports.removeJWT = asyncWrapper(async (req, res) => {
 // 리프레시 토큰을 사용하여 액세스 토큰 갱신
 exports.refreshToken = asyncWrapper(async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
-
+  
   if (!refreshToken) {
-    throw new CustomError(
+    return next(new CustomError(
       "리프레시 토큰이 쿠키에 존재하지 않습니다.",
       StatusCodes.BAD_REQUEST,
       StatusCodes.BAD_REQUEST
-    );
+    ));
   }
   const newAccessToken = refreshAccessToken(refreshToken);
 
   if (!newAccessToken) {
-    throw new CustomError(
+    return next(new CustomError(
       "유효하지 않거나 만료된 리프레시 토큰입니다. 다시 로그인 해주세요.",
       StatusCodes.FORBIDDEN,
       StatusCodes.FORBIDDEN
-    );
+    ));
   }
 
   res.status(StatusCodes.CREATED).json({
@@ -193,11 +202,11 @@ exports.checkIdDuplicated = asyncWrapper(async (req, res, next) => {
 
   // user_id가 공백인 경우
   if (user_id === null || !user_id.trim()) {
-    throw new CustomError(
+    return next(new CustomError(
       "아이디를 입력해 주세요.",
       StatusCodes.BAD_REQUEST,
       StatusCodes.BAD_REQUEST
-    );
+    ));
   }
 
   const user = await prisma.user
@@ -206,19 +215,19 @@ exports.checkIdDuplicated = asyncWrapper(async (req, res, next) => {
     })
     .catch((err) => {
       // Prisma 에러가 발생하면 CustomError로 처리하여 미들웨어 체인에 전달
-      throw new CustomError(
+      return next(new CustomError(
         "Prisma Error occurred!",
         ErrorCode.INTERNAL_SERVER_PRISMA_ERROR,
         StatusCodes.INTERNAL_SERVER_ERROR
-      );
+      ));
     });
 
   if (user) {
-    throw new CustomError(
+    return next(new CustomError(
       "이미 존재하는 아이디입니다.",
       StatusCodes.CONFLICT,
       StatusCodes.CONFLICT
-    );
+    ));
   } else {
     return res
       .status(StatusCodes.OK)
@@ -302,14 +311,26 @@ exports.deleteUser = asyncWrapper(async (req, res, next) => {
   res.status(StatusCodes.OK).json({ message: "회원 탈퇴가 완료되었습니다." });
 });
 
+// userController.js
 // 회원 기본 정보 조회
 exports.getUserBasicInfo = asyncWrapper(async (req, res, next) => {
   const user_id = req.params["user_id"];
 
   const user = await findUserByCriteria({ user_id });
 
-  res.status(StatusCodes.OK).json({
-    message: "회원 정보 조회가 완료되었습니다.",
+  let family = null; // family 변수를 if 블록 밖에서 선언
+
+  if (user.role === "STUDENT" || user.role === "PARENT") {
+    family = await prisma.Family.findFirst({
+      where: {
+        ...(user.role === "STUDENT"
+          ? { student_id: user_id }
+          : { parent_id: user_id }),
+      },
+    });
+  }
+
+  const user_data = {
     user_id: user.user_id,
     academy_id: user.academy_id,
     email: user.email,
@@ -318,6 +339,17 @@ exports.getUserBasicInfo = asyncWrapper(async (req, res, next) => {
     phone_number: user.phone_number,
     role: user.role,
     image: user.image,
+    family:
+      family && user.role === "STUDENT"
+        ? family.parent_id
+        : family && user.role === "PARENT"
+        ? family.student_id
+        : null, // family가 없으면 null을 반환
+  };
+
+  res.status(StatusCodes.OK).json({
+    message: "회원 정보 조회가 완료되었습니다.",
+    data: user_data,
   });
 });
 
@@ -473,3 +505,69 @@ function generateRandomPassword(temp_pw_lenngth = 8) {
     chars.charAt(Math.floor(Math.random() * chars.length))
   ).join("");
 }
+
+exports.setFamily = asyncWrapper(async (req, res, next) => {
+  const { parent_id, student_id } = req.body;
+
+  if (!parent_id || !parent_id.trim() || !student_id || !student_id.trim()) {
+    throw new CustomError(
+      "유효한 parent_id, student_id을 입력해주세요.",
+      StatusCodes.BAD_REQUEST,
+      StatusCodes.BAD_REQUEST
+    );
+  }
+
+  const student = await prisma.User.findUnique({
+    where: { user_id: student_id, role: "STUDENT" },
+  });
+  if (!student) {
+    throw new CustomError(
+      `${student_id}는 User DB에 없는 학생입니다.`,
+      StatusCodes.NOT_FOUND,
+      StatusCodes.NOT_FOUND
+    );
+  }
+
+  const family = await prisma.Family.create({
+    data: {
+      parent_id: parent_id,
+      student_id: student_id,
+    },
+  });
+
+  const isRegistered = await prisma.AcademyUserRegistrationList.findFirst({
+    where: { user_id: student.user_id },
+  });
+
+  let status = null;
+  // 만약 학생이 이미 등록된 상태라면, 부모의 상태를 학생의 상태로 설정
+  if (isRegistered) {
+    if (isRegistered.status === "APPROVED") {
+      status = "APPROVED";
+    } else if (isRegistered.status === "REJECTED") {
+      status = "REJECTED";
+    } else {
+      status = "PENDING";
+    }
+
+    await prisma.AcademyUserRegistrationList.create({
+      data: {
+        user_id: parent_id,
+        academy_id: isRegistered.academy_id,
+        role: "PARENT",
+        status: status,
+      },
+    });
+  }
+  const resData = {
+    parent_id: family.parent_id,
+    student_id: family.student_id,
+    academy_id: student.academy_id,
+    status: status,
+  };
+
+  return res.status(StatusCodes.CREATED).json({
+    message: "학생-부모 관계가 설정되었습니다.",
+    data: family,
+  });
+});
