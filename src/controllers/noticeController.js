@@ -129,6 +129,7 @@ exports.getNoticeList = asyncWrapper(async (req, res, next) => {
       content: notice.content,
       user_id: notice.user_id,
       views: notice.views,
+      notice_id: notice.notice_id,
     };
   });
   return res.status(StatusCodes.OK).json({
