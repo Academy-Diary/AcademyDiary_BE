@@ -4,6 +4,7 @@ const { authenticateJWT } = require("../lib/middlewares/auth.js");
 const router = express.Router();
 const noticeController = require("../controllers/noticeController");
 const { uploadNoticeFile } = require("../lib/middlewares/uploadFile.js");
+const { authenticate } = require("passport");
 
 /**
  * @swagger
@@ -191,6 +192,80 @@ router.get(
   "/list",
   authenticateJWT("CHIEF", "TEACHER", "PARENT", "STUDENT"),
   noticeController.getNoticeList
+);
+/**
+ * @swagger
+ * /notice/{notice_id}:
+ *   delete:
+ *     summary: 공지 삭제
+ *     description: 지정된 ID의 공지사항을 삭제합니다. 'CHIEF' 또는 'TEACHER' 권한이 필요합니다.
+ *     tags: [Notice]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: notice_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 삭제할 공지의 ID, 형식은 academy_id&lecture_id&notice_num입니다.
+ *         example: test_academy2&0&5
+ *     responses:
+ *       200:
+ *         description: 공지가 성공적으로 삭제되었습니다.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: 공지사항이 성공적으로 삭제되었습니다.
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     notice:
+ *                       type: object
+ *                       description: 삭제된 공지의 정보
+ *                     files:
+ *                       type: array
+ *                       description: 삭제된 공지의 파일 목록
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                             example: test_academy2_0_5_file1
+ *                           file:
+ *                             type: string
+ *                             example: /public/notice/test_academy2/0/5/sample.jpg
+ *       400:
+ *         description: 유효한 값들이 입력되지 않았습니다.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: 유효한 값들을 입력해주세요.
+ *       500:
+ *         description: 서버 내부 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: 디렉토리 삭제 중 오류가 발생했습니다.
+ */
+
+// 공지 삭제
+router.delete(
+  "/:notice_id",
+  authenticateJWT("CHIEF", "TEACHER"),
+  noticeController.deleteNotice
 );
 
 module.exports = router;

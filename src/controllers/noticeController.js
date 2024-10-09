@@ -57,10 +57,7 @@ exports.createNotice = asyncWrapper(async (req, res, next) => {
         )
       );
     }
-    return {
-      path: newPath,
-      originalname: file.originalname,
-    };
+    return file.originalname;
   });
 
   console.log("이동 후 파일 경로:", files);
@@ -73,14 +70,14 @@ exports.createNotice = asyncWrapper(async (req, res, next) => {
       lecture_id,
       user_id,
       notice_num: recent_notice_num + 1,
-      notice_id: `${academy_id}_${lecture_id}_${recent_notice_num + 1}`,
+      notice_id: `${academy_id}&${lecture_id}&${recent_notice_num + 1}`,
     },
   });
 
   await prisma.NoticeFile.createMany({
     data: files.map((file) => ({
       notice_id: notice.notice_id,
-      file: file.path,
+      file: file,
     })),
   });
 
@@ -88,7 +85,7 @@ exports.createNotice = asyncWrapper(async (req, res, next) => {
     message: "공지사항이 성공적으로 생성되었습니다.",
     data: {
       notice,
-      files: files.map((file) => file.originalname),
+      files: files,
     },
   });
 });
@@ -134,6 +131,78 @@ exports.getNoticeList = asyncWrapper(async (req, res, next) => {
   });
   return res.status(StatusCodes.OK).json({
     message: "공지사항 목록 조회에 성공했습니다.",
+    data: resData,
+  });
+});
+
+exports.deleteNotice = asyncWrapper(async (req, res, next) => {
+  const notice_id = req.params.notice_id.split("&");
+  const academy_id = notice_id[0];
+  const lecture_id = parseInt(notice_id[1], 10);
+  const notice_num = parseInt(notice_id[2], 10);
+
+  if (isNaN(lecture_id) || isNaN(notice_num)) {
+    return next(
+      new CustomError("유효한 값들을 입력해주세요.", StatusCodes.BAD_REQUEST)
+    );
+  }
+
+  // NoticeFile 조회
+  const notice_files = await prisma.NoticeFile.findMany({
+    where: {
+      notice_id: req.params.notice_id,
+    },
+  });
+
+  // NoticeFile 삭제
+  await prisma.NoticeFile.deleteMany({
+    where: {
+      notice_id: req.params.notice_id,
+    },
+  });
+  // Notice 삭제
+  const notice = await prisma.Notice.delete({
+    where: {
+      notice_id: req.params.notice_id,
+    },
+  });
+
+  // 삭제할 디렉토리 경로 설정
+  const dirPath = path.join(
+    __dirname,
+    "../../public/notice",
+    academy_id,
+    lecture_id.toString(),
+    notice_num.toString()
+  );
+
+  // 디렉토리 삭제
+  try {
+    if (fs.existsSync(dirPath)) {
+      fs.rmSync(dirPath, { recursive: true, force: true });
+      console.log(`디렉토리 삭제 성공: ${dirPath}`);
+    } else {
+      console.log(`삭제할 디렉토리가 존재하지 않습니다: ${dirPath}`);
+    }
+  } catch (error) {
+    console.error(`디렉토리 삭제 실패: ${error}`);
+    return next(
+      new CustomError(
+        "디렉토리 삭제 중 오류가 발생했습니다.",
+        StatusCodes.INTERNAL_SERVER_ERROR
+      )
+    );
+  }
+
+  const resData = {
+    notice: notice,
+    files: notice_files.map((file) => {
+      return file.file;
+    }),
+  };
+
+  return res.status(StatusCodes.OK).json({
+    message: "공지사항이 성공적으로 삭제되었습니다.",
     data: resData,
   });
 });
