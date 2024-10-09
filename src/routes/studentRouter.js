@@ -42,25 +42,20 @@ router.delete("/:user_id", authenticateJWT("CHIEF"), studentController.deleteStu
 
 /**
  * @swagger
- * /student:
+ * /student/{academy_id}:
  *   get:
  *     summary: 학원에 등록된 모든 학생 조회
  *     description: CHIEF 권한을 가진 사용자가 특정 학원에 등록된 모든 학생을 조회합니다.
  *     tags: [Student]
  *     security:
  *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - academy_id
- *             properties:
- *               academy_id:
- *                 type: string
- *                 description: 조회할 학원의 ID
+ *     parameters:
+ *       - in: path
+ *         name: academy_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 조회할 학원의 ID
  *     responses:
  *       200:
  *         description: 학생 목록 조회 성공
@@ -71,7 +66,7 @@ router.delete("/:user_id", authenticateJWT("CHIEF"), studentController.deleteStu
  *               properties:
  *                 message:
  *                   type: string
- *                   description: "학생을 성공적으로 불러왔습니다."
+ *                   description: "학생를 성공적으로 불러왔습니다."
  *                 data:
  *                   type: array
  *                   items:
@@ -86,13 +81,15 @@ router.delete("/:user_id", authenticateJWT("CHIEF"), studentController.deleteStu
  *                       status:
  *                         type: string
  *                         description: 학생의 등록 상태
+ *       403:
+ *         description: 해당 학원에 대한 접근 권한이 없습니다.
  *       404:
  *         description: 등록된 학생이 없습니다.
  *       500:
  *         description: 서버 오류가 발생했습니다.
  */
 // 모든 원생 조회
-router.get("/", authenticateJWT("CHIEF"), studentController.getStudent);
+router.get("/:academy_id", authenticateJWT("CHIEF"), studentController.getStudent);
 
 /**
  * @swagger
