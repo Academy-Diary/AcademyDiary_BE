@@ -172,6 +172,9 @@ router.post(
  *                       views:
  *                         type: integer
  *                         example: 123
+ *                       notice_id:
+ *                         type: string
+ *                         example: test_academy2_0_5
  *       400:
  *         description: 유효하지 않은 파라미터가 입력되었습니다.
  *         content:
