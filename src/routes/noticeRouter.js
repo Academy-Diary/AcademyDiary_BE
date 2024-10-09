@@ -114,5 +114,80 @@ router.post(
   uploadNoticeFile.array("file"),
   noticeController.createNotice
 );
+/**
+ * @swagger
+ * /notice/list:
+ *   get:
+ *     summary: 공지 목록 조회
+ *     description: 학원 및 강의에 대한 공지 목록을 조회합니다. 'CHIEF', 'TEACHER', 'PARENT', 또는 'STUDENT' 권한이 필요합니다.
+ *     tags: [Notice]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: lecture_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 조회할 강의 ID
+ *       - in: query
+ *         name: page
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 페이지 번호
+ *         example: 1
+ *       - in: query
+ *         name: page_size
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 한 페이지에 표시할 공지 개수
+ *         example: 10
+ *     responses:
+ *       200:
+ *         description: 공지 목록 조회에 성공했습니다.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: 공지사항 목록 조회에 성공했습니다.
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       title:
+ *                         type: string
+ *                         example: 코로나19로 인한 학원 운영 방침
+ *                       content:
+ *                         type: string
+ *                         example: 코로나19 예방 방침 공지합니다.
+ *                       user_id:
+ *                         type: string
+ *                         example: chief_seonu
+ *                       views:
+ *                         type: integer
+ *                         example: 123
+ *       400:
+ *         description: 유효하지 않은 파라미터가 입력되었습니다.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: 유효한 값들을 입력해주세요.
+ */
+// 공지 목록 조회
+router.get(
+  "/list",
+  authenticateJWT("CHIEF", "TEACHER", "PARENT", "STUDENT"),
+  noticeController.getNoticeList
+);
 
 module.exports = router;
