@@ -197,7 +197,7 @@ model Notice {
   title      String
   content    String
   created_at DateTime @default(now())
-  edited_at  DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
   user_id    String // FK from User 1: N
   academy_id String // FK from Academy 1:N 
   lecture_id Int // FK from Lecture 1:N
