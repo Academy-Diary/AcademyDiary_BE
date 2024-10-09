@@ -28,6 +28,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json()); // REST API body 파싱
+app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser()); // request의 cookie 파싱
 if (process.env.NODE_ENV === "prod") {
   app.use(morgan("combined"));
@@ -46,6 +47,7 @@ const teacherRouter = require("./routes/teacherRouter");
 const lectureRouter = require("./routes/lectureRouter");
 const expenseRouter = require("./routes/expenseRouter");
 const examTypeRouter = require("./routes/examTypeRouter");
+const noticeRouter = require("./routes/noticeRouter.js");
 
 app.use("/", indexRouter);
 app.use("/user", userRouter);
@@ -55,6 +57,7 @@ app.use("/teacher", teacherRouter);
 app.use("/lecture", lectureRouter);
 app.use("/expense", expenseRouter);
 app.use("/exam-type", examTypeRouter);
+app.use("/notice", noticeRouter);
 
 //swagger
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs))
