@@ -2,7 +2,7 @@ const express = require("express");
 const { authenticateJWT } = require("../lib/middlewares/auth.js");
 const router = express.Router();
 const userController = require("../controllers/userController");
-const uploadImage = require("../lib/middlewares/uploadImage");
+const { uploadProfileImage } = require("../lib/middlewares/uploadFile.js");
 
 /**
  * @swagger
@@ -74,7 +74,6 @@ const uploadImage = require("../lib/middlewares/uploadImage");
  */
 // 회원가입
 router.post(`/signup`, userController.createUser);
-
 
 /**
  * @swagger
@@ -149,7 +148,7 @@ router.post(`/signup`, userController.createUser);
  *                       type: string
  *                     role:
  *                       type: string
- *                     image:
+ *                     uploadProfileImage:
  *                       type: string
  *       400:
  *         description: "로그인 실패, 잘못된 아이디 또는 비밀번호"
@@ -164,7 +163,6 @@ router.post(`/signup`, userController.createUser);
  */
 // 로그인
 router.post("/login", userController.createJWT);
-
 
 /**
  * @swagger
@@ -201,7 +199,6 @@ router.post(
   authenticateJWT("ADMIN", "CHIEF", "TEACHER", "STUDENT", "PARENT"),
   userController.removeJWT
 );
-
 
 /**
  * @swagger
@@ -308,7 +305,6 @@ router.post("/refresh-token", userController.refreshToken);
 // 아이디 중복 확인
 router.get("/check-id/:user_id", userController.checkIdDuplicated);
 
-
 /**
  * @swagger
  * /user/find-id:
@@ -399,7 +395,6 @@ router.post("/find-id", userController.findUserId);
 // 비밀번호 찾기
 router.post("/reset-password", userController.resetUserPassword);
 
-
 /**
  * @swagger
  * /user/{user_id}:
@@ -437,10 +432,9 @@ router.delete(
   userController.deleteUser
 );
 
-
 /**
  * @swagger
- * /user/{user_id}/image-info:
+ * /user/{user_id}/uploadProfileImage-info:
  *   get:
  *     summary: 사용자의 프로필 이미지 조회
  *     description: 특정 사용자의 프로필 이미지 파일을 반환합니다.
@@ -456,7 +450,7 @@ router.delete(
  *       200:
  *         description: 프로필 이미지 반환 성공
  *         content:
- *           image/jpeg:
+ *           uploadProfileImage/jpeg:
  *             schema:
  *               type: string
  *               format: binary
@@ -523,7 +517,7 @@ router.get(
  *                     role:
  *                       type: string
  *                       description: 사용자의 역할 (STUDENT, PARENT 등)
- *                     image:
+ *                     uploadProfileImage:
  *                       type: string
  *                       description: 사용자의 프로필 이미지 파일명
  *                     family:
@@ -616,7 +610,7 @@ router.put(
 
 /**
  * @swagger
- * /user/{user_id}/image-info:
+ * /user/{user_id}/uploadProfileImage-info:
  *   put:
  *     summary: 회원 이미지 정보 수정
  *     description: 특정 사용자의 프로필 이미지를 수정합니다. 이미지 파일은 Multipart/form-data 형식으로 업로드해야 합니다.
@@ -653,7 +647,7 @@ router.put(
  *                 user_id:
  *                   type: string
  *                   description: 이미지가 수정된 사용자의 ID
- *                 image:
+ *                 uploadProfileImage:
  *                   type: string
  *                   description: 수정된 이미지 파일 경로
  *       400:
@@ -665,9 +659,9 @@ router.put(
  */
 // 사용자 이미지 정보 수정 API
 router.put(
-  "/:user_id/image-info",
+  "/:user_id/uploadProfileImage-info",
   authenticateJWT("ADMIN", "CHIEF", "TEACHER", "STUDENT", "PARENT"),
-  uploadImage.single("file"),
+  uploadProfileImage.single("file"),
   userController.updateUserImageInfo
 );
 

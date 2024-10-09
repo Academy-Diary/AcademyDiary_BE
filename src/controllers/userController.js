@@ -12,9 +12,7 @@ const {
 } = require("../lib/jwt/index.js");
 const jwt = require("jsonwebtoken");
 const path = require("path");
-const multer = require("multer");
 const { secretKey, gmailID, gmailPW } = require("../config/secret.js");
-const { stat } = require("fs");
 
 exports.createUser = asyncWrapper(async (req, res, next) => {
   const {
