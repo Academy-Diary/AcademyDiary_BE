@@ -136,7 +136,7 @@ exports.registerUser = asyncWrapper(async(req, res, next) =>{
             parent_id: (newUser.role === "STUDENT" && parent) ? parent.parent_id : null,
         };
         
-        res.status(StatusCodes.CREATED).json({
+        return res.status(StatusCodes.CREATED).json({
             message: '등록요청이 성공적으로 완료되었습니다.',
             data: resData
         });
