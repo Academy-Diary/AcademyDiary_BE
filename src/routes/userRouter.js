@@ -434,7 +434,7 @@ router.delete(
 
 /**
  * @swagger
- * /user/{user_id}/uploadProfileImage-info:
+ * /user/{user_id}/image-info:
  *   get:
  *     summary: 사용자의 프로필 이미지 조회
  *     description: 특정 사용자의 프로필 이미지 파일을 반환합니다.
@@ -610,7 +610,7 @@ router.put(
 
 /**
  * @swagger
- * /user/{user_id}/uploadProfileImage-info:
+ * /user/{user_id}/image-info:
  *   put:
  *     summary: 회원 이미지 정보 수정
  *     description: 특정 사용자의 프로필 이미지를 수정합니다. 이미지 파일은 Multipart/form-data 형식으로 업로드해야 합니다.
@@ -659,7 +659,7 @@ router.put(
  */
 // 사용자 이미지 정보 수정 API
 router.put(
-  "/:user_id/uploadProfileImage-info",
+  "/:user_id/image-info",
   authenticateJWT("ADMIN", "CHIEF", "TEACHER", "STUDENT", "PARENT"),
   uploadProfileImage.single("file"),
   userController.updateUserImageInfo
