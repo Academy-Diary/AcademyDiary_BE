@@ -206,3 +206,72 @@ exports.deleteNotice = asyncWrapper(async (req, res, next) => {
     data: resData,
   });
 });
+
+exports.updateNotice = asyncWrapper(async (req, res, next) => {
+  const { title, content } = req.body;
+  const files_deleted = req.body.files_deleted.split(",");
+  const notice_id = req.params.notice_id.split("&");
+  const academy_id = notice_id[0];
+  const lecture_id = parseInt(notice_id[1], 10);
+  const notice_num = parseInt(notice_id[2], 10);
+
+  const dirPath = path.join(
+    __dirname,
+    "../../public/notice",
+    academy_id,
+    lecture_id.toString(),
+    notice_num.toString()
+  );
+
+  console.log(`files_deleted: ${files_deleted}`);
+  // 삭제할 파일 제거
+  if (files_deleted && files_deleted.length > 0) {
+    // in file system
+    files_deleted.forEach((file) => {
+      const filePath = path.join(dirPath, file);
+      if (fs.existsSync(filePath)) {
+        fs.rmSync(filePath, { recursive: true, force: true });
+      }
+    });
+    // in database
+    await prisma.NoticeFile.deleteMany({
+      where: {
+        notice_id: req.params.notice_id,
+        file: { in: files_deleted },
+      },
+    });
+  }
+
+  // 새 파일 이동
+  const new_files = await Promise.all(
+    req.files.map(async (file) => {
+      const oldPath = file.path;
+      const newPath = path.join(dirPath, file.originalname);
+      await fs.promises.rename(oldPath, newPath);
+      return file.originalname;
+    })
+  );
+
+  // 새로운 파일 내역 DB에 추가
+  const files_to_add = new_files.map((file) => ({
+    notice_id: req.params.notice_id,
+    file: file,
+  }));
+  await prisma.NoticeFile.createMany({ data: files_to_add });
+
+  // 공지 텍스트 정보 업데이트
+  const notice = await prisma.Notice.update({
+    where: { notice_id: req.params.notice_id },
+    data: { title, content },
+  });
+
+  // 업데이트된 파일 목록 반환
+  const updated_files = await prisma.NoticeFile.findMany({
+    where: { notice_id: req.params.notice_id },
+  });
+
+  return res.status(StatusCodes.OK).json({
+    message: "공지사항이 성공적으로 수정되었습니다.",
+    data: { notice, files: updated_files.map((file) => file.file) },
+  });
+});

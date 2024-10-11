@@ -4,7 +4,6 @@ const { authenticateJWT } = require("../lib/middlewares/auth.js");
 const router = express.Router();
 const noticeController = require("../controllers/noticeController");
 const { uploadNoticeFile } = require("../lib/middlewares/uploadFile.js");
-const { authenticate } = require("passport");
 
 /**
  * @swagger
@@ -267,5 +266,84 @@ router.delete(
   authenticateJWT("CHIEF", "TEACHER"),
   noticeController.deleteNotice
 );
+/**
+ * @swagger
+ * /notice/{notice_id}:
+ *   put:
+ *     summary: 공지 수정
+ *     description: 기존 공지의 제목, 내용 및 첨부 파일을 수정합니다. 'CHIEF' 또는 'TEACHER' 권한이 필요합니다.
+ *     tags: [Notice]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: notice_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 수정할 공지의 ID로, 형식은 academy_id&lecture_id&notice_num입니다.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 description: 공지 제목
+ *                 example: 코로나19로 인한 학원 운영 방침 
+ *               content:
+ *                 type: string
+ *                 description: 공지 내용
+ *                 example: 코로나19로 인한 운영 방침 안내
+ *               files_deleted:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   example: 
+ *                 description: 삭제할 파일 목록
+ *               file:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *                 description: 새로 추가할 파일 목록
+ *     responses:
+ *       200:
+ *         description: 공지사항이 성공적으로 수정되었습니다.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: 공지사항이 성공적으로 수정되었습니다.
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     notice:
+ *                       type: object
+ *                       description: 수정된 공지의 정보
+ *                     files:
+ *                       type: array
+ *                       description: 현재 공지에 첨부된 파일 목록
+ *                       items:
+ *                         type: string
+ *       400:
+ *         description: 유효하지 않은 값이 입력되었습니다.
+ *       500:
+ *         description: 서버에서 파일을 수정하는 중 오류가 발생했습니다.
+ */
+
+// 공지 수정
+router.put(
+  "/:notice_id",
+  authenticateJWT("CHIEF", "TEACHER"),
+  uploadNoticeFile.array("file"),
+  noticeController.updateNotice
+);
+
 
 module.exports = router;
