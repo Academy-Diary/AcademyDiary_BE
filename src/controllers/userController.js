@@ -12,6 +12,7 @@ const {
 } = require("../lib/jwt/index.js");
 const jwt = require("jsonwebtoken");
 const path = require("path");
+const fs = require("fs");
 const multer = require("multer");
 const { secretKey, gmailID, gmailPW } = require("../config/secret.js");
 const { stat } = require("fs");
@@ -375,8 +376,13 @@ exports.getUserBasicInfo = asyncWrapper(async (req, res, next) => {
 
 exports.getUserImageInfo = asyncWrapper(async (req, res, next) => {
   const user_id = req.params["user_id"];
-
   const user = await findUserByCriteria({ user_id });
+
+  if (!user || !user.image) {
+    return next(
+      new CustomError("해당 사용자를 찾을 수 없습니다.", StatusCodes.NOT_FOUND)
+    );
+  }
 
   // 이미지 파일 경로 설정
   const imagePath = path.resolve(
@@ -384,8 +390,14 @@ exports.getUserImageInfo = asyncWrapper(async (req, res, next) => {
     `../../public/profile/${user.image}`
   );
 
+  if (!fs.existsSync(imagePath)) {
+    return next(
+      new CustomError("이미지 파일을 찾을 수 없습니다.", StatusCodes.NOT_FOUND)
+    );
+  }
+
   // 이미지 파일 반환
-  res.sendFile(imagePath);
+  return res.sendFile(imagePath);
 });
 
 // 회원 기본 정보 수정
