@@ -380,7 +380,11 @@ exports.getUserImageInfo = asyncWrapper(async (req, res, next) => {
 
   if (!user || !user.image) {
     return next(
-      new CustomError("해당 사용자를 찾을 수 없습니다.", StatusCodes.NOT_FOUND)
+      new CustomError(
+        "해당 사용자를 찾을 수 없습니다.",
+        StatusCodes.NOT_FOUND,
+        StatusCodes.NOT_FOUND
+      )
     );
   }
 
@@ -392,7 +396,11 @@ exports.getUserImageInfo = asyncWrapper(async (req, res, next) => {
 
   if (!fs.existsSync(imagePath)) {
     return next(
-      new CustomError("이미지 파일을 찾을 수 없습니다.", StatusCodes.NOT_FOUND)
+      new CustomError(
+        "이미지 파일을 찾을 수 없습니다.",
+        StatusCodes.NOT_FOUND,
+        StatusCodes.NOT_FOUND
+      )
     );
   }
 
