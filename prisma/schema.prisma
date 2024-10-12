@@ -193,7 +193,7 @@ model Family {
 model Bill {
   bill_id Int @id @default(autoincrement())
   deadline DateTime
-  amount Int
+  amount Int @default(0)
   paid Boolean @default(false)
 
   // Relations
