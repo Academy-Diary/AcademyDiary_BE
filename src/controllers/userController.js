@@ -302,7 +302,7 @@ exports.resetUserPassword = asyncWrapper(async (req, res, next) => {
 
   transporter.sendMail(emailOptions);
 
-  res
+  return res
     .status(StatusCodes.OK)
     .json({ message: "비밀번호가 초기화 메일이 발송되었습니다." });
 });
