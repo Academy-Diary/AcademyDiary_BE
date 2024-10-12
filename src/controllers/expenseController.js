@@ -63,7 +63,7 @@ exports.createClass = asyncWrapper(async(req, res, next)=>{
         ));
     }
 
-    res.status(StatusCodes.OK).json({
+    return res.status(StatusCodes.OK).json({
         message: "성공적으로 Class를 생성했습니다.",
         data : result
     });
@@ -110,7 +110,7 @@ exports.getClass = asyncWrapper(async(req, res, next) => {
         ));
     }
 
-    res.status(StatusCodes.OK).json({
+    return res.status(StatusCodes.OK).json({
         message: "성공적으로 Class를 조회했습니다.",
         data : result
     });
@@ -150,7 +150,7 @@ exports.updateClass = asyncWrapper(async(req, res, next) => {
         data: updateData
     });
 
-    res.status(StatusCodes.OK).json({
+    return res.status(StatusCodes.OK).json({
         message: "성공적으로 Class를 수정했습니다.",
         data : targetClass
     });
@@ -188,7 +188,7 @@ exports.deleteClass = asyncWrapper(async(req, res, next) => {
         }
     })
     .then((targetClass) => {
-        res.status(StatusCodes.OK).json({
+        return res.status(StatusCodes.OK).json({
             message: "성공적으로 Class를 삭제했습니다.",
             data: targetClass
         });
