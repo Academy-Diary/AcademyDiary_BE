@@ -75,7 +75,6 @@ const uploadImage = require("../lib/middlewares/uploadImage");
 // 회원가입
 router.post(`/signup`, userController.createUser);
 
-
 /**
  * @swagger
  * /user/login:
@@ -165,7 +164,6 @@ router.post(`/signup`, userController.createUser);
 // 로그인
 router.post("/login", userController.createJWT);
 
-
 /**
  * @swagger
  * /user/logout:
@@ -201,7 +199,6 @@ router.post(
   authenticateJWT("ADMIN", "CHIEF", "TEACHER", "STUDENT", "PARENT"),
   userController.removeJWT
 );
-
 
 /**
  * @swagger
@@ -308,7 +305,6 @@ router.post("/refresh-token", userController.refreshToken);
 // 아이디 중복 확인
 router.get("/check-id/:user_id", userController.checkIdDuplicated);
 
-
 /**
  * @swagger
  * /user/find-id:
@@ -399,7 +395,6 @@ router.post("/find-id", userController.findUserId);
 // 비밀번호 찾기
 router.post("/reset-password", userController.resetUserPassword);
 
-
 /**
  * @swagger
  * /user/{user_id}:
@@ -437,7 +432,6 @@ router.delete(
   userController.deleteUser
 );
 
-
 /**
  * @swagger
  * /user/{user_id}/image-info:
@@ -460,11 +454,32 @@ router.delete(
  *             schema:
  *               type: string
  *               format: binary
+ *           image/png:
+ *             schema:
+ *               type: string
+ *               format: binary
  *       404:
- *         description: 해당 사용자를 찾을 수 없습니다.
+ *         description: 해당 사용자를 찾을 수 없거나 이미지 파일이 없습니다.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: 해당 사용자를 찾을 수 없습니다.
  *       500:
  *         description: 서버에서 이미지를 반환하는 중 오류가 발생했습니다.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: 서버에서 이미지를 반환하는 중 오류가 발생했습니다.
  */
+
 // 사용자 이미지 정보 API
 router.get(
   "/:user_id/image-info",

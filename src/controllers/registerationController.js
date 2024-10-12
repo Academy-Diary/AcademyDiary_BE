@@ -39,8 +39,8 @@ exports.registerAcademy = asyncWrapper(async(req, res, next) => {
         if (error.code === 'P2002') { // Prisma의 unique constraint 오류 코드
             return next(new CustomError(
                 "이미 존재하는 학원 ID나 이메일입니다.",
-                StatusCodes.DUPLICATE_ENTRY,
-                StatusCodes.DUPLICATE_ENTRY
+                StatusCodes.CONFLICT,
+                StatusCodes.CONFLICT
             ));
         } else {
             return next(new CustomError(
