@@ -51,7 +51,7 @@ exports.deleteTeacher = asyncWrapper(async(req, res, next) => {
         });
 
         // 성공 응답
-        res.status(StatusCodes.OK).json({ 
+        return res.status(StatusCodes.OK).json({ 
             message: `강사 ID ${id}의 academy_id가 성공적으로 NULL로 설정되었고, 등록 목록에서 삭제되었습니다.`,
         });
     } catch(error) {
@@ -110,7 +110,7 @@ exports.getTeacher = asyncWrapper(async(req, res, next) => {
         }
 
         // 성공 응답
-        res.status(StatusCodes.OK).json({ 
+        return res.status(StatusCodes.OK).json({ 
             message: "강사를 성공적으로 불러왔습니다.",
             data: getTeacher
         });
