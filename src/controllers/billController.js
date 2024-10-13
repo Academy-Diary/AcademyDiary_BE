@@ -12,9 +12,8 @@ exports.createBill = asyncWrapper(async(req, res, next) => {
     const classId = req.body.class_id;
     const deadline = req.body.deadline;
 
-    // const userId = paramsUser.split(','); // user_id 쿼리스트링을 배열로 변환
-    // const classId = paramsClass.split(','); // class_id 쿼리스트링을 배열로 변환
 
+    //입력받은 class들을 DB에서 꺼내온다.
     const classes = await prisma.class.findMany({
         where : {
             class_id : {in : classId}
@@ -28,11 +27,13 @@ exports.createBill = asyncWrapper(async(req, res, next) => {
 
     const newBill = await prisma.bill.create({
         data : {
-            deadline : deadline,
-            amount : totalAmount // 클래스 비용을 합산하여 저장
+            deadline : new Date(deadline),
+            amount : totalAmount // 클래스 비용을 합산하여 청구서에 저장
         }
     });
+    console.log(newBill);
     
+    // 청구서-Class N:M테이블에 id저장
     await prisma.billClass.createMany({
          data : classId.map((x) => {
             return {
@@ -42,6 +43,7 @@ exports.createBill = asyncWrapper(async(req, res, next) => {
         })
     });
 
+    // 청구서-User N:M테이블에 id저장
     await prisma.billUser.createMany({
         data : userId.map((x) => {
            return {
