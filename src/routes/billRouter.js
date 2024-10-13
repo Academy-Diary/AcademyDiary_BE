@@ -67,7 +67,12 @@ const billController = require("../controllers/billController.js");
  *       500:
  *         description: 서버 오류가 발생했습니다.
  */
-router.post("/", billController.createBill);
+router.post("/",authenticateJWT("CHIEF"), billController.createBill);
+
+//미&완납 청구서 목록 조회(원장)
+router.get("/:academy_id", authenticateJWT("CHIEF"), billController.getBill);
+
+//미&완납 청구서 목록 조회(학생)
 
 
 module.exports = router;

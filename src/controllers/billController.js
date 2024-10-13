@@ -87,3 +87,57 @@ exports.createBill = asyncWrapper(async (req, res, next) => {
         data: result,
     });
 });
+
+
+exports.getBill = asyncWrapper(async(req, res, next) => {
+    const { academy_id } = req.params.academy_id;
+    const isPaid = req.query.isPaid;
+
+    // `isPaid`가 null 또는 undefined일 경우 기본값으로 false를 설정
+    if(isPaid === null || isPaid === undefined) {
+        isPaid = false;
+    }
+
+    // JWT에서 academy_id를 추출 (인증 미들웨어를 통해 토큰을 디코드하고 req.user에 저장되어있음)
+    const userAcademyId = req.user.academy_id;  // JWT 토큰에서 가져온 academy_id
+
+    // 파라미터와 로그인한 유저의 소속 academy_id가 일치하는지 확인
+    if (userAcademyId !== academy_id) {
+        return next(new CustomError(
+            "해당 학원에 대한 접근 권한이 없습니다.",
+            StatusCodes.FORBIDDEN,
+            StatusCodes.FORBIDDEN
+        ));
+    }
+
+    //academy_id랑 지불여부로 청구서 리스트 찾음
+    const foundRawBillList = await prisma.bill.findMany({
+        where : {
+            academy_id : academy_id,
+            paid : isPaid === "true" ? true : false
+        },
+        include : {
+            billClasses : {
+                include : { class : { select : { class_name : true } } } 
+            },
+            billUsers : {
+                include : { user : { select : { user_name : true } } }
+            }
+        }
+    });
+    
+    //데이터 이쁘게 전처리 하기! ㅎㅎ
+    const responseBillList = foundRawBillList.map((bill) => ({
+        bill_id : bill.bill_id,
+        deadline : bill.deadline,
+        amount : bill.amount,
+        paid : bill.paid,
+        user_name : bill.billUsers.map((billUser) => billUser.user.user_name),
+        class_name :  bill.billClasses.map((billClass) => billClass.class.class_name)
+    }));
+
+    return res.status(StatusCodes.OK).json({
+        message : "청구서 목록을 불러오는데 성공했습니다.",
+        responseBillList
+    });
+})
