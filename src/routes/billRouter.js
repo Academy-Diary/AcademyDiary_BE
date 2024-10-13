@@ -9,7 +9,7 @@ const billController = require("../controllers/billController.js");
  * /bill:
  *   post:
  *     summary: Bill 생성
- *     description: 여러 학생과 수업에 대한 Bill을 생성하고, 각 메뉴(Class)의 비용을 합산하여 청구 금액을 계산합니다.
+ *     description: 여러 학생과 수업에 대한 Bill을 생성하고, 각 수업의 비용을 합산하여 청구 금액을 계산합니다. 트랜잭션을 사용하여 작업이 모두 성공했을 때만 커밋됩니다.
  *     tags: [Bill]
  *     security:
  *       - bearerAuth: []
@@ -28,18 +28,18 @@ const billController = require("../controllers/billController.js");
  *                 type: array
  *                 items:
  *                   type: string
- *                 description: Bill을 발행할 학생들의 ID 목록
+ *                 description: Bill을 발행할 학생들의 user_id 목록
  *               class_id:
  *                 type: array
  *                 items:
- *                   type: number
- *                 description: Bill에 포함될 클래스들의 ID 목록
+ *                   type: string
+ *                 description: Bill에 포함될 클래스들의 class_id 목록
  *               deadline:
  *                 type: string
  *                 format: date
  *                 description: Bill의 마감 기한
  *     responses:
- *       201:
+ *       200:
  *         description: Bill 생성 성공
  *         content:
  *           application/json:
@@ -48,7 +48,7 @@ const billController = require("../controllers/billController.js");
  *               properties:
  *                 message:
  *                   type: string
- *                   description: Bill이 성공적으로 생성되었습니다.
+ *                   description: "청구서 전송이 완료되었습니다."
  *                 data:
  *                   type: object
  *                   properties:
@@ -63,7 +63,7 @@ const billController = require("../controllers/billController.js");
  *                       format: date
  *                       description: Bill의 마감 기한
  *       400:
- *         description: 잘못된 요청입니다. 필요한 필드가 누락되었습니다.
+ *         description: 입력된 class_id 또는 user_id가 유효하지 않음
  *       500:
  *         description: 서버 오류가 발생했습니다.
  */
