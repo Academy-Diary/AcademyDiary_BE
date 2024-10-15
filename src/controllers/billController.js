@@ -136,7 +136,7 @@ exports.getBill = asyncWrapper(async(req, res, next) => {
         );
       }
     
-    //데이터 이쁘게 전처리 하기! ㅎㅎ
+    //데이터 이쁘게 처리 하기! ㅎㅎ
     const responseBillList = foundRawBillList.map((bill) => ({
         bill_id : bill.bill_id,
         deadline : bill.deadline,
@@ -173,6 +173,17 @@ exports.getMyBill = asyncWrapper(async(req, res, next) => {
         },
         include : {
             bill : {
+                include : {
+                    billClasses : {
+                        include : {
+                            class : {
+                                select : {
+                                    class_name : true
+                                }
+                            }
+                        }
+                    }
+                },
                 select : {
                     amount : true,
                     deadline : true,
@@ -192,8 +203,18 @@ exports.getMyBill = asyncWrapper(async(req, res, next) => {
         );
       }
 
+    // 청구서 데이터를 가공하여 반환
+    const responseBillList = foundBillList.map((billUser) => ({
+        amount: billUser.bill.amount,
+        deadline: billUser.bill.deadline,
+        paid: billUser.bill.paid,
+        classes: billUser.bill.billClasses.map((billClass) => ({
+        class_name: billClass.class.class_name, // class_name 포함
+        })),
+    }));
+
     return res.status(StatusCodes.OK).json({
         message : "청구서 목록을 불러오는데 성공했습니다.",
-        foundBillList
+        responseBillList
     });
 })

@@ -142,7 +142,7 @@ router.get("/:academy_id", authenticateJWT("CHIEF"), billController.getBill);
  * /bill/my/{user_id}:
  *   get:
  *     summary: 내 Bill 조회
- *     description: 로그인한 사용자가 자신의 Bill 목록을 조회합니다.
+ *     description: 로그인한 사용자가 자신의 Bill 목록을 조회합니다. 청구서에 포함된 클래스 이름도 함께 반환됩니다.
  *     tags: [Bill]
  *     security:
  *       - bearerAuth: []
@@ -164,7 +164,7 @@ router.get("/:academy_id", authenticateJWT("CHIEF"), billController.getBill);
  *                 message:
  *                   type: string
  *                   description: "청구서 목록을 불러오는데 성공했습니다."
- *                 foundBillList:
+ *                 responseBillList:
  *                   type: array
  *                   items:
  *                     type: object
@@ -179,6 +179,14 @@ router.get("/:academy_id", authenticateJWT("CHIEF"), billController.getBill);
  *                       paid:
  *                         type: boolean
  *                         description: 지불 여부
+ *                       classes:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             class_name:
+ *                               type: string
+ *                               description: 포함된 클래스 이름
  *       403:
  *         description: 사용자에 대한 접근 권한이 없습니다.
  *       404:
@@ -186,7 +194,6 @@ router.get("/:academy_id", authenticateJWT("CHIEF"), billController.getBill);
  *       500:
  *         description: 서버 오류가 발생했습니다.
  */
-//미&완납 청구서 목록 조회(학생)
 router.get("/my/:user_id", authenticateJWT("STUDENT", "PARENT"), billController.getMyBill);
 
 module.exports = router;
