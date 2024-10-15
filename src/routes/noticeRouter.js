@@ -4,7 +4,7 @@ const { authenticateJWT } = require("../lib/middlewares/auth.js");
 const router = express.Router();
 const noticeController = require("../controllers/noticeController");
 const { uploadNoticeFile } = require("../lib/middlewares/uploadFile.js");
-
+const { fetchRecentNoticeNum } = require("../lib/middlewares/fetchNoticeInfo.js");
 /**
  * @swagger
  * /notice/create:
