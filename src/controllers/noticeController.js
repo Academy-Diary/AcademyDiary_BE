@@ -20,7 +20,11 @@ exports.createNotice = asyncWrapper(async (req, res, next) => {
 
   if (!title || !content || isNaN(lecture_id)) {
     return next(
-      new CustomError("유효한 값들을 입력해주세요.", StatusCodes.BAD_REQUEST)
+      new CustomError(
+        "유효한 값들을 입력해주세요.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
     );
   }
 
@@ -48,9 +52,12 @@ exports.createNotice = asyncWrapper(async (req, res, next) => {
     try {
       fs.renameSync(oldPath, newPath);
     } catch (error) {
-      throw new CustomError(
-        "파일 이동 중 오류가 발생했습니다.",
-        StatusCodes.INTERNAL_SERVER_ERROR
+      return next(
+        new CustomError(
+          "파일 이동 중 오류가 발생했습니다.",
+          StatusCodes.INTERNAL_SERVER_ERROR,
+          StatusCodes.INTERNAL_SERVER_ERROR
+        )
       );
     }
     return file.originalname;
@@ -91,16 +98,19 @@ exports.createNotice = asyncWrapper(async (req, res, next) => {
     await fs.promises.rmdir(dirPath);
   } catch (error) {
     console.error("S3 업로드 오류:", error);
-    throw new CustomError(
-      "S3 업로드 중 오류가 발생했습니다.",
-      StatusCodes.INTERNAL_SERVER_ERROR
+    return next(
+      new CustomError(
+        "S3 업로드 중 오류가 발생했습니다.",
+        StatusCodes.S3_UPLOAD_ERROR,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      )
     );
   }
   return res.status(StatusCodes.CREATED).json({
     message: "공지사항이 성공적으로 생성되었습니다.",
     data: {
       notice,
-      files ,
+      files,
     },
   });
 });
