@@ -9,7 +9,7 @@ const util = require("util");
 const unlinkFile = util.promisify(fs.unlink); // fs.unlink을 Promise 기반으로 변환
 const path = require("path");
 const { S3_BUCKET_NAME } = require("../config/secret");
-const { uploadDirToS3 } = require("../lib/middlewares/uploadFile");
+const { uploadDirToS3 } = require("../lib/middlewares/handlingFile");
 const { throwDeprecation } = require("process");
 
 exports.createNotice = asyncWrapper(async (req, res, next) => {
@@ -87,7 +87,7 @@ exports.createNotice = asyncWrapper(async (req, res, next) => {
     await Promise.all(
       files.map((file) => unlinkFile(path.join(dirPath, file)))
     );
-    
+
     await fs.promises.rmdir(dirPath);
   } catch (error) {
     console.error("S3 업로드 오류:", error);
@@ -100,7 +100,7 @@ exports.createNotice = asyncWrapper(async (req, res, next) => {
     message: "공지사항이 성공적으로 생성되었습니다.",
     data: {
       notice,
-      files,
+      files ,
     },
   });
 });
