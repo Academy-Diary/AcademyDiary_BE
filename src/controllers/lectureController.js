@@ -799,7 +799,7 @@ exports.modifyScore = asyncWrapper(async (req, res, next) => {
 exports.getExamTypeScore = asyncWrapper(async (req, res, next) => {
   const { lecture_id } = req.params;
   const user_id = req.query.user_id;
-  const exam_type_id = req.query.exam_type;
+  const exam_type_id = req.query.exam_type_id;
   const asc = req.query.asc;
 
   if (!lecture_id || !user_id || !exam_type_id) {
