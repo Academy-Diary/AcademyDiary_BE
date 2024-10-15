@@ -2,6 +2,8 @@ const ErrorCode = {
   INTERNAL_SERVER_PRISMA_ERROR: 1001,
   IMAGE_INCORRECT_FILETYPE: 1002,
   DB_Integrity_ERROR : 1003,
+  S3_DELETE_ERROR : 1004,
+  S3_UPLOAD_ERROR : 1005,
 };
 
 module.exports = ErrorCode;
