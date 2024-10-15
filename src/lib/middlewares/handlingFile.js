@@ -6,7 +6,11 @@ const ErrorCode = require("../errors/errorCode");
 const { StatusCodes } = require("http-status-codes");
 const { asyncWrapper } = require("./async");
 const s3 = require("../../config/s3client");
-const { PutObjectCommand } = require("@aws-sdk/client-s3");
+const {
+  PutObjectCommand,
+  ListObjectsV2Command,
+  DeleteObjectsCommand,
+} = require("@aws-sdk/client-s3");
 
 // Multer 저장소 설정
 const profileStorage = multer.diskStorage({
@@ -95,4 +99,69 @@ async function getFiles(dir) {
   );
   return Array.prototype.concat(...files);
 }
-module.exports = { uploadProfileImage, uploadNoticeFile, uploadDirToS3 };
+
+/**
+ * S3에서 파일을 삭제하는 함수
+ * @param {string} bucketName - S3 버킷 이름
+ * @param {string} s3Prefix - 삭제할 파일들의 공통 경로 (폴더)
+ * @param {string[]} filesToDelete - 삭제할 파일의 Key 목록 (전체 삭제 시 null 또는 빈 배열)
+ */
+
+// S3에서 파일 삭제하는 함수
+async function deleteFilesFromS3(bucketName, s3Prefix, filesToDelete = null) {
+  try {
+    let objectsToDelete = [];
+
+    // 특정 파일 목록이 주어진 경우 해당 파일만 삭제
+    if (filesToDelete && filesToDelete.length > 0) {
+      objectsToDelete = filesToDelete.map((file) => ({
+        Key: `${s3Prefix}${file}`,
+      }));
+    } else {
+      // 특정 파일 목록이 없으면 전체 파일 목록 가져오기
+      const listCommand = new ListObjectsV2Command({
+        Bucket: bucketName,
+        Prefix: s3Prefix,
+      });
+      const listResponse = await s3.send(listCommand);
+
+      if (listResponse.Contents && listResponse.Contents.length > 0) {
+        objectsToDelete = listResponse.Contents.map((item) => ({
+          Key: item.Key,
+        }));
+      }
+    }
+
+    if (objectsToDelete.length > 0) {
+      // 파일 삭제 요청
+      const deleteParams = {
+        Bucket: bucketName,
+        Delete: {
+          Objects: objectsToDelete,
+        },
+      };
+      const deleteCommand = new DeleteObjectsCommand(deleteParams);
+      await s3.send(deleteCommand);
+      console.log(`S3 파일 삭제 성공: ${s3Prefix}`);
+    } else {
+      console.log(`삭제할 S3 파일이 없습니다: ${s3Prefix}`);
+    }
+  } catch (error) {
+    console.error(`S3 파일 삭제 실패: ${error}`);
+    
+    return next(
+      new CustomError(
+        "S3 디렉토리 삭제 중 오류가 발생했습니다.",
+        StatusCodes.INTERNAL_SERVER_ERROR,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      )
+    );
+  }
+}
+
+module.exports = {
+  uploadProfileImage,
+  uploadNoticeFile,
+  uploadDirToS3,
+  deleteFilesFromS3,
+};

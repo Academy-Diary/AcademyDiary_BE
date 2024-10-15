@@ -9,7 +9,10 @@ const util = require("util");
 const unlinkFile = util.promisify(fs.unlink); // fs.unlink을 Promise 기반으로 변환
 const path = require("path");
 const { S3_BUCKET_NAME } = require("../config/secret");
-const { uploadDirToS3 } = require("../lib/middlewares/handlingFile");
+const {
+  uploadDirToS3,
+  deleteFilesFromS3,
+} = require("../lib/middlewares/handlingFile");
 const { throwDeprecation } = require("process");
 
 exports.createNotice = asyncWrapper(async (req, res, next) => {
@@ -167,7 +170,11 @@ exports.deleteNotice = asyncWrapper(async (req, res, next) => {
 
   if (isNaN(lecture_id) || isNaN(notice_num)) {
     return next(
-      new CustomError("유효한 값들을 입력해주세요.", StatusCodes.BAD_REQUEST)
+      new CustomError(
+        "유효한 값들을 입력해주세요.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
     );
   }
 
@@ -178,41 +185,24 @@ exports.deleteNotice = asyncWrapper(async (req, res, next) => {
     },
   });
 
-  // NoticeFile 삭제
-  await prisma.NoticeFile.deleteMany({
-    where: {
-      notice_id: req.params.notice_id,
-    },
-  });
-  // Notice 삭제
+  // Notice 삭제, NoticeFile은 cascade로 삭제됨
   const notice = await prisma.Notice.delete({
     where: {
       notice_id: req.params.notice_id,
     },
   });
 
-  // 삭제할 디렉토리 경로 설정
-  const dirPath = path.join(
-    __dirname,
-    "../../public/notice",
-    academy_id,
-    lecture_id.toString(),
-    notice_num.toString()
-  );
+  // S3 경로 설정 및 전체 디렉토리 삭제
+  const bucketName = S3_BUCKET_NAME;
+  const s3Prefix = `public/notice/${academy_id}/${lecture_id}/${notice_num}/`;
 
-  // 디렉토리 삭제
   try {
-    if (fs.existsSync(dirPath)) {
-      fs.rmSync(dirPath, { recursive: true, force: true });
-      console.log(`디렉토리 삭제 성공: ${dirPath}`);
-    } else {
-      console.log(`삭제할 디렉토리가 존재하지 않습니다: ${dirPath}`);
-    }
+    await deleteFilesFromS3(bucketName, s3Prefix); // 전체 디렉토리 삭제
   } catch (error) {
-    console.error(`디렉토리 삭제 실패: ${error}`);
     return next(
       new CustomError(
-        "디렉토리 삭제 중 오류가 발생했습니다.",
+        "S3 디렉토리 삭제 중 오류가 발생했습니다.",
+        ErrorCode.S3_DELETE_ERROR,
         StatusCodes.INTERNAL_SERVER_ERROR
       )
     );
@@ -220,9 +210,7 @@ exports.deleteNotice = asyncWrapper(async (req, res, next) => {
 
   const resData = {
     notice: notice,
-    files: notice_files.map((file) => {
-      return file.file;
-    }),
+    files: notice_files.map((file) => file.file),
   };
 
   return res.status(StatusCodes.OK).json({
