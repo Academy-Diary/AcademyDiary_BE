@@ -157,7 +157,7 @@ router.get("/:academy_id", authenticateJWT("CHIEF"), billController.getBill);
  *         name: isPaid
  *         schema:
  *           type: boolean
- *         description: 지불 여부에 따른 Bill 필터링 (기본값: false)
+ *         description: 지불 여부에 따른 Bill 필터링 (기본값 false)
  *     responses:
  *       200:
  *         description: Bill 목록 조회 성공
