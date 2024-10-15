@@ -2,7 +2,7 @@ const express = require("express");
 const { authenticateJWT } = require("../lib/middlewares/auth.js");
 const router = express.Router();
 const userController = require("../controllers/userController");
-const { uploadProfileImage } = require("../lib/middlewares/uploadFile.js");
+const { uploadProfileImage } = require("../lib/middlewares/handlingFile");
 
 /**
  * @swagger
