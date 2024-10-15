@@ -49,16 +49,18 @@ exports.createUser = asyncWrapper(async (req, res, next) => {
         .json({ message: "회원가입이 완료되었습니다." });
     })
     .catch((err) => {
+      console.log(err);
       // Prisma의 고유성 제약 조건 에러 처리 (이메일 또는 아이디 중복)
       if (err.code === "P2002") {
-        const duplicatedField = err.meta.target[0]; // 중복된 필드를 확인
+        const duplicatedField = err.meta.target; // 중복된 필드를 확인
+        console.log(duplicatedField);
         let errorMessage = "중복된 값이 있습니다.";
 
-        if (duplicatedField === "email") {
+        if (duplicatedField === "User_email_key") {
           errorMessage = "이미 사용 중인 이메일입니다.";
-        } else if (duplicatedField === "user_id") {
+        } else if (duplicatedField === "User_user_id_key") {
           errorMessage = "이미 존재하는 아이디입니다.";
-        } else if (duplicatedField === "phone_number") {
+        } else if (duplicatedField === "User_phone_number_key") {
           errorMessage = "이미 존재하는 휴대폰 번호 입니다.";
         }
 
