@@ -126,7 +126,7 @@ exports.getBill = asyncWrapper(async(req, res, next) => {
         }
     });
 
-    if (!foundRawBillList || foundRawBillList === 0) {
+    if (!foundRawBillList || foundRawBillList.length === 0) {
         return next(
           new CustomError(
             "청구서가 존재하지 않습니다.",
@@ -182,7 +182,7 @@ exports.getMyBill = asyncWrapper(async(req, res, next) => {
         }
     });
 
-    if (!foundBillList || foundBillList === 0) {
+    if (!foundBillList || foundBillList.length === 0) {
         return next(
           new CustomError(
             "청구서가 존재하지 않습니다.",
