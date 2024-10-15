@@ -985,7 +985,7 @@ router.put(
  *           type: string
  *         description: 사용자 ID
  *       - in: query
- *         name: exam_type
+ *         name: exam_type_id
  *         required: true
  *         schema:
  *           type: string

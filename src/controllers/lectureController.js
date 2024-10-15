@@ -799,7 +799,7 @@ exports.modifyScore = asyncWrapper(async (req, res, next) => {
 exports.getExamTypeScore = asyncWrapper(async (req, res, next) => {
   const { lecture_id } = req.params;
   const user_id = req.query.user_id;
-  const exam_type_id = req.query.exam_type;
+  const exam_type_id = req.query.exam_type_id;
   const asc = req.query.asc;
 
   if (!lecture_id || !user_id || !exam_type_id) {
@@ -860,29 +860,33 @@ exports.getExamTypeScore = asyncWrapper(async (req, res, next) => {
   }
 
   // Promise.all로 모든 비동기 작업을 처리
-  const exams_data = await Promise.all(
-    exams_info.exams.map(async (exam) => {
-      const exam_score = await prisma.ExamUserScore.findFirst({
-        where: {
-          exam_id: exam.exam_id,
-          user_id: user_id,
-        },
-      });
+  // -> map와 같이 사용하면 DB에서 데이터를 가져오는 작업을 병렬로 처리 가능. 속도 향상
+  // 또한 filtered로 점수가 없을 때 반환안하게 구현
+  const exams_data = (
+    await Promise.all(
+      exams_info.exams.map(async (exam) => {
+        const exam_score = await prisma.ExamUserScore.findFirst({
+          where: {
+            exam_id: exam.exam_id,
+            user_id: user_id,
+          },
+        });
 
-      return {
-        exam_id: exam.exam_id,
-        exam_name: exam.exam_name,
-        exam_date: exam.exam_date,
-        score: exam_score ? exam_score.score : null,
-        ...(lecture_id_int === 0
+        // exam_score가 null이 아니면 반환, null이면 undefined 반환
+        return exam_score
           ? {
-              lecture_id: exam.lecture_id,
+              exam_id: exam.exam_id,
+              exam_name: exam.exam_name,
+              exam_date: exam.exam_date,
+              score: exam_score.score,
+              ...(lecture_id_int === 0 ? { lecture_id: exam.lecture_id } : {}),
             }
-          : {}),
-      };
-    })
-  );
+          : undefined;
+      })
+    )
+  ).filter(Boolean); // undefined 값 제거
 
+  
   return res.status(StatusCodes.OK).json({
     message: `${user_id}의 성적을 성공적으로 불러왔습니다.`,
     data: {
