@@ -153,11 +153,6 @@ router.get("/:academy_id", authenticateJWT("CHIEF"), billController.getBill);
  *         schema:
  *           type: string
  *         description: 조회할 사용자의 ID
- *       - in: query
- *         name: isPaid
- *         schema:
- *           type: boolean
- *         description: 지불 여부에 따른 Bill 필터링 (기본값 false)
  *     responses:
  *       200:
  *         description: Bill 목록 조회 성공

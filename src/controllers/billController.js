@@ -154,12 +154,6 @@ exports.getBill = asyncWrapper(async(req, res, next) => {
 
 exports.getMyBill = asyncWrapper(async(req, res, next) => {
     const { user_id } = req.params;
-    const isPaid = req.query.isPaid;
-
-    // `isPaid`가 null 또는 undefined일 경우 기본값으로 false를 설정
-    if(isPaid === null || isPaid === undefined) {
-        isPaid = false;
-    }
 
     // JWT에서 user_id를 추출 (인증 미들웨어를 통해 토큰을 디코드하고 req.user에 저장되어있음)
     const userUserId = req.user.user_id;  // JWT 토큰에서 가져온 user_id
