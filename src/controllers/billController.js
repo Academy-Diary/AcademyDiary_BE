@@ -125,6 +125,16 @@ exports.getBill = asyncWrapper(async(req, res, next) => {
             }
         }
     });
+
+    if (!foundRawBillList || foundRawBillList === 0) {
+        return next(
+          new CustomError(
+            "청구서가 존재하지 않습니다.",
+            StatusCodes.NOT_FOUND,
+            StatusCodes.NOT_FOUND
+          )
+        );
+      }
     
     //데이터 이쁘게 전처리 하기! ㅎㅎ
     const responseBillList = foundRawBillList.map((bill) => ({
