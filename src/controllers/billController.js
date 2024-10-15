@@ -141,3 +141,55 @@ exports.getBill = asyncWrapper(async(req, res, next) => {
         responseBillList
     });
 })
+
+exports.getMyBill = asyncWrapper(async(req, res, next) => {
+    const { user_id } = req.params;
+    const isPaid = req.query.isPaid;
+
+    // `isPaid`가 null 또는 undefined일 경우 기본값으로 false를 설정
+    if(isPaid === null || isPaid === undefined) {
+        isPaid = false;
+    }
+
+    // JWT에서 user_id를 추출 (인증 미들웨어를 통해 토큰을 디코드하고 req.user에 저장되어있음)
+    const userUserId = req.user.user_id;  // JWT 토큰에서 가져온 user_id
+
+    // 파라미터와 로그인한 유저의 소속 academy_id가 일치하는지 확인
+    if (userUserId !== user_id) {
+        return next(new CustomError(
+            "해당 사용자에 대한 접근 권한이 없습니다.",
+            StatusCodes.FORBIDDEN,
+            StatusCodes.FORBIDDEN
+        ));
+    }
+
+    const foundBillList = await prisma.billUser.findMany({
+        where : {
+            user_id : user_id
+        },
+        include : {
+            bill : {
+                select : {
+                    amount : true,
+                    deadline : true,
+                    paid : true
+                }
+            }
+        }
+    });
+
+    if (!foundBillList || foundBillList === 0) {
+        return next(
+          new CustomError(
+            "청구서가 존재하지 않습니다.",
+            StatusCodes.NOT_FOUND,
+            StatusCodes.NOT_FOUND
+          )
+        );
+      }
+
+    return res.status(StatusCodes.OK).json({
+        message : "청구서 목록을 불러오는데 성공했습니다.",
+        foundBillList
+    });
+})
