@@ -216,7 +216,7 @@ model NoticeFile {
   file      String // 이미지 경로
 
   // Relations
-  notice Notice @relation("NoticeToNoticeFiles_Relation", fields: [notice_id], references: [notice_id]) // Notice 모델과의 관계 설정
+  notice Notice @relation("NoticeToNoticeFiles_Relation", fields: [notice_id], references: [notice_id], onDelete: Cascade) // Notice 모델과의 관계 설정
 }
 
 enum Status {
