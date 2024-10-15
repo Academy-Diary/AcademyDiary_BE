@@ -16,7 +16,7 @@ model User {
   birth_date   DateTime
   user_name    String
   password     String
-  phone_number String
+  phone_number String   @unique
   role         Role     @default(STUDENT)
   image        String   @default("default.png")
 
