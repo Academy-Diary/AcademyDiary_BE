@@ -213,8 +213,8 @@ model Notice {
 model NoticeFile {
   id        Int    @id @default(autoincrement()) // PK
   notice_id String // Fk from Notice
-  file      String // 이미지 경로
-
+  path      String // 이미지 경로
+  name      String // 파일명
   // Relations
   notice Notice @relation("NoticeToNoticeFiles_Relation", fields: [notice_id], references: [notice_id], onDelete: Cascade) // Notice 모델과의 관계 설정
 }
