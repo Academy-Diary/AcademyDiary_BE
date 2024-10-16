@@ -28,14 +28,10 @@ const { uploadNoticeFile } = require("../lib/middlewares/handlingFile");
  *                 type: string
  *                 description: 공지 내용
  *                 example: 코로나19로 인한 운영 방침 안내
- *               academy_id:
+ *               notice_id:
  *                 type: string
- *                 description: 학원 ID
- *                 example: test_academy2
- *               lecture_id:
- *                 type: integer
- *                 description: 강의 ID (전체 공지의 경우 "0")
- *                 example: 0
+ *                 description: 최근 공지사항의 id에 +1한 값을 넣어주세요. academy_id&lecture_id&{recent_notice_num + 1}입니다.
+ *                 example: test_academy2&0&5
  *               file:
  *                 type: array
  *                 items:
@@ -79,7 +75,7 @@ const { uploadNoticeFile } = require("../lib/middlewares/handlingFile");
  *                           example: 5
  *                         notice_id:
  *                           type: string
- *                           example: test_academy2_0_5
+ *                           example: test_academy2&0&5
  *                     files:
  *                       type: array
  *                       items:
@@ -291,7 +287,7 @@ router.delete(
  *               title:
  *                 type: string
  *                 description: 공지 제목
- *                 example: 코로나19로 인한 학원 운영 방침 
+ *                 example: 코로나19로 인한 학원 운영 방침
  *               content:
  *                 type: string
  *                 description: 공지 내용
@@ -300,7 +296,7 @@ router.delete(
  *                 type: array
  *                 items:
  *                   type: string
- *                   example: 
+ *                   example:
  *                 description: 삭제할 파일 목록
  *               file:
  *                 type: array
@@ -343,6 +339,5 @@ router.put(
   uploadNoticeFile.array("file"),
   noticeController.updateNotice
 );
-
 
 module.exports = router;

@@ -13,14 +13,15 @@ const {
   uploadDirToS3,
   deleteFilesFromS3,
 } = require("../lib/middlewares/handlingFile");
-const { throwDeprecation } = require("process");
 
 exports.createNotice = asyncWrapper(async (req, res, next) => {
   const { title, content } = req.body;
-  const lecture_id = parseInt(req.body.lecture_id, 10);
-  const academy_id = req.user.academy_id;
+  const lecture_id = req.body.lecture_id;
+  const academy_id = req.body.academy_id;
+  const notice_num = req.body.notice_num;
   const user_id = req.user.user_id;
 
+  // 유효성 검사1: 값들이 존재하지 않으면 에러 처리
   if (!title || !content || isNaN(lecture_id)) {
     return next(
       new CustomError(
@@ -31,40 +32,16 @@ exports.createNotice = asyncWrapper(async (req, res, next) => {
     );
   }
 
-  const recent_notice = await prisma.Notice.findFirst({
-    where: { academy_id, lecture_id },
-    orderBy: { notice_num: "desc" },
-  });
-  const recent_notice_num = recent_notice ? recent_notice.notice_num : 0;
-
-  const dirPath = path.join(
-    __dirname,
-    "/../../public/notice",
-    academy_id,
-    lecture_id.toString(),
-    (recent_notice_num + 1).toString()
-  );
-
-  if (!fs.existsSync(dirPath)) {
-    fs.mkdirSync(dirPath, { recursive: true });
+  // 유효성 검사2: 다른 학원의 공지를 생성하려고 하는 경우 에러 처리
+  if (academy_id !== req.user.academy_id) {
+    return next(
+      new CustomError(
+        "해당 학원에 대한 권한이 없습니다.",
+        StatusCodes.FORBIDDEN,
+        StatusCodes.FORBIDDEN
+      )
+    );
   }
-
-  const files = req.files.map((file) => {
-    const oldPath = file.path;
-    const newPath = path.join(dirPath, file.originalname);
-    try {
-      fs.renameSync(oldPath, newPath);
-    } catch (error) {
-      return next(
-        new CustomError(
-          "파일 이동 중 오류가 발생했습니다.",
-          StatusCodes.INTERNAL_SERVER_ERROR,
-          StatusCodes.INTERNAL_SERVER_ERROR
-        )
-      );
-    }
-    return file.originalname;
-  });
 
   const notice = await prisma.Notice.create({
     data: {
@@ -73,47 +50,26 @@ exports.createNotice = asyncWrapper(async (req, res, next) => {
       academy_id,
       lecture_id,
       user_id,
-      notice_num: recent_notice_num + 1,
-      notice_id: `${academy_id}&${lecture_id}&${recent_notice_num + 1}`,
+      notice_num: notice_num,
+      notice_id: `${academy_id}&${lecture_id}&${notice_num}`,
     },
   });
 
   await prisma.NoticeFile.createMany({
-    data: files.map((file) => ({
+    data: req.files.map((file) => ({
       notice_id: notice.notice_id,
-      file: file,
+      file: file.location,
     })),
   });
 
-  try {
-    const bucketName = S3_BUCKET_NAME;
-    const s3KeyPrefix = `public/notice/${academy_id}/${lecture_id}/${
-      recent_notice_num + 1
-    }`;
-
-    await uploadDirToS3(dirPath, bucketName, s3KeyPrefix);
-
-    // local dirPath 내의 모든 파일 및 dir 삭제
-    await Promise.all(
-      files.map((file) => unlinkFile(path.join(dirPath, file)))
-    );
-
-    await fs.promises.rmdir(dirPath);
-  } catch (error) {
-    console.error("S3 업로드 오류:", error);
-    return next(
-      new CustomError(
-        "S3 업로드 중 오류가 발생했습니다.",
-        StatusCodes.S3_UPLOAD_ERROR,
-        StatusCodes.INTERNAL_SERVER_ERROR
-      )
-    );
-  }
   return res.status(StatusCodes.CREATED).json({
     message: "공지사항이 성공적으로 생성되었습니다.",
     data: {
       notice,
-      files,
+      files: req.files.map((file) => ({
+        url: file.location,
+        name: file.originalname,
+      })),
     },
   });
 });
