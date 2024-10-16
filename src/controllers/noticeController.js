@@ -58,7 +58,8 @@ exports.createNotice = asyncWrapper(async (req, res, next) => {
   await prisma.NoticeFile.createMany({
     data: req.files.map((file) => ({
       notice_id: notice.notice_id,
-      file: file.location,
+      path: file.location,
+      name: file.originalname,
     })),
   });
 
@@ -73,12 +74,14 @@ exports.createNotice = asyncWrapper(async (req, res, next) => {
     },
   });
 });
+
 // 공지 리스트 조회
 exports.getNoticeList = asyncWrapper(async (req, res, next) => {
   const academy_id = req.user.academy_id;
   const lecture_id = parseInt(req.query.lecture_id, 10);
   const page = parseInt(req.query.page, 10);
   const page_size = parseInt(req.query.page_size, 10);
+  
   // 유효성 검사1: 값들이 존재하지 않으면 에러 처리
   if (isNaN(lecture_id) || isNaN(page) || isNaN(page_size)) {
     return next(
