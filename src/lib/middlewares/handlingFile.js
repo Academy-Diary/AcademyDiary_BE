@@ -4,13 +4,14 @@ const fs = require("fs");
 const { CustomError } = require("../errors/customError");
 const ErrorCode = require("../errors/errorCode");
 const { StatusCodes } = require("http-status-codes");
-const { asyncWrapper } = require("./async");
 const s3 = require("../../config/s3client");
 const {
   PutObjectCommand,
   ListObjectsV2Command,
   DeleteObjectsCommand,
 } = require("@aws-sdk/client-s3");
+const { S3_BUCKET_NAME } = require("../../config/secret");
+const multerS3 = require("multer-s3");
 
 // Multer 저장소 설정
 const profileStorage = multer.diskStorage({
@@ -62,10 +63,37 @@ const uploadProfileImage = multer({
 });
 
 const uploadNoticeFile = multer({
-  storage: noticeStorage,
-  limits: {
-    fileSize: 10000000, // 10MB 제한
-  },
+  storage: multerS3({
+    s3: s3,
+    bucket: S3_BUCKET_NAME,
+    contentType: multerS3.AUTO_CONTENT_TYPE,
+    acl: "public-read",
+    key: (req, file, cb) => {
+      // let academy_id, lecture_id, notice_num;
+      try {
+        const notice_id = req.body.notice_id.split("&");
+        req.body.academy_id = notice_id[0];
+        req.body.lecture_id = parseInt(notice_id[1], 10);
+        req.body.notice_num = parseInt(notice_id[2], 10);
+      } catch (error) {
+        console.log(req);
+        throw new CustomError(
+          "유효한 값들을 입력해주세요.",
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.BAD_REQUEST
+        );
+      } // 경로가 존재하지 않더라도 S3는 자동으로 경로 생성
+      file.originalname = Buffer.from(file.originalname, "latin1").toString(
+        "utf8"
+      );
+
+      const s3KeyPrefix = `public/notice/${req.body.academy_id}/${req.body.lecture_id}/${req.body.notice_num}`;
+      const fileKey = `${s3KeyPrefix}/${file.originalname}`;
+
+      cb(null, fileKey);
+    },
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 파일 크기 제한 10MB
 });
 
 // 디렉토리 내의 모든 파일을 S3로 업로드
@@ -148,13 +176,10 @@ async function deleteFilesFromS3(bucketName, s3Prefix, filesToDelete = null) {
     }
   } catch (error) {
     console.error(`S3 파일 삭제 실패: ${error}`);
-    
-    return next(
-      new CustomError(
-        "S3 디렉토리 삭제 중 오류가 발생했습니다.",
-        StatusCodes.INTERNAL_SERVER_ERROR,
-        StatusCodes.INTERNAL_SERVER_ERROR
-      )
+    throw new CustomError(
+      "S3 디렉토리 삭제 중 오류가 발생했습니다.",
+      ErrorCode.S3_DELETE_ERROR,
+      StatusCodes.INTERNAL_SERVER_ERROR
     );
   }
 }
