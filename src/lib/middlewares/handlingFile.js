@@ -71,7 +71,12 @@ const uploadNoticeFile = multer({
     key: (req, file, cb) => {
       // let academy_id, lecture_id, notice_num;
       try {
-        const notice_id = req.body.notice_id.split("&");
+        let notice_id;
+        if (isNaN(req.params.notice_id)) {
+          notice_id = req.body.notice_id.split("&");
+        } else {
+          notice_id = req.params.notice_id.split("&");
+        }
         req.body.academy_id = notice_id[0];
         req.body.lecture_id = parseInt(notice_id[1], 10);
         req.body.notice_num = parseInt(notice_id[2], 10);
