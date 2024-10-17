@@ -114,6 +114,8 @@ exports.createJWT = asyncWrapper(async (req, res) => {
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: "None",
+      secure: true,
     }); //7일
 
     // 액세스 토큰을 Authorization 헤더에 추가
