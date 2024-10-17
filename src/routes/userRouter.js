@@ -92,7 +92,7 @@ router.post(`/signup`, userController.createUser);
  *               user_id:
  *                 type: string
  *                 description: "유저 아이디"
- *                 example: "chief_seonu"
+ *                 example: "test_chief"
  *               password:
  *                 type: string
  *                 description: "유저 비밀번호"
@@ -688,7 +688,7 @@ router.put(
 
 /**
  * @swagger
- * /family:
+ * /user/family:
  *   post:
  *     summary: 학생과 부모 관계 설정
  *     description: 학생과 부모 간의 관계를 설정하고, 부모의 학원 등록 상태를 학생의 상태로 설정합니다.
