@@ -6,6 +6,8 @@ require("dotenv").config();
 const app = express();
 const port = 8000;
 const { swaggerUi, specs } = require("./swagger/swagger");
+const { MongoClient } = require("mongodb");
+const { chatDBurl } = require("../src/config/secret")
 
 const whitelist = [
   "http://localhost:5173",
@@ -25,6 +27,15 @@ const corsOptions = {
     }
   },
 };
+
+let chatDB
+const url = chatDBurl;
+new MongoClient(url).connect().then((client)=>{
+  console.log('채팅DB연결성공')
+  chatDB = client.db('chat')
+}).catch((err)=>{
+  console.log(err)
+})
 
 app.use(cors(corsOptions));
 app.use(express.json()); // REST API body 파싱
