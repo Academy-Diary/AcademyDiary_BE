@@ -10,4 +10,7 @@ router.get("/request", chatController.createRoom);
 //내가 속한 채팅방 목록 불러오기
 router.get("/list", chatController.myChatRoom);
 
+//특정채팅방 채팅내역 불러오기
+router.get("/detail/:id", chatController.detailChatRoom);
+
 module.exports = router;

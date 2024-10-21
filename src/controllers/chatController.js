@@ -39,3 +39,32 @@ exports.myChatRoom = asyncWrapper(async(req, res, next) => {
         result
     });
 })
+
+exports.detailChatRoom = asyncWrapper(async(req, res, next) => {
+    const chatDB = getChatDB();
+      // ObjectId 유효성 검증
+  if (!ObjectId.isValid(req.params.id)) {
+    return next(new CustomError(
+        "잘못된 채팅방 ID입니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+    ))
+  }
+
+    const result = await chatDB.collection("chat_room").findOne({
+        _id : new ObjectId(req.params.id)
+    });
+
+    if (!result) {
+        return next(new CustomError(
+            "해당 채팅방을 찾을 수 없습니다.",
+            StatusCodes.NOT_FOUND,
+            StatusCodes.NOT_FOUND
+        ));
+      }
+
+    return res.status(StatusCodes.OK).json({
+        message : "채팅방 상세페이지를 불러오는데 성공하였습니다.",
+        result
+    });
+})
