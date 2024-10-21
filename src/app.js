@@ -7,7 +7,7 @@ const app = express();
 const port = 8000;
 const { swaggerUi, specs } = require("./swagger/swagger");
 const { MongoClient } = require("mongodb");
-const { chatDBurl } = require("../src/config/secret")
+const { connectToMongo } = require("../src/lib/chatDB/chatDB");
 
 const whitelist = [
   "http://localhost:5173",
@@ -28,14 +28,8 @@ const corsOptions = {
   },
 };
 
-let chatDB
-const url = chatDBurl;
-new MongoClient(url).connect().then((client)=>{
-  console.log('채팅DB연결성공')
-  chatDB = client.db('chat')
-}).catch((err)=>{
-  console.log(err)
-})
+// MongoDB 연결
+connectToMongo();
 
 app.use(cors(corsOptions));
 app.use(express.json()); // REST API body 파싱
@@ -57,6 +51,7 @@ const teacherRouter = require("./routes/teacherRouter");
 const lectureRouter = require("./routes/lectureRouter");
 const expenseRouter = require("./routes/expenseRouter");
 const examTypeRouter = require("./routes/examTypeRouter");
+const chatRouter = require("./routes/chatRouter");
 
 app.use("/", indexRouter);
 app.use("/user", userRouter);
@@ -66,6 +61,7 @@ app.use("/teacher", teacherRouter);
 app.use("/lecture", lectureRouter);
 app.use("/expense", expenseRouter);
 app.use("/exam-type", examTypeRouter);
+app.use("/chat", chatRouter);
 
 //swagger
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs))
