@@ -20,3 +20,22 @@ exports.createRoom = asyncWrapper(async(req, res, next) => {
     });
 })
 
+exports.myChatRoom = asyncWrapper(async(req, res, next) => {
+    const chatDB = getChatDB();
+    const result = await chatDB.collection("chat_room").find({
+        member: { $elemMatch: { $eq: req.user.user_id } } // 배열 내에서 user_id 검색
+    }).toArray()
+
+    if (result.length === 0) {
+        return next(new CustomError(
+            "사용자가 속한 채팅방이 없습니다.",
+            StatusCodes.NOT_FOUND,
+            StatusCodes.NOT_FOUND
+        ));
+      }
+
+    return res.status(StatusCodes.OK).json({
+        message : "채팅방 목록을 불러오는데 성공하였습니다.",
+        result
+    });
+})
