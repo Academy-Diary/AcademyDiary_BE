@@ -44,7 +44,7 @@ router.delete("/:id", authenticateJWT("CHIEF"), teacherController.deleteTeacher)
  * /teacher/{academy_id}:
  *   get:
  *     summary: 학원의 모든 강사 조회
- *     description: CHIEF 권한을 가진 사용자가 특정 학원의 모든 강사 목록을 조회합니다.
+ *     description: CHIEF 권한을 가진 사용자가 특정 학원의 모든 강사 목록을 조회합니다. 강사의 학원 ID와 사용자 ID는 제외하고 반환됩니다.
  *     tags: [Teacher]
  *     security:
  *       - bearerAuth: []
@@ -67,27 +67,42 @@ router.delete("/:id", authenticateJWT("CHIEF"), teacherController.deleteTeacher)
  *                   type: string
  *                   description: "강사를 성공적으로 불러왔습니다."
  *                 data:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       email:
- *                         type: string
- *                         description: 강사의 이메일
- *                       phone_number:
- *                         type: string
- *                         description: 강사의 전화번호
- *                       lectures:
- *                         type: array
- *                         items:
- *                           type: object
- *                           properties:
- *                             lecture_id:
- *                               type: integer
- *                               description: 강의 ID
- *                             lecture_name:
- *                               type: string
- *                               description: 강의 이름
+ *                   type: object
+ *                   properties:
+ *                     academy_id:
+ *                       type: string
+ *                       description: 학원의 ID
+ *                     role:
+ *                       type: string
+ *                       description: 강사의 역할 (TEACHER)
+ *                     status:
+ *                       type: string
+ *                       description: 강사의 상태 (APPROVED)
+ *                     user:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           user_name:
+ *                             type: string
+ *                             description: 강사의 이름
+ *                           email:
+ *                             type: string
+ *                             description: 강사의 이메일
+ *                           phone_number:
+ *                             type: string
+ *                             description: 강사의 전화번호
+ *                           lectures:
+ *                             type: array
+ *                             items:
+ *                               type: object
+ *                               properties:
+ *                                 lecture_id:
+ *                                   type: integer
+ *                                   description: 강의 ID
+ *                                 lecture_name:
+ *                                   type: string
+ *                                   description: 강의 이름
  *       403:
  *         description: 학원에 대한 접근 권한이 없습니다.
  *       404:
