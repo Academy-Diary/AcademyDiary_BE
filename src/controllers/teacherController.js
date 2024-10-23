@@ -88,6 +88,8 @@ exports.getTeacher = asyncWrapper(async(req, res, next) => {
             include : {
                 user : {
                     select : {
+                        user_id : true,
+                        user_name : true,
                         email : true,
                         phone_number : true,
                         lectures : {
@@ -109,10 +111,24 @@ exports.getTeacher = asyncWrapper(async(req, res, next) => {
             ));
         }
 
+        // academy_id와 user_id를 제외한 필드만 반환
+        const formattedTeachers = getTeacher.map(teacher => {
+            const { academy_id, ...rest } = teacher.user;  // academy_id와 user_id 제외
+            return {
+                ...rest, // 나머지 필드 반환
+                lectures: teacher.user.lectures  // lectures 정보 추가
+            };
+        });
+
         // 성공 응답
         return res.status(StatusCodes.OK).json({ 
             message: "강사를 성공적으로 불러왔습니다.",
-            data: getTeacher
+            data: {
+                academy_id: academy_id,
+                role: "TEACHER",
+                status: "APPROVED",
+                user : formattedTeachers
+            }
         });
     } catch(error) {
         return next(new CustomError(
