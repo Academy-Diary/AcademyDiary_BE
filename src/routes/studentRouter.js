@@ -40,12 +40,13 @@ const { authenticateJWT } = require("../lib/middlewares/auth.js");
 // 학원에서 학생 삭제
 router.delete("/:user_id", authenticateJWT("CHIEF"), studentController.deleteStudent);
 
+// studentRouter.js
 /**
  * @swagger
  * /student/{academy_id}:
  *   get:
  *     summary: 학원에 등록된 모든 학생 조회
- *     description: CHIEF 권한을 가진 사용자가 특정 학원에 등록된 모든 학생을 조회합니다.
+ *     description: CHIEF 권한을 가진 사용자가 특정 학원에 등록된 모든 학생의 이름, 전화번호 및 학부모 정보를 조회합니다.
  *     tags: [Student]
  *     security:
  *       - bearerAuth: []
@@ -56,6 +57,18 @@ router.delete("/:user_id", authenticateJWT("CHIEF"), studentController.deleteStu
  *         schema:
  *           type: string
  *         description: 조회할 학원의 ID
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           description: 페이지 번호
+ *       - in: query
+ *         name: page_size
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           description: 페이지당 학생 수
  *     responses:
  *       200:
  *         description: 학생 목록 조회 성공
@@ -72,15 +85,27 @@ router.delete("/:user_id", authenticateJWT("CHIEF"), studentController.deleteStu
  *                   items:
  *                     type: object
  *                     properties:
- *                       user_id:
+ *                       user_name:
  *                         type: string
- *                         description: 학생의 ID
- *                       academy_id:
+ *                         description: 학생의 이름
+ *                       phone_number:
  *                         type: string
- *                         description: 학원의 ID
- *                       status:
- *                         type: string
- *                         description: 학생의 등록 상태
+ *                         description: 학생의 전화번호
+ *                       familiesAsStudent:
+ *                         type: array
+ *                         description: 학생의 학부모 정보 목록
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             parent:
+ *                               type: object
+ *                               properties:
+ *                                 user_name:
+ *                                   type: string
+ *                                   description: 학부모의 이름
+ *                                 phone_number:
+ *                                   type: string
+ *                                   description: 학부모의 전화번호
  *       403:
  *         description: 해당 학원에 대한 접근 권한이 없습니다.
  *       404:
@@ -88,6 +113,7 @@ router.delete("/:user_id", authenticateJWT("CHIEF"), studentController.deleteStu
  *       500:
  *         description: 서버 오류가 발생했습니다.
  */
+
 // 모든 원생 조회
 router.get("/:academy_id", authenticateJWT("CHIEF"), studentController.getStudent);
 
