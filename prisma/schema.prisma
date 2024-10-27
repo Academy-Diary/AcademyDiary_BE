@@ -76,7 +76,7 @@ model Lecture {
   lecture_id   Int      @id @default(autoincrement())
   lecture_name String
   teacher_id   String
-  headcount    Int? //수강생 수
+  headcount    Int      @default(0)
   academy_id   String
   start_time   DateTime @default(now()) // 수업시간 // 시간 정보만 사용
   end_time     DateTime @default(now()) // 수업시간 // 시간 정보만 사용
