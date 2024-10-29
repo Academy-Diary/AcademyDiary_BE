@@ -1,11 +1,14 @@
 const express = require("express");
+const http = require("http"); // 기본 http 모듈을 불러옴
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
 require("dotenv").config();
 const app = express();
+const server = http.createServer(app); // Express 앱을 HTTP 서버에 연결
 const port = 8000;
 const { swaggerUi, specs } = require("./swagger/swagger");
+const socketConfig = require("./socket"); // Socket.IO 설정 파일 가져오기
 const { MongoClient } = require("mongodb");
 const { connectToMongo } = require("../src/lib/chatDB/chatDB");
 
@@ -40,7 +43,8 @@ if (process.env.NODE_ENV === "prod") {
   app.use(morgan("dev"));
 }
 
-
+// Socket.IO 설정 초기화
+socketConfig(server);
 
 // routes
 const indexRouter = require("./routes/index");
