@@ -18,14 +18,14 @@ module.exports = (server) => {
         if (!existingRoom) {
           await chatDB.collection("chat_room").insertOne({
             _id: new ObjectId(roomId),
-            members: [userId],
-            created_at: new Date(),
+            member: [userId],
+            date: new Date(),
           });
         } else {
           // 이미 존재하면 멤버 목록에 추가
           await chatDB.collection("chat_room").updateOne(
             { _id: new ObjectId(roomId) },
-            { $addToSet: { members: userId } } // 중복 없이 추가
+            { $addToSet: { member: userId } } // 중복 없이 추가
           );
         }
   
