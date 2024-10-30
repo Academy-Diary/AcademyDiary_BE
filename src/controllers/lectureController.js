@@ -294,6 +294,16 @@ exports.getLectureStudent = asyncWrapper(async (req, res, next) => {
     where: {
       lecture_id: target_id,
     },
+    include : {
+      user: {
+        select: {
+          user_id : true,
+          user_name: true,
+          email : true,
+          phone_number: true
+        }
+      }
+    }
   });
 
   if (!result || result.length === 0) {
@@ -306,9 +316,18 @@ exports.getLectureStudent = asyncWrapper(async (req, res, next) => {
     );
   }
 
+  // lecture_id와 user_id를 제외하고 수강생 정보를 가공
+  const students = result.map(participant => ({
+    user_id : participant.user.user_id,
+    user_name: participant.user.user_name,
+    email : participant.user.email,
+    phone_number: participant.user.phone_number
+  }));
+
   return res.status(StatusCodes.OK).json({
     message: "수강생을 성공적으로 불러왔습니다.",
-    data: result,
+    lecture_id : target_id,
+    data: students
   });
 });
 

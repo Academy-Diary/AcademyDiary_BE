@@ -338,7 +338,8 @@ router.delete(
  * @swagger
  * /lecture/{lecture_id}/student:
  *   get:
- *     summary: 강의에 등록된 수강생 조회
+ *     summary: 강의 수강생 조회
+ *     description: 특정 강의에 등록된 수강생 목록을 조회합니다.
  *     tags: [Lecture]
  *     security:
  *       - bearerAuth: []
@@ -348,10 +349,10 @@ router.delete(
  *         required: true
  *         schema:
  *           type: string
- *         description: 강의 ID
+ *         description: 조회할 강의의 ID
  *     responses:
  *       200:
- *         description: 성공적으로 수강생을 불러옴
+ *         description: 수강생 목록 조회 성공
  *         content:
  *           application/json:
  *             schema:
@@ -359,31 +360,33 @@ router.delete(
  *               properties:
  *                 message:
  *                   type: string
+ *                   description: "수강생을 성공적으로 불러왔습니다."
+ *                 lecture_id:
+ *                   type: integer
+ *                   description: 강의 ID
  *                 data:
  *                   type: array
  *                   items:
  *                     type: object
  *                     properties:
  *                       user_id:
- *                         type: string
- *                       lecture_id:
  *                         type: integer
- *             example:
- *               message: "수강생을 성공적으로 불러왔습니다."
- *               data:
- *                 - user_id: "student123"
- *                   lecture_id: 1
+ *                         description: 수강생의 사용자 ID
+ *                       user_name:
+ *                         type: string
+ *                         description: 수강생의 이름
+ *                       email:
+ *                         type: string
+ *                         description: 수강생의 이메일
+ *                       phone_number:
+ *                         type: string
+ *                         description: 수강생의 전화번호
+ *       400:
+ *         description: 유효하지 않은 lecture_id가 제공되었습니다.
  *       404:
- *         description: 수강생이 없음
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *             example:
- *               message: "수강생이 없거나 불러올 수 없습니다."
+ *         description: 수강생이 없거나 불러올 수 없습니다.
+ *       500:
+ *         description: 서버 오류가 발생했습니다.
  */
 // 강의 수강생 조회
 router.get(
@@ -456,6 +459,7 @@ router.post(
   authenticateJWT("CHIEF", "TEACHER"),
   lectureController.createLectureStudent
 );
+
 /**
  * @swagger
  * /lecture/{lecture_id}/student:
@@ -514,8 +518,6 @@ router.post(
  *             example:
  *               message: "유효한 user_id가 제공되지 않았습니다."
  */
-
-module.exports = router;
 
 //강의 수강생 제거
 router.delete(
