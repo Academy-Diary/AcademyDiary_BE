@@ -57,18 +57,6 @@ router.delete("/:user_id", authenticateJWT("CHIEF"), studentController.deleteStu
  *         schema:
  *           type: string
  *         description: 조회할 학원의 ID
- *       - in: query
- *         name: page
- *         required: false
- *         schema:
- *           type: integer
- *           description: 페이지 번호
- *       - in: query
- *         name: page_size
- *         required: false
- *         schema:
- *           type: integer
- *           description: 페이지당 학생 수
  *     responses:
  *       200:
  *         description: 학생 목록 조회 성공
@@ -79,33 +67,38 @@ router.delete("/:user_id", authenticateJWT("CHIEF"), studentController.deleteStu
  *               properties:
  *                 message:
  *                   type: string
- *                   description: "학생를 성공적으로 불러왔습니다."
+ *                   description: "학생들을 성공적으로 불러왔습니다."
+ *                   example: "학생들을 성공적으로 불러왔습니다."
  *                 data:
  *                   type: array
  *                   items:
  *                     type: object
  *                     properties:
+ *                       user_id:
+ *                         type: string
+ *                         description: 학생의 ID
+ *                         example: "test_student"         
  *                       user_name:
  *                         type: string
  *                         description: 학생의 이름
+ *                         example: "춘향이" 
  *                       phone_number:
  *                         type: string
  *                         description: 학생의 전화번호
- *                       familiesAsStudent:
- *                         type: array
- *                         description: 학생의 학부모 정보 목록
- *                         items:
- *                           type: object
- *                           properties:
- *                             parent:
- *                               type: object
- *                               properties:
- *                                 user_name:
- *                                   type: string
- *                                   description: 학부모의 이름
- *                                 phone_number:
- *                                   type: string
- *                                   description: 학부모의 전화번호
+ *                         example: "010-1234-5678"
+ *                       parent:
+ *                         type: object
+ *                         nullable: true
+ *                         description: 학부모 정보 (없을 경우 null)
+ *                         properties:
+ *                           user_name:
+ *                             type: string
+ *                             description: 학부모의 이름
+ *                             example: "홍길동"
+ *                           phone_number:
+ *                             type: string
+ *                             description: 학부모의 전화번호
+ *                             example: "010-1111-2222"   
  *       403:
  *         description: 해당 학원에 대한 접근 권한이 없습니다.
  *       404:

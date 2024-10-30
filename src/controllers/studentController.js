@@ -105,17 +105,28 @@ exports.deleteStudent = asyncWrapper(async (req, res, next) => {
 
 exports.getStudent = asyncWrapper(async (req, res, next) => {
   const { academy_id } = req.params;
-  const { page, page_size } = req.query;
 
+  // JWT에서 academy_id를 추출 (인증 미들웨어를 통해 토큰을 디코드하고 req.user에 저장되어있음)
+  const userAcademyId = req.user.academy_id; // JWT 토큰에서 가져온 academy_id
+
+  // 사용자가 다른 학원의 수업을 수정하려고 하는지 체크
+  if (userAcademyId !== academy_id) {
+    return next(
+      new CustomError(
+        "해당 학원에 대한 접근 권한이 없습니다.",
+        StatusCodes.FORBIDDEN,
+        StatusCodes.FORBIDDEN
+      )
+    );
+  }
   // 나중에 User DB에서 가져오게끔 수정.
   const students = await prisma.User.findMany({
-    skip: (parseInt(page) - 1) * parseInt(page_size),
-    take: parseInt(page_size),
     where: {
       academy_id: academy_id,
       role: "STUDENT",
     },
     select: {
+      user_id: true,
       user_name: true,
       phone_number: true,
       familiesAsStudent: {
@@ -130,22 +141,7 @@ exports.getStudent = asyncWrapper(async (req, res, next) => {
       },
     },
   });
-  console.log(`academy_id: ${academy_id}, page: ${page}, page_size: ${page_size}`);
   console.log(students);
-  // JWT에서 academy_id를 추출 (인증 미들웨어를 통해 토큰을 디코드하고 req.user에 저장되어있음)
-  const userAcademyId = req.user.academy_id; // JWT 토큰에서 가져온 academy_id
-
-  // 사용자가 다른 학원의 수업을 수정하려고 하는지 체크
-  if (userAcademyId !== academy_id) {
-    return next(
-      new CustomError(
-        "해당 학원에 대한 접근 권한이 없습니다.",
-        StatusCodes.FORBIDDEN,
-        StatusCodes.FORBIDDEN
-      )
-    );
-  }
-
   if (!students || students.length === 0) {
     return next(
       new CustomError(
@@ -156,10 +152,27 @@ exports.getStudent = asyncWrapper(async (req, res, next) => {
     );
   }
 
+  const resData = students.map((student) => {
+    const family = student.familiesAsStudent[0]; // 첫 번째 요소를 가져옴
+    return {
+      user_id: student.user_id,
+      user_name: student.user_name,
+      phone_number: student.phone_number,
+      parent: family && family.parent // family가 존재하고 parent가 있는지 확인
+        ? {
+            user_name: family.parent.user_name,
+            phone_number: family.parent.phone_number,
+          }
+        : null,
+    };
+  });
+
+
+
   // 성공 응답
   return res.status(StatusCodes.OK).json({
     message: "학생를 성공적으로 불러왔습니다.",
-    data: students,
+    data: resData,
   });
 });
 
