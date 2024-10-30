@@ -197,13 +197,18 @@ exports.getStudentLecture = asyncWrapper(async (req, res, next) => {
         select: {
           lecture_id: true,
           lecture_name: true,
+          start_time: true,
+          end_time: true,
           days: {
             select: {
               day: true,
             },
           },
-          start_time: true,
-          end_time: true,
+          teacher: {
+            select: {
+              user_name: true,  // 강사의 이름만 선택
+            },
+          },
         },
       },
     },
