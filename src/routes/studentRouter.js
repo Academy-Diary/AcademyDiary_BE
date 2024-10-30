@@ -114,8 +114,8 @@ router.get("/:academy_id", authenticateJWT("CHIEF"), studentController.getStuden
  * @swagger
  * /student/{user_id}/lecture:
  *   get:
- *     summary: 학생이 수강 중인 강의 내역 조회
- *     description: CHIEF, STUDENT, TEACHER, PARENT 권한을 가진 사용자가 특정 학생이 수강 중인 강의 목록을 조회합니다.
+ *     summary: 학생의 수강 중인 강의 조회
+ *     description: 특정 학생이 수강 중인 강의 목록을 조회합니다. 각 강의의 요일과 강사 이름도 함께 반환됩니다.
  *     tags: [Student]
  *     security:
  *       - bearerAuth: []
@@ -125,10 +125,10 @@ router.get("/:academy_id", authenticateJWT("CHIEF"), studentController.getStuden
  *         required: true
  *         schema:
  *           type: string
- *         description: 수강 내역을 조회할 학생의 ID
+ *         description: 조회할 학생의 ID
  *     responses:
  *       200:
- *         description: 학생의 강의 내역 조회 성공
+ *         description: 강의 목록 조회 성공
  *         content:
  *           application/json:
  *             schema:
@@ -148,21 +148,29 @@ router.get("/:academy_id", authenticateJWT("CHIEF"), studentController.getStuden
  *                       lecture_name:
  *                         type: string
  *                         description: 강의 이름
+ *                       start_time:
+ *                         type: string
+ *                         format: time
+ *                         description: 강의 시작 시간
+ *                       end_time:
+ *                         type: string
+ *                         format: time
+ *                         description: 강의 종료 시간
  *                       days:
  *                         type: array
  *                         items:
  *                           type: string
- *                           description: 강의가 진행되는 요일
- *                       start_time:
- *                         type: string
- *                         description: 강의 시작 시간
- *                       end_time:
- *                         type: string
- *                         description: 강의 종료 시간
+ *                         description: 강의가 진행되는 요일
+ *                       teacher:
+ *                         type: object
+ *                         properties:
+ *                           user_name:
+ *                             type: string
+ *                             description: 강사의 이름
  *       400:
  *         description: 유효한 user_id가 제공되지 않았습니다.
  *       404:
- *         description: 해당 학생의 강의 내역을 찾을 수 없습니다.
+ *         description: 해당 학생의 수강 중인 강의를 찾을 수 없습니다.
  *       500:
  *         description: 서버 오류가 발생했습니다.
  */
