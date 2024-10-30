@@ -336,7 +336,7 @@ router.delete(
 );
 /**
  * @swagger
- * /lecture/{lecture_id}/students:
+ * /lecture/{lecture_id}/student:
  *   get:
  *     summary: 강의 수강생 조회
  *     description: 특정 강의에 등록된 수강생 목록을 조회합니다.
