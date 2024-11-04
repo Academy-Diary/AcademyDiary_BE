@@ -3,7 +3,9 @@ const express = require("express");
 const { authenticateJWT } = require("../lib/middlewares/auth.js");
 const router = express.Router();
 const noticeController = require("../controllers/noticeController");
-const { uploadNoticeFile } = require("../lib/middlewares/handlingFile");
+const {
+  uploadNoticeFile,
+} = require("../lib/middlewares/handlingFile");
 /**
  * @swagger
  * /notice/create:
@@ -30,8 +32,8 @@ const { uploadNoticeFile } = require("../lib/middlewares/handlingFile");
  *                 example: 코로나19로 인한 운영 방침 안내
  *               notice_id:
  *                 type: string
- *                 description: 최근 공지사항의 id에 +1한 값을 넣어주세요. academy_id&lecture_id&{recent_notice_num + 1}입니다.
- *                 example: test_academy2&0&5
+ *                 description: 최근 공지사항의 id에 +1한 값을 넣어주세요. academy_id&lecture_id&{recent_notice_num + 1}입니다. 전체 공지는 전체 공지 번호 조회 API을 조회 후 공지 아이디를 입력하세요.
+ *                 example: test_academy&5&2
  *               file:
  *                 type: array
  *                 items:
@@ -107,6 +109,12 @@ router.post(
   "/create",
   authenticateJWT("CHIEF", "TEACHER"),
   uploadNoticeFile.array("file"),
+  (req, res, next) => {
+    if (!req.files) {
+      return uploadNoticeFile.none();
+    }
+    next();
+  },
   noticeController.createNotice
 );
 /**
@@ -202,7 +210,7 @@ router.get(
  *         required: true
  *         schema:
  *           type: string
- *         description: 삭제할 공지의 ID, 형식은 academy_id&lecture_id&notice_num입니다.
+ *         description: 삭제할 공지의 ID, 형식은 academy_id&lecture_id&notice_num입니다. 전체 공지는 전체 공지 번호 조회 API을 조회 후 공지 아이디를 입력하세요.
  *         example: test_academy2&0&5
  *     responses:
  *       200:
@@ -276,7 +284,7 @@ router.delete(
  *         required: true
  *         schema:
  *           type: string
- *         description: 수정할 공지의 ID로, 형식은 academy_id&lecture_id&notice_num입니다.
+ *         description: 수정할 공지의 ID로, 형식은 academy_id&lecture_id&notice_num입니다. 전체 공지는 전체 공지 번호 조회 API을 조회 후 공지 아이디를 입력하세요.
  *     requestBody:
  *       required: true
  *       content:
@@ -337,6 +345,12 @@ router.put(
   "/:notice_id",
   authenticateJWT("CHIEF", "TEACHER"),
   uploadNoticeFile.array("file"),
+  (req, res, next) => {
+    if (!req.files) {
+      return uploadNoticeFile.none();
+    }
+    next();
+  },
   noticeController.updateNotice
 );
 
