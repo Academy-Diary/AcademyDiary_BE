@@ -88,7 +88,7 @@ exports.getNoticeList = asyncWrapper(async (req, res, next) => {
   const lecture_id = parseInt(req.query.lecture_id, 10);
   const page = parseInt(req.query.page, 10);
   const page_size = parseInt(req.query.page_size, 10);
-  
+
   // 유효성 검사1: 값들이 존재하지 않으면 에러 처리
   if (isNaN(lecture_id) || isNaN(page) || isNaN(page_size)) {
     return next(
@@ -277,5 +277,63 @@ exports.updateNotice = asyncWrapper(async (req, res, next) => {
   return res.status(StatusCodes.OK).json({
     message: "공지사항이 성공적으로 수정되었습니다.",
     data: { notice, files: updated_files.map((file) => file.name) },
+  });
+});
+
+exports.getNoticeDetail = asyncWrapper(async (req, res, next) => {
+  const notice_id = req.params.notice_id.split("&");
+  const academy_id = notice_id[0];
+  const lecture_id = parseInt(notice_id[1], 10);
+  const notice_num = parseInt(notice_id[2], 10);
+
+  // 유효성 검사1: 값들이 존재하지 않으면 에러 처리
+  if (isNaN(lecture_id) || isNaN(notice_num)) {
+    return next(
+      new CustomError(
+        "유효한 값들을 입력해주세요.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+
+  const notice = await prisma.Notice.findFirst({
+    where: {
+      notice_id: req.params.notice_id,
+    },
+  });
+
+  // 유효성 검사2: 해당 공지사항이 존재하지 않으면 에러 처리
+  if (!notice) {
+    return next(
+      new CustomError(
+        "해당 공지사항이 존재하지 않습니다.",
+        StatusCodes.NOT_FOUND,
+        StatusCodes.NOT_FOUND
+      )
+    );
+  }
+
+  // 조회수 증가
+  await prisma.Notice.update({
+    where: { notice_id: req.params.notice_id },
+    data: { views: { increment: 1 } },
+  });
+
+  const notice_files = await prisma.NoticeFile.findMany({
+    where: {
+      notice_id: req.params.notice_id,
+    },
+  });
+
+  return res.status(StatusCodes.OK).json({
+    message: "공지사항 상세 조회에 성공했습니다.",
+    data: {
+      notice,
+      files: notice_files.map((file) => ({
+        url: file.path,
+        name: file.name,
+      })),
+    },
   });
 });

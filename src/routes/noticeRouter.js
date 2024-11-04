@@ -3,9 +3,8 @@ const express = require("express");
 const { authenticateJWT } = require("../lib/middlewares/auth.js");
 const router = express.Router();
 const noticeController = require("../controllers/noticeController");
-const {
-  uploadNoticeFile,
-} = require("../lib/middlewares/handlingFile");
+const { uploadNoticeFile } = require("../lib/middlewares/handlingFile");
+
 /**
  * @swagger
  * /notice/create:
@@ -104,17 +103,10 @@ const {
  *                   type: string
  *                   example: 파일 이동 중 오류가 발생했습니다.
  */
-
 router.post(
   "/create",
   authenticateJWT("CHIEF", "TEACHER"),
   uploadNoticeFile.array("file"),
-  (req, res, next) => {
-    if (!req.files) {
-      return uploadNoticeFile.none();
-    }
-    next();
-  },
   noticeController.createNotice
 );
 /**
@@ -189,12 +181,12 @@ router.post(
  *                   type: string
  *                   example: 유효한 값들을 입력해주세요.
  */
-// 공지 목록 조회
 router.get(
   "/list",
   authenticateJWT("CHIEF", "TEACHER", "PARENT", "STUDENT"),
   noticeController.getNoticeList
 );
+
 /**
  * @swagger
  * /notice/{notice_id}:
@@ -262,13 +254,12 @@ router.get(
  *                   type: string
  *                   example: 디렉토리 삭제 중 오류가 발생했습니다.
  */
-
-// 공지 삭제
 router.delete(
   "/:notice_id",
   authenticateJWT("CHIEF", "TEACHER"),
   noticeController.deleteNotice
 );
+
 /**
  * @swagger
  * /notice/{notice_id}:
@@ -339,19 +330,38 @@ router.delete(
  *       500:
  *         description: 서버에서 파일을 수정하는 중 오류가 발생했습니다.
  */
-
-// 공지 수정
 router.put(
   "/:notice_id",
   authenticateJWT("CHIEF", "TEACHER"),
   uploadNoticeFile.array("file"),
-  (req, res, next) => {
-    if (!req.files) {
-      return uploadNoticeFile.none();
-    }
-    next();
-  },
   noticeController.updateNotice
+);
+
+// 공지 상세 조회
+/**
+ * @swagger
+ * /notice/{notice_id}:
+ *   get:
+ *     summary: 특정 공지사항의 상세 조회
+ *     description: 특정 공지사항의 세부 정보를 조회합니다.
+ *     tags: [Notice]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: notice_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 조회할 공지사항의 ID입니다.
+ *     responses:
+ *       200:
+ *         description: 공지사항 상세 조회 성공
+ */
+router.get(
+  "/:notice_id",
+  authenticateJWT("CHIEF", "TEACHER", "PARENT", "STUDENT"),
+  noticeController.getNoticeDetail
 );
 
 module.exports = router;
