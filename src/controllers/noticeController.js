@@ -204,56 +204,64 @@ exports.deleteNotice = asyncWrapper(async (req, res, next) => {
 });
 
 exports.updateNotice = asyncWrapper(async (req, res, next) => {
-  const { title, content } = req.body;
+  let { title, content } = req.body;
   const files_deleted = req.body.files_deleted.split(",");
   const notice_id = req.params.notice_id.split("&");
   const academy_id = notice_id[0];
   const lecture_id = parseInt(notice_id[1], 10);
   const notice_num = parseInt(notice_id[2], 10);
 
-  const dirPath = path.join(
-    __dirname,
-    "../../public/notice",
-    academy_id,
-    lecture_id.toString(),
-    notice_num.toString()
-  );
-
   console.log(`files_deleted: ${files_deleted}`);
+
+  // 유효성 검사1: 다른 학원의 공지를 생성하려고 하는 경우 에러 처리
+  if (academy_id !== req.user.academy_id) {
+    return next(
+      new CustomError(
+        "해당 학원에 대한 권한이 없습니다.",
+        StatusCodes.FORBIDDEN,
+        StatusCodes.FORBIDDEN
+      )
+    );
+  }
+  const original_notice = await prisma.Notice.findFirst({
+    where: {
+      notice_id: req.params.notice_id,
+    },
+  });
+  // 유효성 검사2: 값들이 존재하지 않으면 이전과 동일한 값으로 대체
+  if (!title) {
+    title = original_notice.title;
+  }
+  if (!content) {
+    content = original_notice.content;
+  }
+
   // 삭제할 파일 제거
   if (files_deleted && files_deleted.length > 0) {
-    // in file system
-    files_deleted.forEach((file) => {
-      const filePath = path.join(dirPath, file);
-      if (fs.existsSync(filePath)) {
-        fs.rmSync(filePath, { recursive: true, force: true });
-      }
-    });
-    // in database
+    // in RDS
     await prisma.NoticeFile.deleteMany({
       where: {
         notice_id: req.params.notice_id,
-        file: { in: files_deleted },
+        name: { in: files_deleted },
       },
     });
+    // in S3
+    const bucketName = S3_BUCKET_NAME;
+    const s3Prefix = `public/notice/${academy_id}/${lecture_id}/${notice_num}/`;
+    await deleteFilesFromS3(bucketName, s3Prefix, files_deleted); //
   }
 
-  // 새 파일 이동
-  const new_files = await Promise.all(
-    req.files.map(async (file) => {
-      const oldPath = file.path;
-      const newPath = path.join(dirPath, file.originalname);
-      await fs.promises.rename(oldPath, newPath);
-      return file.originalname;
-    })
-  );
-
-  // 새로운 파일 내역 DB에 추가
-  const files_to_add = new_files.map((file) => ({
-    notice_id: req.params.notice_id,
-    file: file,
-  }));
-  await prisma.NoticeFile.createMany({ data: files_to_add });
+  // 추가할 파일 RDS에 반영 , S3 업로드는 미들웨어에서 처리
+  const files_added = req.files && req.files.length > 0 ? req.files : [];
+  if (files_added.length > 0) {
+    await prisma.NoticeFile.createMany({
+      data: files_added.map((file) => ({
+        notice_id: req.params.notice_id,
+        path: file.location,
+        name: file.originalname,
+      })),
+    });
+  }
 
   // 공지 텍스트 정보 업데이트
   const notice = await prisma.Notice.update({
@@ -268,6 +276,6 @@ exports.updateNotice = asyncWrapper(async (req, res, next) => {
 
   return res.status(StatusCodes.OK).json({
     message: "공지사항이 성공적으로 수정되었습니다.",
-    data: { notice, files: updated_files.map((file) => file.file) },
+    data: { notice, files: updated_files.map((file) => file.name) },
   });
 });
