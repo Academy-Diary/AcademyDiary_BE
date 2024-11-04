@@ -7,114 +7,109 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// TODO: 임시유저 => db schema 에 맞게 변환 해야함.
 model User {
-  id           Int      @id @default(autoincrement())
-  user_id      String   @unique
-  academy_id   String?
-  email        String   @unique
-  birth_date   DateTime
-  user_name    String
-  password     String
-  phone_number String
-  role         Role     @default(STUDENT)
-  image        String   @default("default.png")
-
-  // Relations
-  academy           Academy?                     @relation(fields: [academy_id], references: [academy_id], name: "UserAcademyRelation")
-  chief             Chief_Academy?               @relation("UserChiefRelation")
+  id                Int                          @id @default(autoincrement())
+  user_id           String                       @unique
+  academy_id        String?
+  email             String                       @unique
+  birth_date        DateTime
+  user_name         String
+  password          String
+  phone_number      String
+  role              Role                         @default(STUDENT)
+  image             String                       @default("default.png")
   registrationList  AcademyUserRegistrationList? @relation("AcademyUserRegistrationList_User_Relation")
-  lectures          Lecture[]                    @relation("Teacher_Lecture") //강사-강의 1:N
-  registerdLecture  LectureParticipant[] //강의-수강생 N:M
-  exam_scores       ExamUserScore[]              @relation("ExamUserScore_User_Relation") // User : ExamUserScore  (M:N relationship with Exam)
-  familiesAsStudent Family[]                     @relation("StudentFamilyRelation") // Family 테이블에서 student_id로 연결
-  familiesAsParent  Family[]                     @relation("ParentFamilyRelation") // Family 테이블에서 parent_id로 연결
-  notice            Notice[]                     @relation("UserToNotice_Relation") // 1:N 관계 (User to Notice)
+  chief             Chief_Academy?               @relation("UserChiefRelation")
+  exam_scores       ExamUserScore[]              @relation("ExamUserScore_User_Relation")
+  familiesAsParent  Family[]                     @relation("ParentFamilyRelation")
+  familiesAsStudent Family[]                     @relation("StudentFamilyRelation")
+  lectures          Lecture[]                    @relation("Teacher_Lecture")
+  registerdLecture  LectureParticipant[]
+  notice            Notice[]                     @relation("UserToNotice_Relation")
+  academy           Academy?                     @relation("UserAcademyRelation", fields: [academy_id], references: [academy_id])
+
+  @@index([academy_id], map: "User_academy_id_fkey")
 }
 
 model Academy {
-  id            Int     @id @default(autoincrement())
-  academy_id    String? @unique
-  academy_key   String  @unique
-  academy_name  String
-  academy_email String  @unique
-  address       String
-  phone_number  String
-  status        Status  @default(PENDING)
-
-  // Relations
-  users            User[]                        @relation("UserAcademyRelation")
-  chief            Chief_Academy?                @relation("AcademyChiefRelation")
+  id               Int                           @id @default(autoincrement())
+  academy_id       String?                       @unique
+  academy_key      String                        @unique
+  academy_name     String
+  academy_email    String                        @unique
+  address          String
+  phone_number     String
+  status           Status                        @default(PENDING)
   registrationList AcademyUserRegistrationList[] @relation("AcademyUserRegistrationList_Academy_Relation")
-  class            Class[] //학원 - 메뉴(Class) 1:N
-  lectures         Lecture[] //학원-강의 1:N
-  exam_types       ExamType[]                    @relation("Academy_ExamType_Relation") //학원-시험 유형 1:N
-  notice           Notice[]                      @relation("AcademyToNotice_Relation") // 1:N 관계
+  chief            Chief_Academy?                @relation("AcademyChiefRelation")
+  class            Class[]
+  exam_types       ExamType[]                    @relation("Academy_ExamType_Relation")
+  lectures         Lecture[]
+  notice           Notice[]                      @relation("AcademyToNotice_Relation")
+  users            User[]                        @relation("UserAcademyRelation")
 }
 
 model Chief_Academy {
-  id         String @id @default(uuid()) // 단일 기본키로 설정
-  chief_id   String @unique
-  academy_id String @unique
+  id         String  @id @default(uuid())
+  chief_id   String  @unique
+  academy_id String  @unique
+  academy    Academy @relation("AcademyChiefRelation", fields: [academy_id], references: [academy_id])
+  user       User    @relation("UserChiefRelation", fields: [chief_id], references: [user_id])
 
-  // Relations
-  user    User    @relation("UserChiefRelation", fields: [chief_id], references: [user_id])
-  academy Academy @relation("AcademyChiefRelation", fields: [academy_id], references: [academy_id])
-
-  @@unique([chief_id, academy_id]) // 고유 쌍으로 설정
+  @@unique([chief_id, academy_id])
 }
 
 model AcademyUserRegistrationList {
   academy_id String
-  user_id    String @unique
-  role       Role   @default(STUDENT)
-  status     Status @default(PENDING)
+  user_id    String  @unique
+  role       Role    @default(STUDENT)
+  status     Status  @default(PENDING)
+  academy    Academy @relation("AcademyUserRegistrationList_Academy_Relation", fields: [academy_id], references: [academy_id])
+  user       User    @relation("AcademyUserRegistrationList_User_Relation", fields: [user_id], references: [user_id])
 
-  academy Academy @relation("AcademyUserRegistrationList_Academy_Relation", fields: [academy_id], references: [academy_id])
-  user    User    @relation("AcademyUserRegistrationList_User_Relation", fields: [user_id], references: [user_id])
+  @@index([academy_id], map: "AcademyUserRegistrationList_academy_id_fkey")
 }
 
 model Lecture {
-  lecture_id   Int      @id @default(autoincrement())
+  lecture_id   Int                  @id @default(autoincrement())
   lecture_name String
   teacher_id   String
-  headcount    Int? //수강생 수
+  headcount    Int?
   academy_id   String
-  start_time   DateTime @default(now()) // 수업시간 // 시간 정보만 사용
-  end_time     DateTime @default(now()) // 수업시간 // 시간 정보만 사용
-
-  // Relations
-  teacher      User                 @relation("Teacher_Lecture", fields: [teacher_id], references: [user_id])
-  academy      Academy              @relation(fields: [academy_id], references: [academy_id])
-  participant  LectureParticipant[]
-  exams        Exam[]               @relation("Lecture_Exam_Relation") // Lecture : Exam = 1:N
+  start_time   DateTime             @default(now())
+  end_time     DateTime             @default(now())
   ClassLecture ClassLecture[]
-  days         LectureDay[] //Lecture와 Day의 N:M
+  exams        Exam[]               @relation("Lecture_Exam_Relation")
+  academy      Academy              @relation(fields: [academy_id], references: [academy_id])
+  teacher      User                 @relation("Teacher_Lecture", fields: [teacher_id], references: [user_id])
+  days         LectureDay[]
+  participant  LectureParticipant[]
   notice       Notice[]             @relation("LectureToNotice_Relation")
+
+  @@index([academy_id], map: "Lecture_academy_id_fkey")
+  @@index([teacher_id], map: "Lecture_teacher_id_fkey")
 }
 
-//강의-Day N:M 중간테이블
 model LectureDay {
   id         Int     @id @default(autoincrement())
   day        Day
   lecture_id Int
   lecture    Lecture @relation(fields: [lecture_id], references: [lecture_id], onDelete: Cascade)
+
+  @@index([lecture_id], map: "LectureDay_lecture_id_fkey")
 }
 
-//강의-수강생 N:M테이블
 model LectureParticipant {
-  id         Int    @id @default(autoincrement())
+  id         Int     @id @default(autoincrement())
   lecture_id Int
   user_id    String
-
-  // Relations
-  lecture Lecture @relation(fields: [lecture_id], references: [lecture_id])
-  user    User    @relation(fields: [user_id], references: [user_id])
+  lecture    Lecture @relation(fields: [lecture_id], references: [lecture_id])
+  user       User    @relation(fields: [user_id], references: [user_id])
 
   @@unique([lecture_id, user_id])
+  @@index([user_id], map: "LectureParticipant_user_id_fkey")
 }
 
-//메뉴 (Class) (ex.. 이과 종합반, 고등 종합반 등등..)
 model Class {
   class_id   Int            @id @default(autoincrement())
   class_name String
@@ -122,101 +117,103 @@ model Class {
   expense    Int
   discount   Int?
   duration   Int
-  // Relations
   academy    Academy        @relation(fields: [academy_id], references: [academy_id])
   lectures   ClassLecture[]
+
+  @@index([academy_id], map: "Class_academy_id_fkey")
 }
 
-// 메뉴(Class)와 강의의 중간 테이블 (ClassLecture) - N:M 관계
 model ClassLecture {
   class_id   Int
   lecture_id Int
-  // Relations
   class      Class   @relation(fields: [class_id], references: [class_id])
   lecture    Lecture @relation(fields: [lecture_id], references: [lecture_id])
 
-  // Primary Key
   @@id([class_id, lecture_id])
+  @@index([lecture_id], map: "ClassLecture_lecture_id_fkey")
 }
 
 model ExamType {
-  academy_id     String? // Foreign Key for Academy
-  exam_type_id   Int      @id @default(autoincrement()) // Primary Key, Auto Increment
-  exam_type_name String // ex 단원평가
-  // Relations
-  exams          Exam[]   @relation("ExamType_Exam_Relation") // ExamType : Exam = 1:N
-  academy        Academy? @relation("Academy_ExamType_Relation", fields: [academy_id], references: [academy_id]) // Academy : ExamType = 1:N
+  academy_id     String?
+  exam_type_id   Int      @id @default(autoincrement())
+  exam_type_name String
+  exams          Exam[]   @relation("ExamType_Exam_Relation")
+  academy        Academy? @relation("Academy_ExamType_Relation", fields: [academy_id], references: [academy_id])
+
+  @@index([academy_id], map: "ExamType_academy_id_fkey")
 }
 
 model Exam {
-  exam_id       Int      @id @default(autoincrement()) // Primary Key, Auto Increment
-  lecture_id    Int // Foreign Key for Lecture
-  exam_name     String // Exam name
-  high_score    Int      @default(0) // Highest score
-  low_score     Int      @default(100)
-  average_score Decimal  @default(0) @db.Decimal(5, 2) // Average score
-  total_score   Int      @default(0) // Total score
-  created_at    DateTime @default(now()) // Created at timestamp
-  exam_date     DateTime // Exam date
-  exam_type_id  Int // Foreign Key for ExamType
-  headcount     Int      @default(0) // Number of students
+  exam_id       Int             @id @default(autoincrement())
+  lecture_id    Int
+  exam_name     String
+  high_score    Int             @default(0)
+  low_score     Int             @default(100)
+  average_score Decimal         @default(0.00) @db.Decimal(5, 2)
+  total_score   Int             @default(0)
+  created_at    DateTime        @default(now())
+  exam_date     DateTime
+  exam_type_id  Int
+  headcount     Int             @default(0)
+  exam_type     ExamType        @relation("ExamType_Exam_Relation", fields: [exam_type_id], references: [exam_type_id])
+  lecture       Lecture         @relation("Lecture_Exam_Relation", fields: [lecture_id], references: [lecture_id])
+  exam_scores   ExamUserScore[] @relation("ExamUserScore_Exam_Relation")
 
-  // Relations
-  exam_type   ExamType        @relation("ExamType_Exam_Relation", fields: [exam_type_id], references: [exam_type_id]) // ExamType : Exam = 1:N
-  lecture     Lecture         @relation("Lecture_Exam_Relation", fields: [lecture_id], references: [lecture_id]) // Lecture : Exam = 1:N
-  exam_scores ExamUserScore[] @relation("ExamUserScore_Exam_Relation") // Exam : ExamUserScore (M:N relationship with User)
+  @@index([exam_type_id], map: "Exam_exam_type_id_fkey")
+  @@index([lecture_id], map: "Exam_lecture_id_fkey")
 }
 
 model ExamUserScore {
   exam_id Int
   user_id String
   score   Int    @default(0)
+  exam    Exam   @relation("ExamUserScore_Exam_Relation", fields: [exam_id], references: [exam_id], onDelete: Cascade)
+  user    User   @relation("ExamUserScore_User_Relation", fields: [user_id], references: [user_id], onDelete: Cascade)
 
-  // Relations
-  exam Exam @relation("ExamUserScore_Exam_Relation", fields: [exam_id], references: [exam_id], onDelete: Cascade)
-  user User @relation("ExamUserScore_User_Relation", fields: [user_id], references: [user_id], onDelete: Cascade)
-
-  @@id([exam_id, user_id]) // Composite Primary Key for the many-to-many relationship
+  @@id([exam_id, user_id])
+  @@index([user_id], map: "ExamUserScore_user_id_fkey")
 }
 
 model Family {
   student_id String
   parent_id  String
+  parent     User   @relation("ParentFamilyRelation", fields: [parent_id], references: [user_id], onDelete: Cascade)
+  student    User   @relation("StudentFamilyRelation", fields: [student_id], references: [user_id], onDelete: Cascade)
 
-  // Relations
-  student User @relation("StudentFamilyRelation", fields: [student_id], references: [user_id], onDelete: Cascade)
-  parent  User @relation("ParentFamilyRelation", fields: [parent_id], references: [user_id], onDelete: Cascade)
-
-  @@id([student_id, parent_id]) // 복합 기본 키 설정 (학생과 부모의 관계가 유일하도록)
+  @@id([student_id, parent_id])
+  @@index([parent_id], map: "Family_parent_id_fkey")
 }
 
 model Notice {
-  id         Int      @id @default(autoincrement()) // PK
-  notice_id  String   @unique
-  notice_num Int // 그냥 업로드한 파일 폴더별로 쉽게 관리할려고
+  id         Int          @id @default(autoincrement())
+  notice_id  String       @unique
+  notice_num Int
   title      String
   content    String
-  created_at DateTime @default(now())
-  updated_at DateTime @default(now()) @updatedAt
-  user_id    String // FK from User 1: N
-  academy_id String // FK from Academy 1:N 
-  lecture_id Int // FK from Lecture 1:N
-  views      Int      @default(0) // 공지 조회수 
+  created_at DateTime     @default(now())
+  updated_at DateTime     @default(now()) @updatedAt
+  user_id    String
+  academy_id String
+  lecture_id Int
+  views      Int          @default(0)
+  academy    Academy      @relation("AcademyToNotice_Relation", fields: [academy_id], references: [academy_id])
+  lecture    Lecture      @relation("LectureToNotice_Relation", fields: [lecture_id], references: [lecture_id])
+  user       User         @relation("UserToNotice_Relation", fields: [user_id], references: [user_id])
+  files      NoticeFile[] @relation("NoticeToNoticeFiles_Relation")
 
-  // Relations
-  files   NoticeFile[] @relation("NoticeToNoticeFiles_Relation") // 1:N 관계 (Notice to NoticeFile)
-  user    User?        @relation("UserToNotice_Relation", fields: [user_id], references: [user_id])
-  academy Academy?     @relation("AcademyToNotice_Relation", fields: [academy_id], references: [academy_id])
-  lecture Lecture?     @relation("LectureToNotice_Relation", fields: [lecture_id], references: [lecture_id])
+  @@index([academy_id], map: "Notice_academy_id_fkey")
+  @@index([lecture_id], map: "Notice_lecture_id_fkey")
+  @@index([user_id], map: "Notice_user_id_fkey")
 }
 
 model NoticeFile {
-  id        Int    @id @default(autoincrement()) // PK
-  notice_id String // Fk from Notice
-  path      String // 이미지 경로
-  name      String // 파일명
-  // Relations
-  notice Notice @relation("NoticeToNoticeFiles_Relation", fields: [notice_id], references: [notice_id], onDelete: Cascade) // Notice 모델과의 관계 설정
+  id        Int    @id @default(autoincrement())
+  notice_id String
+  path      String
+  name      String
+  notice    Notice @relation("NoticeToNoticeFiles_Relation", fields: [notice_id], references: [notice_id], onDelete: Cascade)
+
+  @@index([notice_id], map: "NoticeFile_notice_id_fkey")
 }
 
 enum Status {
