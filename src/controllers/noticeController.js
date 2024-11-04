@@ -16,13 +16,14 @@ const {
 
 exports.createNotice = asyncWrapper(async (req, res, next) => {
   const { title, content } = req.body;
-  const lecture_id = req.body.lecture_id;
-  const academy_id = req.body.academy_id;
-  const notice_num = req.body.notice_num;
+  const notice_id = req.body.notice_id.split("&");
+  const academy_id = notice_id[0];
+  const lecture_id = parseInt(notice_id[1], 10);
+  const notice_num = parseInt(notice_id[2], 10);
   const user_id = req.user.user_id;
 
-  // 유효성 검사1: 값들이 존재하지 않으면 에러 처리
-  if (!title || !content || isNaN(lecture_id)) {
+  // 유효성 검사1: 필수 값들이 존재하지 않거나 notice_id가 올바른 형식아 아니면.
+  if (!title || !content || !academy_id || !lecture_id || !notice_num) {
     return next(
       new CustomError(
         "유효한 값들을 입력해주세요.",
@@ -43,6 +44,7 @@ exports.createNotice = asyncWrapper(async (req, res, next) => {
     );
   }
 
+  // 공지 생성
   const notice = await prisma.Notice.create({
     data: {
       title,
@@ -50,24 +52,29 @@ exports.createNotice = asyncWrapper(async (req, res, next) => {
       academy_id,
       lecture_id,
       user_id,
-      notice_num: notice_num,
-      notice_id: `${academy_id}&${lecture_id}&${notice_num}`,
+      notice_num,
+      notice_id: req.body.notice_id,
     },
   });
 
-  await prisma.NoticeFile.createMany({
-    data: req.files.map((file) => ({
-      notice_id: notice.notice_id,
-      path: file.location,
-      name: file.originalname,
-    })),
-  });
+  // 파일이 있는지 확인 후 처리
+  const files = req.files && req.files.length > 0 ? req.files : [];
+  console.log(files);
+  if (files.length > 0) {
+    await prisma.NoticeFile.createMany({
+      data: files.map((file) => ({
+        notice_id: notice.notice_id,
+        path: file.location,
+        name: file.originalname,
+      })),
+    });
+  }
 
   return res.status(StatusCodes.CREATED).json({
     message: "공지사항이 성공적으로 생성되었습니다.",
     data: {
       notice,
-      files: req.files.map((file) => ({
+      files: files.map((file) => ({
         url: file.location,
         name: file.originalname,
       })),
