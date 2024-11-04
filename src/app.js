@@ -46,6 +46,7 @@ const teacherRouter = require("./routes/teacherRouter");
 const lectureRouter = require("./routes/lectureRouter");
 const expenseRouter = require("./routes/expenseRouter");
 const examTypeRouter = require("./routes/examTypeRouter");
+const billRouter = require("./routes/billRouter");
 
 app.use("/", indexRouter);
 app.use("/user", userRouter);
@@ -55,6 +56,7 @@ app.use("/teacher", teacherRouter);
 app.use("/lecture", lectureRouter);
 app.use("/expense", expenseRouter);
 app.use("/exam-type", examTypeRouter);
+app.use("/bill", billRouter);
 
 //swagger
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs))

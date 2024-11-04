@@ -29,6 +29,7 @@ model User {
   exam_scores       ExamUserScore[]              @relation("ExamUserScore_User_Relation") // User : ExamUserScore  (M:N relationship with Exam)
   familiesAsStudent Family[]                     @relation("StudentFamilyRelation") // Family 테이블에서 student_id로 연결
   familiesAsParent  Family[]                     @relation("ParentFamilyRelation") // Family 테이블에서 parent_id로 연결
+  billUsers   BillUser[]   // 여러 사용자를 청구서에 연결
 }
 
 model Academy {
@@ -48,6 +49,7 @@ model Academy {
   class            Class[] //학원 - 메뉴(Class) 1:N
   lectures         Lecture[] //학원-강의 1:N
   exam_types       ExamType[]                    @relation("Academy_ExamType_Relation") //학원-시험 유형 1:N
+  bills            Bill[] //학원-청구서 1:N
 }
 
 model Chief_Academy {
@@ -122,6 +124,7 @@ model Class {
   // Relations
   academy    Academy        @relation(fields: [academy_id], references: [academy_id])
   lectures   ClassLecture[]
+  billClasses BillClass[]  // 여러 클래스를 청구서에 포함
 }
 
 // 메뉴(Class)와 강의의 중간 테이블 (ClassLecture) - N:M 관계
@@ -185,6 +188,46 @@ model Family {
   parent  User @relation("ParentFamilyRelation", fields: [parent_id], references: [user_id], onDelete: Cascade)
 
   @@id([student_id, parent_id]) // 복합 기본 키 설정 (학생과 부모의 관계가 유일하도록)
+}
+
+//청구서
+model Bill {
+  bill_id Int @id @default(autoincrement())
+  academy_id String
+  deadline DateTime
+  amount Int @default(0)
+  paid Boolean @default(false)
+
+  // Relations
+  billClasses BillClass[]  // 여러 클래스를 청구서에 포함
+  billUsers   BillUser[]   // 여러 사용자를 청구서에 연결
+  academy Academy @relation(fields: [academy_id], references: [academy_id], onDelete: Cascade)
+}
+
+//BillClass 중간 테이블 (Bill과 Class 간 N:M 관계)
+model BillClass {
+  id         Int    @id @default(autoincrement())
+  bill_id    Int
+  class_id   Int
+
+  // Relations
+  bill       Bill   @relation(fields: [bill_id], references: [bill_id], onDelete: Cascade)
+  class      Class  @relation(fields: [class_id], references: [class_id], onDelete: Cascade)
+
+  @@unique([bill_id, class_id]) // 복합 고유 키 설정
+}
+
+//BillUser 중간 테이블 (Bill과 User 간 N:M 관계)
+model BillUser {
+  id       Int    @id @default(autoincrement())
+  bill_id  Int
+  user_id  String
+
+  // Relations
+  bill     Bill   @relation(fields: [bill_id], references: [bill_id], onDelete: Cascade)
+  user     User   @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@unique([bill_id, user_id]) // 복합 고유 키 설정
 }
 
 enum Status {
