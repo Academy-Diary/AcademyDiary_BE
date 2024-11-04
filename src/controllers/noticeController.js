@@ -180,7 +180,7 @@ exports.deleteNotice = asyncWrapper(async (req, res, next) => {
   });
 
   // Notice 삭제, NoticeFile은 cascade로 삭제됨
-  const notice = await prisma.Notice.delete({
+  await prisma.Notice.delete({
     where: {
       notice_id: req.params.notice_id,
     },
@@ -190,21 +190,11 @@ exports.deleteNotice = asyncWrapper(async (req, res, next) => {
   const bucketName = S3_BUCKET_NAME;
   const s3Prefix = `public/notice/${academy_id}/${lecture_id}/${notice_num}/`;
 
-  try {
-    await deleteFilesFromS3(bucketName, s3Prefix); // 전체 디렉토리 삭제
-  } catch (error) {
-    return next(
-      new CustomError(
-        "S3 디렉토리 삭제 중 오류가 발생했습니다.",
-        ErrorCode.S3_DELETE_ERROR,
-        StatusCodes.INTERNAL_SERVER_ERROR
-      )
-    );
-  }
+  await deleteFilesFromS3(bucketName, s3Prefix); // 전체 디렉토리 삭제
 
   const resData = {
     notice: notice,
-    files: notice_files.map((file) => file.file),
+    files: notice_files ? notice_files.map((file) => file.name) : [],
   };
 
   return res.status(StatusCodes.OK).json({
