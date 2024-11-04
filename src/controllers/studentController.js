@@ -78,7 +78,7 @@ exports.deleteStudent = asyncWrapper(async (req, res, next) => {
     },
   });
   const parent_id = family ? family.parent_id : null;
-  
+
   if (parent_id) {
     //부모의 academy_id를 NULL로 업데이트
     await prisma.user.update({
@@ -104,17 +104,44 @@ exports.deleteStudent = asyncWrapper(async (req, res, next) => {
 });
 
 exports.getStudent = asyncWrapper(async (req, res, next) => {
-  const { academy_id } = req.body;
+  const { academy_id } = req.params;
 
+  // JWT에서 academy_id를 추출 (인증 미들웨어를 통해 토큰을 디코드하고 req.user에 저장되어있음)
+  const userAcademyId = req.user.academy_id; // JWT 토큰에서 가져온 academy_id
+
+  // 사용자가 다른 학원의 수업을 수정하려고 하는지 체크
+  if (userAcademyId !== academy_id) {
+    return next(
+      new CustomError(
+        "해당 학원에 대한 접근 권한이 없습니다.",
+        StatusCodes.FORBIDDEN,
+        StatusCodes.FORBIDDEN
+      )
+    );
+  }
   // 나중에 User DB에서 가져오게끔 수정.
-  const students = await prisma.AcademyUserRegistrationList.findMany({
+  const students = await prisma.User.findMany({
     where: {
       academy_id: academy_id,
       role: "STUDENT",
-      status: "APPROVED",
+    },
+    select: {
+      user_id: true,
+      user_name: true,
+      phone_number: true,
+      familiesAsStudent: {
+        select: {
+          parent: {
+            select: {
+              user_name: true,
+              phone_number: true,
+            },
+          },
+        },
+      },
     },
   });
-
+  console.log(students);
   if (!students || students.length === 0) {
     return next(
       new CustomError(
@@ -125,10 +152,27 @@ exports.getStudent = asyncWrapper(async (req, res, next) => {
     );
   }
 
+  const resData = students.map((student) => {
+    const family = student.familiesAsStudent[0]; // 첫 번째 요소를 가져옴
+    return {
+      user_id: student.user_id,
+      user_name: student.user_name,
+      phone_number: student.phone_number,
+      parent: family && family.parent // family가 존재하고 parent가 있는지 확인
+        ? {
+            user_name: family.parent.user_name,
+            phone_number: family.parent.phone_number,
+          }
+        : null,
+    };
+  });
+
+
+
   // 성공 응답
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: "학생를 성공적으로 불러왔습니다.",
-    data: students,
+    data: resData,
   });
 });
 
@@ -153,13 +197,18 @@ exports.getStudentLecture = asyncWrapper(async (req, res, next) => {
         select: {
           lecture_id: true,
           lecture_name: true,
-          days : {
-            select : {
-              day : true
-            }
+          start_time: true,
+          end_time: true,
+          days: {
+            select: {
+              day: true,
+            },
           },
-          start_time : true,
-          end_time : true
+          teacher: {
+            select: {
+              user_name: true,  // 강사의 이름만 선택
+            },
+          },
         },
       },
     },
@@ -167,11 +216,11 @@ exports.getStudentLecture = asyncWrapper(async (req, res, next) => {
   // 각 강의에서 day 필드를 추출하여 가공
   const lectures = rawLectures.map((x) => ({
     ...x.lecture,
-    days: x.lecture.days.map(dayObj => dayObj.day) // 각 강의의 day 값만 추출
+    days: x.lecture.days.map((dayObj) => dayObj.day), // 각 강의의 day 값만 추출
   }));
 
   return res.status(StatusCodes.OK).json({
     message: "학생이 수강 중인 강의를 성공적으로 불러왔습니다.",
-      lectures: lectures
+    lectures: lectures,
   });
 });

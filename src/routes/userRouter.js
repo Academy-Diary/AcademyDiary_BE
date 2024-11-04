@@ -92,7 +92,7 @@ router.post(`/signup`, userController.createUser);
  *               user_id:
  *                 type: string
  *                 description: "유저 아이디"
- *                 example: "chief_seonu"
+ *                 example: "test_chief"
  *               password:
  *                 type: string
  *                 description: "유저 비밀번호"
@@ -454,11 +454,32 @@ router.delete(
  *             schema:
  *               type: string
  *               format: binary
+ *           image/png:
+ *             schema:
+ *               type: string
+ *               format: binary
  *       404:
- *         description: 해당 사용자를 찾을 수 없습니다.
+ *         description: 해당 사용자를 찾을 수 없거나 이미지 파일이 없습니다.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: 해당 사용자를 찾을 수 없습니다.
  *       500:
  *         description: 서버에서 이미지를 반환하는 중 오류가 발생했습니다.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: 서버에서 이미지를 반환하는 중 오류가 발생했습니다.
  */
+
 // 사용자 이미지 정보 API
 router.get(
   "/:user_id/image-info",
@@ -667,7 +688,7 @@ router.put(
 
 /**
  * @swagger
- * /family:
+ * /user/family:
  *   post:
  *     summary: 학생과 부모 관계 설정
  *     description: 학생과 부모 간의 관계를 설정하고, 부모의 학원 등록 상태를 학생의 상태로 설정합니다.

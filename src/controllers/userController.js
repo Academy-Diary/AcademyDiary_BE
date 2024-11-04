@@ -8,7 +8,7 @@ const { StatusCodes } = require("http-status-codes");
 const {
   generateAccessToken,
   generateRefreshToken,
-  refreshAccessToken,
+  generateNewTokens,
 } = require("../lib/jwt/index.js");
 const jwt = require("jsonwebtoken");
 const path = require("path");
@@ -46,32 +46,38 @@ exports.createUser = asyncWrapper(async (req, res, next) => {
         .json({ message: "회원가입이 완료되었습니다." });
     })
     .catch((err) => {
+      console.log(err);
       // Prisma의 고유성 제약 조건 에러 처리 (이메일 또는 아이디 중복)
-      if (err.code === 'P2002') {
-        const duplicatedField = err.meta.target[0]; // 중복된 필드를 확인
+      if (err.code === "P2002") {
+        const duplicatedField = err.meta.target; // 중복된 필드를 확인
+        console.log(duplicatedField);
         let errorMessage = "중복된 값이 있습니다.";
 
-        if (duplicatedField === 'email') {
+        if (duplicatedField === "User_email_key") {
           errorMessage = "이미 사용 중인 이메일입니다.";
-        } else if (duplicatedField === 'user_id') {
+        } else if (duplicatedField === "User_user_id_key") {
           errorMessage = "이미 존재하는 아이디입니다.";
-        } else if (duplicatedField === 'phone_number') {
+        } else if (duplicatedField === "User_phone_number_key") {
           errorMessage = "이미 존재하는 휴대폰 번호 입니다.";
         }
 
-        return next(new CustomError(
-          errorMessage,
-          StatusCodes.CONFLICT,
-          StatusCodes.CONFLICT
-        ));
+        return next(
+          new CustomError(
+            errorMessage,
+            StatusCodes.CONFLICT,
+            StatusCodes.CONFLICT
+          )
+        );
       }
 
       // 그 외의 에러 처리
-      return next(new CustomError(
-        "회원가입 중 오류가 발생했습니다.",
-        StatusCodes.INTERNAL_SERVER_ERROR,
-        StatusCodes.INTERNAL_SERVER_ERROR
-      ));
+      return next(
+        new CustomError(
+          "회원가입 중 오류가 발생했습니다.",
+          StatusCodes.INTERNAL_SERVER_ERROR,
+          StatusCodes.INTERNAL_SERVER_ERROR
+        )
+      );
     });
 });
 
@@ -105,6 +111,8 @@ exports.createJWT = asyncWrapper(async (req, res) => {
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: "None",
+      secure: true,
     }); //7일
 
     // 액세스 토큰을 Authorization 헤더에 추가
@@ -126,7 +134,7 @@ exports.createJWT = asyncWrapper(async (req, res) => {
       image: user.image,
     };
 
-    res.status(StatusCodes.CREATED).json({
+    return res.status(StatusCodes.CREATED).json({
       message: "로그인 되었습니다.",
       userStatus,
       accessToken: accessToken,
@@ -146,50 +154,65 @@ exports.removeJWT = asyncWrapper(async (req, res, next) => {
   const refreshToken = req.cookies.refreshToken;
   // 검사1: 토큰이 없을 경우
   if (!refreshToken) {
-    return next(new CustomError(
-      "리프레시 토큰이 쿠키에 존재하지 않습니다.",
-      StatusCodes.BAD_REQUEST,
-      StatusCodes.BAD_REQUEST
-    ));
+    return next(
+      new CustomError(
+        "리프레시 토큰이 쿠키에 존재하지 않습니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
   }
   // 검사 2: 토큰이 정상적인 토큰이 아닌 경우
   try {
     jwt.verify(refreshToken, secretKey); // 토큰 유효성 검증
   } catch (err) {
-    return next(new CustomError(
-      "잘못된 리프레시 토큰입니다.",
-      StatusCodes.BAD_REQUEST,
-      StatusCodes.BAD_REQUEST
-    ));
+    return next(
+      new CustomError(
+        "잘못된 리프레시 토큰입니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
   }
 
   // 쿠키 삭제
   res.clearCookie("refreshToken");
-  res.status(StatusCodes.OK).json({ message: "로그아웃 되었습니다." });
+  return res.status(StatusCodes.OK).json({ message: "로그아웃 되었습니다." });
 });
 
 // 리프레시 토큰을 사용하여 액세스 토큰 갱신
-exports.refreshToken = asyncWrapper(async (req, res) => {
+exports.refreshToken = asyncWrapper(async (req, res, next) => {
   const refreshToken = req.cookies.refreshToken;
-  
+
   if (!refreshToken) {
-    return next(new CustomError(
-      "리프레시 토큰이 쿠키에 존재하지 않습니다.",
-      StatusCodes.BAD_REQUEST,
-      StatusCodes.BAD_REQUEST
-    ));
+    return next(
+      new CustomError(
+        "리프레시 토큰이 쿠키에 존재하지 않습니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
   }
-  const newAccessToken = refreshAccessToken(refreshToken);
+  const {newAccessToken, newRefreshToken} = generateNewTokens(refreshToken);
 
   if (!newAccessToken) {
-    return next(new CustomError(
-      "유효하지 않거나 만료된 리프레시 토큰입니다. 다시 로그인 해주세요.",
-      StatusCodes.FORBIDDEN,
-      StatusCodes.FORBIDDEN
-    ));
+    return next(
+      new CustomError(
+        "유효하지 않거나 만료된 리프레시 토큰입니다. 다시 로그인 해주세요.",
+        StatusCodes.FORBIDDEN,
+        StatusCodes.FORBIDDEN
+      )
+    );
   }
 
-  res.status(StatusCodes.CREATED).json({
+  res.cookie("refreshToken", newRefreshToken, {
+    httpOnly: true,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    sameSite: "None",
+    secure: true,
+  }); //7일
+
+  return res.status(StatusCodes.CREATED).json({
     message: "액세스 토큰이 갱신되었습니다.",
     accessToken: newAccessToken,
   });
@@ -200,11 +223,13 @@ exports.checkIdDuplicated = asyncWrapper(async (req, res, next) => {
 
   // user_id가 공백인 경우
   if (user_id === null || !user_id.trim()) {
-    return next(new CustomError(
-      "아이디를 입력해 주세요.",
-      StatusCodes.BAD_REQUEST,
-      StatusCodes.BAD_REQUEST
-    ));
+    return next(
+      new CustomError(
+        "아이디를 입력해 주세요.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
   }
 
   const user = await prisma.user
@@ -213,19 +238,23 @@ exports.checkIdDuplicated = asyncWrapper(async (req, res, next) => {
     })
     .catch((err) => {
       // Prisma 에러가 발생하면 CustomError로 처리하여 미들웨어 체인에 전달
-      return next(new CustomError(
-        "Prisma Error occurred!",
-        ErrorCode.INTERNAL_SERVER_PRISMA_ERROR,
-        StatusCodes.INTERNAL_SERVER_ERROR
-      ));
+      return next(
+        new CustomError(
+          "Prisma Error occurred!",
+          ErrorCode.INTERNAL_SERVER_PRISMA_ERROR,
+          StatusCodes.INTERNAL_SERVER_ERROR
+        )
+      );
     });
 
   if (user) {
-    return next(new CustomError(
-      "이미 존재하는 아이디입니다.",
-      StatusCodes.CONFLICT,
-      StatusCodes.CONFLICT
-    ));
+    return next(
+      new CustomError(
+        "이미 존재하는 아이디입니다.",
+        StatusCodes.CONFLICT,
+        StatusCodes.CONFLICT
+      )
+    );
   } else {
     return res
       .status(StatusCodes.OK)
@@ -241,7 +270,7 @@ exports.findUserId = asyncWrapper(async (req, res, next) => {
 
   const user = await findUserByCriteria({ email, phone_number });
 
-  res.status(StatusCodes.OK).json({ user_id: user.user_id });
+  return res.status(StatusCodes.OK).json({ user_id: user.user_id });
 });
 
 // 비밀번호 재설정
@@ -281,7 +310,7 @@ exports.resetUserPassword = asyncWrapper(async (req, res, next) => {
 
   transporter.sendMail(emailOptions);
 
-  res
+  return res
     .status(StatusCodes.OK)
     .json({ message: "비밀번호가 초기화 메일이 발송되었습니다." });
 });
@@ -306,7 +335,9 @@ exports.deleteUser = asyncWrapper(async (req, res, next) => {
     where: { user_id },
   });
 
-  res.status(StatusCodes.OK).json({ message: "회원 탈퇴가 완료되었습니다." });
+  return res
+    .status(StatusCodes.OK)
+    .json({ message: "회원 탈퇴가 완료되었습니다." });
 });
 
 // userController.js
@@ -345,7 +376,7 @@ exports.getUserBasicInfo = asyncWrapper(async (req, res, next) => {
         : null, // family가 없으면 null을 반환
   };
 
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: "회원 정보 조회가 완료되었습니다.",
     data: user_data,
   });
@@ -353,8 +384,17 @@ exports.getUserBasicInfo = asyncWrapper(async (req, res, next) => {
 
 exports.getUserImageInfo = asyncWrapper(async (req, res, next) => {
   const user_id = req.params["user_id"];
-
   const user = await findUserByCriteria({ user_id });
+
+  if (!user || !user.image) {
+    return next(
+      new CustomError(
+        "해당 사용자를 찾을 수 없습니다.",
+        StatusCodes.NOT_FOUND,
+        StatusCodes.NOT_FOUND
+      )
+    );
+  }
 
   // 이미지 파일 경로 설정
   const imagePath = path.resolve(
@@ -362,8 +402,18 @@ exports.getUserImageInfo = asyncWrapper(async (req, res, next) => {
     `../../public/profile/${user.image}`
   );
 
+  if (!fs.existsSync(imagePath)) {
+    return next(
+      new CustomError(
+        "이미지 파일을 찾을 수 없습니다.",
+        StatusCodes.NOT_FOUND,
+        StatusCodes.NOT_FOUND
+      )
+    );
+  }
+
   // 이미지 파일 반환
-  res.sendFile(imagePath);
+  return res.sendFile(imagePath);
 });
 
 // 회원 기본 정보 수정
@@ -399,7 +449,7 @@ exports.updateUserBasicInfo = asyncWrapper(async (req, res, next) => {
     },
   });
 
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: "회원 정보가 수정되었습니다.",
     user_id: user_id,
     email: email,
@@ -433,7 +483,7 @@ exports.updateUserImageInfo = asyncWrapper(async (req, res, next) => {
     },
   });
 
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     message: "회원 이미지 정보가 수정되었습니다.",
     user_id: user_id,
     image: imagePath,

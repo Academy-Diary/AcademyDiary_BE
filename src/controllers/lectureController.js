@@ -42,14 +42,27 @@ exports.getLecture = asyncWrapper(async (req, res, next) => {
         select : {
           day : true
         }
+      },
+     teacher:{
+        select:{
+          user_name : true
+        }
       }
     }
   });
 
-  // 각 강의에 대해 days에서 day 값만 추출하여 새로운 객체 배열 생성
-  const formattedLectureList = LectureList.map(lecture => ({
-    ...lecture,
-    days: lecture.days.map(dayObj => dayObj.day)  // days에서 day 값만 추출
+
+  // 각 강의에 대해 필요한 필드만 포함한 새로운 객체 배열 생성
+  const formattedLectureList = LectureList.map((lecture) => ({
+    lecture_id: lecture.lecture_id,
+    lecture_name: lecture.lecture_name,
+    teacher_id: lecture.teacher_id,
+    headcount: lecture.headcount,
+    academy_id: lecture.academy_id,
+    start_time: lecture.start_time,
+    end_time: lecture.end_time,
+    teacher_name: lecture.teacher.user_name, // teacher_name 필드로 추가
+    days: lecture.days.map((dayObj) => dayObj.day), // days에서 day 값만 추출
   }));
 
   if (!LectureList || LectureList.length === 0) {
@@ -64,10 +77,9 @@ exports.getLecture = asyncWrapper(async (req, res, next) => {
 
   return res.status(StatusCodes.OK).json({
     message: "강의를 성공적으로 불러왔습니다.",
-    data: formattedLectureList
+    data: formattedLectureList,
   });
 });
-
 //강의 생성
 exports.createLecture = asyncWrapper(async (req, res, next) => {
   const { lecture_name, user_id, academy_id, day, start_time, end_time } = req.body;
@@ -282,6 +294,16 @@ exports.getLectureStudent = asyncWrapper(async (req, res, next) => {
     where: {
       lecture_id: target_id,
     },
+    include : {
+      user: {
+        select: {
+          user_id : true,
+          user_name: true,
+          email : true,
+          phone_number: true
+        }
+      }
+    }
   });
 
   if (!result || result.length === 0) {
@@ -294,9 +316,18 @@ exports.getLectureStudent = asyncWrapper(async (req, res, next) => {
     );
   }
 
+  // lecture_id와 user_id를 제외하고 수강생 정보를 가공
+  const students = result.map(participant => ({
+    user_id : participant.user.user_id,
+    user_name: participant.user.user_name,
+    email : participant.user.email,
+    phone_number: participant.user.phone_number
+  }));
+
   return res.status(StatusCodes.OK).json({
     message: "수강생을 성공적으로 불러왔습니다.",
-    data: result,
+    lecture_id : target_id,
+    data: students
   });
 });
 
@@ -799,7 +830,7 @@ exports.modifyScore = asyncWrapper(async (req, res, next) => {
 exports.getExamTypeScore = asyncWrapper(async (req, res, next) => {
   const { lecture_id } = req.params;
   const user_id = req.query.user_id;
-  const exam_type_id = req.query.exam_type;
+  const exam_type_id = req.query.exam_type_id;
   const asc = req.query.asc;
 
   if (!lecture_id || !user_id || !exam_type_id) {
@@ -860,29 +891,33 @@ exports.getExamTypeScore = asyncWrapper(async (req, res, next) => {
   }
 
   // Promise.all로 모든 비동기 작업을 처리
-  const exams_data = await Promise.all(
-    exams_info.exams.map(async (exam) => {
-      const exam_score = await prisma.ExamUserScore.findFirst({
-        where: {
-          exam_id: exam.exam_id,
-          user_id: user_id,
-        },
-      });
+  // -> map와 같이 사용하면 DB에서 데이터를 가져오는 작업을 병렬로 처리 가능. 속도 향상
+  // 또한 filtered로 점수가 없을 때 반환안하게 구현
+  const exams_data = (
+    await Promise.all(
+      exams_info.exams.map(async (exam) => {
+        const exam_score = await prisma.ExamUserScore.findFirst({
+          where: {
+            exam_id: exam.exam_id,
+            user_id: user_id,
+          },
+        });
 
-      return {
-        exam_id: exam.exam_id,
-        exam_name: exam.exam_name,
-        exam_date: exam.exam_date,
-        score: exam_score ? exam_score.score : null,
-        ...(lecture_id_int === 0
+        // exam_score가 null이 아니면 반환, null이면 undefined 반환
+        return exam_score
           ? {
-              lecture_id: exam.lecture_id,
+              exam_id: exam.exam_id,
+              exam_name: exam.exam_name,
+              exam_date: exam.exam_date,
+              score: exam_score.score,
+              ...(lecture_id_int === 0 ? { lecture_id: exam.lecture_id } : {}),
             }
-          : {}),
-      };
-    })
-  );
+          : undefined;
+      })
+    )
+  ).filter(Boolean); // undefined 값 제거
 
+  
   return res.status(StatusCodes.OK).json({
     message: `${user_id}의 성적을 성공적으로 불러왔습니다.`,
     data: {

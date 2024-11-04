@@ -5,13 +5,6 @@ const lectureController = require("../controllers/lectureController.js");
 
 /**
  * @swagger
- * tags:
- *   name: Lecture
- *   description: 강의 관련 API
- */
-
-/**
- * @swagger
  * /lecture/{academy_id}:
  *   get:
  *     summary: 학원 내의 모든 강의 조회
@@ -42,21 +35,47 @@ const lectureController = require("../controllers/lectureController.js");
  *                     properties:
  *                       lecture_id:
  *                         type: integer
+ *                         description: 강의 ID
  *                       lecture_name:
  *                         type: string
+ *                         description: 강의 이름
  *                       teacher_id:
  *                         type: string
+ *                         description: 강사 ID
+ *                       headcount:
+ *                         type: integer
+ *                         description: 현재 강의 수강 인원
+ *                       academy_id:
+ *                         type: string
+ *                         description: 학원 ID
+ *                       start_time:
+ *                         type: string
+ *                         format: date-time
+ *                         description: 강의 시작 시간
+ *                       end_time:
+ *                         type: string
+ *                         format: date-time
+ *                         description: 강의 종료 시간
+ *                       teacher_name:
+ *                         type: string
+ *                         description: 강사 이름
  *                       days:
  *                         type: array
  *                         items:
  *                           type: string
+ *                         description: 강의 요일 목록
  *             example:
  *               message: "강의를 성공적으로 불러왔습니다."
  *               data:
  *                 - lecture_id: 1
- *                   lecture_name: "Math"
- *                   teacher_id: "user123"
- *                   days: ["Monday", "Wednesday"]
+ *                   lecture_name: "한국사"
+ *                   teacher_id: "test_teacher"
+ *                   headcount: 0
+ *                   academy_id: "test_academy"
+ *                   start_time: "2024-10-16T04:30:00.000Z"
+ *                   end_time: "2024-10-16T06:00:00.000Z"
+ *                   teacher_name: "홍길동"
+ *                   days: ["TUESDAY", "THURSDAY"]
  *       400:
  *         description: 유효하지 않은 academy_id
  *         content:
@@ -79,9 +98,25 @@ const lectureController = require("../controllers/lectureController.js");
  *                   type: string
  *             example:
  *               message: "해당 학원에 대한 접근 권한이 없습니다."
+ *       404:
+ *         description: 개설된 강의가 존재하지 않음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             example:
+ *               message: "현재 개설된 강의가 존재하지 않습니다."
  */
+
 //학원내의 모든 강의 조회
-router.get("/:academy_id", authenticateJWT("CHIEF"), lectureController.getLecture);
+router.get(
+  "/:academy_id",
+  authenticateJWT("CHIEF"),
+  lectureController.getLecture
+);
 /**
  * @swagger
  * /lecture:
@@ -246,7 +281,11 @@ router.post("/", authenticateJWT("CHIEF"), lectureController.createLecture);
  *               message: "유효하지 않은 입력입니다."
  */
 //강의 수정
-router.put("/:lecture_id", authenticateJWT("CHIEF"), lectureController.modifyLecture);
+router.put(
+  "/:lecture_id",
+  authenticateJWT("CHIEF"),
+  lectureController.modifyLecture
+);
 /**
  * @swagger
  * /lecture/{lecture_id}:
@@ -290,12 +329,17 @@ router.put("/:lecture_id", authenticateJWT("CHIEF"), lectureController.modifyLec
  *               message: "유효한 lecture_id가 제공되지 않았습니다."
  */
 //강의 삭제
-router.delete("/:lecture_id", authenticateJWT("CHIEF"), lectureController.deleteLecture);
+router.delete(
+  "/:lecture_id",
+  authenticateJWT("CHIEF"),
+  lectureController.deleteLecture
+);
 /**
  * @swagger
  * /lecture/{lecture_id}/student:
  *   get:
- *     summary: 강의에 등록된 수강생 조회
+ *     summary: 강의 수강생 조회
+ *     description: 특정 강의에 등록된 수강생 목록을 조회합니다.
  *     tags: [Lecture]
  *     security:
  *       - bearerAuth: []
@@ -305,10 +349,10 @@ router.delete("/:lecture_id", authenticateJWT("CHIEF"), lectureController.delete
  *         required: true
  *         schema:
  *           type: string
- *         description: 강의 ID
+ *         description: 조회할 강의의 ID
  *     responses:
  *       200:
- *         description: 성공적으로 수강생을 불러옴
+ *         description: 수강생 목록 조회 성공
  *         content:
  *           application/json:
  *             schema:
@@ -316,34 +360,40 @@ router.delete("/:lecture_id", authenticateJWT("CHIEF"), lectureController.delete
  *               properties:
  *                 message:
  *                   type: string
+ *                   description: "수강생을 성공적으로 불러왔습니다."
+ *                 lecture_id:
+ *                   type: integer
+ *                   description: 강의 ID
  *                 data:
  *                   type: array
  *                   items:
  *                     type: object
  *                     properties:
  *                       user_id:
- *                         type: string
- *                       lecture_id:
  *                         type: integer
- *             example:
- *               message: "수강생을 성공적으로 불러왔습니다."
- *               data:
- *                 - user_id: "student123"
- *                   lecture_id: 1
+ *                         description: 수강생의 사용자 ID
+ *                       user_name:
+ *                         type: string
+ *                         description: 수강생의 이름
+ *                       email:
+ *                         type: string
+ *                         description: 수강생의 이메일
+ *                       phone_number:
+ *                         type: string
+ *                         description: 수강생의 전화번호
+ *       400:
+ *         description: 유효하지 않은 lecture_id가 제공되었습니다.
  *       404:
- *         description: 수강생이 없음
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *             example:
- *               message: "수강생이 없거나 불러올 수 없습니다."
+ *         description: 수강생이 없거나 불러올 수 없습니다.
+ *       500:
+ *         description: 서버 오류가 발생했습니다.
  */
 // 강의 수강생 조회
-router.get("/:lecture_id/student", authenticateJWT("CHIEF", "TEACHER"), lectureController.getLectureStudent);
+router.get(
+  "/:lecture_id/student",
+  authenticateJWT("CHIEF", "TEACHER"),
+  lectureController.getLectureStudent
+);
 /**
  * @swagger
  * /lecture/{lecture_id}/student:
@@ -404,7 +454,12 @@ router.get("/:lecture_id/student", authenticateJWT("CHIEF", "TEACHER"), lectureC
  */
 
 //강의 수강생 추가
-router.post("/:lecture_id/student", authenticateJWT("CHIEF", "TEACHER"), lectureController.createLectureStudent);
+router.post(
+  "/:lecture_id/student",
+  authenticateJWT("CHIEF", "TEACHER"),
+  lectureController.createLectureStudent
+);
+
 /**
  * @swagger
  * /lecture/{lecture_id}/student:
@@ -463,8 +518,6 @@ router.post("/:lecture_id/student", authenticateJWT("CHIEF", "TEACHER"), lecture
  *             example:
  *               message: "유효한 user_id가 제공되지 않았습니다."
  */
-
-module.exports = router;
 
 //강의 수강생 제거
 router.delete(
@@ -681,7 +734,7 @@ router.get(
  *               message: "시험 삭제가 완료되었습니다."
  *               data:
  *                 lecture_id: 1001
- *                 exams: 
+ *                 exams:
  *                  exam_id: 9,
  *                  lecture_id: 129
  *                  exam_name: "단원평가2"
@@ -985,7 +1038,7 @@ router.put(
  *           type: string
  *         description: 사용자 ID
  *       - in: query
- *         name: exam_type
+ *         name: exam_type_id
  *         required: true
  *         schema:
  *           type: string

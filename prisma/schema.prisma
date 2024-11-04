@@ -8,27 +8,27 @@ datasource db {
 }
 
 model User {
-  id                Int                          @id @default(autoincrement())
-  user_id           String                       @unique
-  academy_id        String?
-  email             String                       @unique
-  birth_date        DateTime
-  user_name         String
-  password          String
-  phone_number      String
-  role              Role                         @default(STUDENT)
-  image             String                       @default("default.png")
-  registrationList  AcademyUserRegistrationList? @relation("AcademyUserRegistrationList_User_Relation")
-  chief             Chief_Academy?               @relation("UserChiefRelation")
-  exam_scores       ExamUserScore[]              @relation("ExamUserScore_User_Relation")
-  familiesAsParent  Family[]                     @relation("ParentFamilyRelation")
-  familiesAsStudent Family[]                     @relation("StudentFamilyRelation")
-  lectures          Lecture[]                    @relation("Teacher_Lecture")
-  registerdLecture  LectureParticipant[]
-  notice            Notice[]                     @relation("UserToNotice_Relation")
-  academy           Academy?                     @relation("UserAcademyRelation", fields: [academy_id], references: [academy_id])
+  id           Int      @id @default(autoincrement())
+  user_id      String   @unique
+  academy_id   String?
+  email        String   @unique
+  birth_date   DateTime
+  user_name    String
+  password     String
+  phone_number String   @unique
+  role         Role     @default(STUDENT)
+  image        String   @default("default.png")
 
-  @@index([academy_id], map: "User_academy_id_fkey")
+  // Relations
+  academy           Academy?                     @relation(fields: [academy_id], references: [academy_id], name: "UserAcademyRelation")
+  chief             Chief_Academy?               @relation("UserChiefRelation")
+  registrationList  AcademyUserRegistrationList? @relation("AcademyUserRegistrationList_User_Relation")
+  lectures          Lecture[]                    @relation("Teacher_Lecture") //강사-강의 1:N
+  registerdLecture  LectureParticipant[] //강의-수강생 N:M
+  exam_scores       ExamUserScore[]              @relation("ExamUserScore_User_Relation") // User : ExamUserScore  (M:N relationship with Exam)
+  familiesAsStudent Family[]                     @relation("StudentFamilyRelation") // Family 테이블에서 student_id로 연결
+  familiesAsParent  Family[]                     @relation("ParentFamilyRelation") // Family 테이블에서 parent_id로 연결
+  billUsers   BillUser[]   // 여러 사용자를 청구서에 연결
 }
 
 model Academy {
@@ -40,19 +40,24 @@ model Academy {
   address          String
   phone_number     String
   status           Status                        @default(PENDING)
+ 
+  // Relations
   registrationList AcademyUserRegistrationList[] @relation("AcademyUserRegistrationList_Academy_Relation")
   chief            Chief_Academy?                @relation("AcademyChiefRelation")
-  class            Class[]
-  exam_types       ExamType[]                    @relation("Academy_ExamType_Relation")
-  lectures         Lecture[]
   notice           Notice[]                      @relation("AcademyToNotice_Relation")
   users            User[]                        @relation("UserAcademyRelation")
+  class            Class[] //학원 - 메뉴(Class) 1:N
+  lectures         Lecture[] //학원-강의 1:N
+  exam_types       ExamType[]                    @relation("Academy_ExamType_Relation") //학원-시험 유형 1:N
+  bills            Bill[] //학원-청구서 1:N
 }
 
 model Chief_Academy {
   id         String  @id @default(uuid())
   chief_id   String  @unique
   academy_id String  @unique
+  
+  // Relations
   academy    Academy @relation("AcademyChiefRelation", fields: [academy_id], references: [academy_id])
   user       User    @relation("UserChiefRelation", fields: [chief_id], references: [user_id])
 
@@ -64,6 +69,8 @@ model AcademyUserRegistrationList {
   user_id    String  @unique
   role       Role    @default(STUDENT)
   status     Status  @default(PENDING)
+  
+  // Rleations
   academy    Academy @relation("AcademyUserRegistrationList_Academy_Relation", fields: [academy_id], references: [academy_id])
   user       User    @relation("AcademyUserRegistrationList_User_Relation", fields: [user_id], references: [user_id])
 
@@ -74,10 +81,12 @@ model Lecture {
   lecture_id   Int                  @id @default(autoincrement())
   lecture_name String
   teacher_id   String
-  headcount    Int?
+  headcount    Int      @default(0)
   academy_id   String
   start_time   DateTime             @default(now())
   end_time     DateTime             @default(now())
+  
+  // Relations
   ClassLecture ClassLecture[]
   exams        Exam[]               @relation("Lecture_Exam_Relation")
   academy      Academy              @relation(fields: [academy_id], references: [academy_id])
@@ -117,15 +126,18 @@ model Class {
   expense    Int
   discount   Int?
   duration   Int
+ 
+  // Relations
   academy    Academy        @relation(fields: [academy_id], references: [academy_id])
   lectures   ClassLecture[]
-
-  @@index([academy_id], map: "Class_academy_id_fkey")
+  billClasses BillClass[]  // 여러 클래스를 청구서에 포함
 }
 
 model ClassLecture {
   class_id   Int
   lecture_id Int
+  
+  // Relations
   class      Class   @relation(fields: [class_id], references: [class_id])
   lecture    Lecture @relation(fields: [lecture_id], references: [lecture_id])
 
@@ -137,6 +149,8 @@ model ExamType {
   academy_id     String?
   exam_type_id   Int      @id @default(autoincrement())
   exam_type_name String
+  
+  // Relations
   exams          Exam[]   @relation("ExamType_Exam_Relation")
   academy        Academy? @relation("Academy_ExamType_Relation", fields: [academy_id], references: [academy_id])
 
@@ -155,6 +169,8 @@ model Exam {
   exam_date     DateTime
   exam_type_id  Int
   headcount     Int             @default(0)
+  
+  // Relations
   exam_type     ExamType        @relation("ExamType_Exam_Relation", fields: [exam_type_id], references: [exam_type_id])
   lecture       Lecture         @relation("Lecture_Exam_Relation", fields: [lecture_id], references: [lecture_id])
   exam_scores   ExamUserScore[] @relation("ExamUserScore_Exam_Relation")
@@ -167,6 +183,8 @@ model ExamUserScore {
   exam_id Int
   user_id String
   score   Int    @default(0)
+  
+  // Relations
   exam    Exam   @relation("ExamUserScore_Exam_Relation", fields: [exam_id], references: [exam_id], onDelete: Cascade)
   user    User   @relation("ExamUserScore_User_Relation", fields: [user_id], references: [user_id], onDelete: Cascade)
 
@@ -177,6 +195,8 @@ model ExamUserScore {
 model Family {
   student_id String
   parent_id  String
+  
+  // Relations
   parent     User   @relation("ParentFamilyRelation", fields: [parent_id], references: [user_id], onDelete: Cascade)
   student    User   @relation("StudentFamilyRelation", fields: [student_id], references: [user_id], onDelete: Cascade)
 
@@ -214,6 +234,46 @@ model NoticeFile {
   notice    Notice @relation("NoticeToNoticeFiles_Relation", fields: [notice_id], references: [notice_id], onDelete: Cascade)
 
   @@index([notice_id], map: "NoticeFile_notice_id_fkey")
+}
+
+//청구서
+model Bill {
+  bill_id Int @id @default(autoincrement())
+  academy_id String
+  deadline DateTime
+  amount Int @default(0)
+  paid Boolean @default(false)
+
+  // Relations
+  billClasses BillClass[]  // 여러 클래스를 청구서에 포함
+  billUsers   BillUser[]   // 여러 사용자를 청구서에 연결
+  academy Academy @relation(fields: [academy_id], references: [academy_id], onDelete: Cascade)
+}
+
+//BillClass 중간 테이블 (Bill과 Class 간 N:M 관계)
+model BillClass {
+  id         Int    @id @default(autoincrement())
+  bill_id    Int
+  class_id   Int
+
+  // Relations
+  bill       Bill   @relation(fields: [bill_id], references: [bill_id], onDelete: Cascade)
+  class      Class  @relation(fields: [class_id], references: [class_id], onDelete: Cascade)
+
+  @@unique([bill_id, class_id]) // 복합 고유 키 설정
+}
+
+//BillUser 중간 테이블 (Bill과 User 간 N:M 관계)
+model BillUser {
+  id       Int    @id @default(autoincrement())
+  bill_id  Int
+  user_id  String
+
+  // Relations
+  bill     Bill   @relation(fields: [bill_id], references: [bill_id], onDelete: Cascade)
+  user     User   @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@unique([bill_id, user_id]) // 복합 고유 키 설정
 }
 
 enum Status {
