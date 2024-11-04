@@ -196,4 +196,65 @@ router.get("/:academy_id", authenticateJWT("CHIEF"), billController.getBill);
  */
 router.get("/my/:user_id", authenticateJWT("STUDENT", "PARENT"), billController.getMyBill);
 
+/**
+ * @swagger
+ * /bill/{academy_id}/pay:
+ *   patch:
+ *     summary: 청구서 결제 상태 업데이트
+ *     description: 특정 학원에서 선택한 청구서 목록의 결제 상태를 업데이트합니다.
+ *     tags: [Bill]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: academy_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 결제 상태를 업데이트할 학원의 ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - targetBillList
+ *               - paid
+ *             properties:
+ *               targetBillList:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *                 description: 결제 상태를 업데이트할 청구서 ID 목록
+ *               paid:
+ *                 type: boolean
+ *                 description: 청구서의 결제 상태
+ *     responses:
+ *       200:
+ *         description: 청구서 결제 상태 업데이트 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: "청구서가 성공적으로 업데이트 되었습니다."
+ *                 updatedBills:
+ *                   type: array
+ *                   items:
+ *                     type: integer
+ *                   description: 업데이트된 청구서 ID 목록
+ *       400:
+ *         description: paid 값이 유효하지 않거나 다른 요청 오류 발생
+ *       403:
+ *         description: 학원에 대한 접근 권한이 없습니다.
+ *       404:
+ *         description: 유효한 청구서가 없습니다.
+ *       500:
+ *         description: 서버 오류가 발생했습니다.
+ */
+router.post("/:academy_id/pay", authenticateJWT("CHIEF"), billController.payBill);
+
 module.exports = router;
