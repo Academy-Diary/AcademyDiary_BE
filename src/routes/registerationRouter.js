@@ -199,12 +199,14 @@ router.post(
  *           schema:
  *             type: object
  *             properties:
- *               academy_id:
- *                 type: string
  *               user_id:
- *                 type: string
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: 승인 또는 거절할 유저의 ID 배열
  *               agreed:
  *                 type: boolean
+ *                 description: 승인(true) 또는 거절(false)
  *     responses:
  *       200:
  *         description: 사용자 승인/거절이 성공적으로 완료됨
@@ -215,30 +217,32 @@ router.post(
  *               properties:
  *                 message:
  *                   type: string
+ *                   example: "유저 승인/거절이 성공적으로 완료되었습니다."
  *                 data:
  *                   type: object
  *                   properties:
- *                     user_id:
- *                       type: string
- *                     academy_id:
- *                       type: string
- *                     role:
- *                       type: string
- *                       enum: [TEACHER, STUDENT, PARENT]
+ *                     updatedUserIds:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                       description: 업데이트된 유저 ID 배열
+ *                     inputCount: 
+ *                       type: integer 
+ *                       description: 프론트에서 요청된(선택한) 유저 수
+ *                     updatedCount:
+ *                       type: integer
+ *                       description: 상태가 변경된 유저 수
  *                     status:
  *                       type: string
  *                       enum: [APPROVED, REJECTED]
- *                     parent_id:
- *                       type: string
- *                       nullable: true
+ *                       description: 승인 또는 거절 상태
  *             example:
  *               message: "유저 승인/거절이 성공적으로 완료되었습니다."
  *               data:
- *                 user_id: "user123"
- *                 academy_id: "academy123"
- *                 role: "STUDENT"
+ *                 updatedUserIds: ["test_student", "test_teacher", "test_parent"]
+ *                 inputCount: 2
+ *                 updatedCount: 3
  *                 status: "APPROVED"
- *                 parent_id: "parent123"
  *       404:
  *         description: 사용자 정보를 찾을 수 없음
  *         content:
@@ -248,8 +252,7 @@ router.post(
  *               properties:
  *                 message:
  *                   type: string
- *             example:
- *               message: "해당하는 유저가 존재하지 않습니다."
+ *                   example: "해당하는 유저가 존재하지 않습니다."
  *       500:
  *         description: 서버 오류 발생
  *         content:
@@ -259,15 +262,14 @@ router.post(
  *               properties:
  *                 message:
  *                   type: string
- *             example:
- *               message: "사용자 승인/거절 처리 중 오류가 발생했습니다."
+ *                   example: "사용자 승인/거절 처리 중 오류가 발생했습니다."
  */
-// 사용자 승인/거절
 router.post(
   "/decide/user",
   authenticateJWT("CHIEF"),
   registerController.decideUserStatus
 );
+
 /**
  * @swagger
  * /registeration/list/user:
