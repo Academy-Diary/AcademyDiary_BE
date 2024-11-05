@@ -152,78 +152,89 @@ exports.registerUser = asyncWrapper(async(req, res, next) =>{
         ));
     }
 })
+
+// registrationController.js
 exports.decideUserStatus = asyncWrapper(async (req, res, next) => {
-    const { academy_id, user_id, agreed } = req.body;
-
-    // 등록된 유저 검색
-    const searchUser = await prisma.AcademyUserRegistrationList.findUnique({
-        where: {
-            academy_id: academy_id,
-            user_id: user_id,
-        },
-    });
-
-    if (!searchUser) {
-        return next(new CustomError(
-            "해당하는 유저가 존재하지 않습니다.",
-            StatusCodes.NOT_FOUND,
-            StatusCodes.NOT_FOUND
-        ));
-    }
-
+    const agreed = req.body.agreed;
+    const arr_user_id = req.body.user_id;
+    const academy_id = req.user.academy_id;
     const newStatus = agreed ? 'APPROVED' : 'REJECTED';
 
-    const updatedUser = await prisma.AcademyUserRegistrationList.update({
-        where: {
-            academy_id: academy_id,
-            user_id: user_id,
-        },
-        data: { status: newStatus },
-    });
-
-    if(newStatus === 'APPROVED') {
-        await prisma.user.update({
+    // 트랜잭션 작업을 배열에 저장
+    const transactionOperations = [
+        // 등록 리스트 상태 업데이트
+        prisma.AcademyUserRegistrationList.updateMany({
             where: {
-                user_id: user_id,
+                user_id: { in: arr_user_id },
             },
-            data: {
-                academy_id: academy_id,
-            },
-        });
+            data: { status: newStatus },
+        }),
+    ];
+
+    // 승인인 경우 User 테이블에서 학원 ID 업데이트
+    if (newStatus === 'APPROVED') {
+        transactionOperations.push(
+            prisma.user.updateMany({
+                where: {
+                    user_id: { in: arr_user_id },
+                },
+                data: {
+                    academy_id: academy_id,
+                },
+            })
+        );
     }
 
-    let parent = null;
-    if (searchUser.role === "STUDENT") {
-        parent = await prisma.Family.findFirst({ where: { student_id: user_id } });
+    // 학부모 ID 배열 가져오기 (학생의 부모 ID만 포함)
+    const parents = await prisma.Family.findMany({
+        where: {
+            student_id: { in: arr_user_id },
+        },
+        select: {
+            parent_id: true,
+        },
+    });
 
-        if (parent) {
-            await prisma.AcademyUserRegistrationList.update({
+    // 학부모 ID 배열에서 null 값 제외
+    const parentIds = parents.map((p) => p.parent_id).filter((id) => id !== null);
+
+    if (parentIds.length > 0) {
+        // 학부모 등록 리스트와 User 테이블에서 상태 업데이트
+        transactionOperations.push(
+            prisma.AcademyUserRegistrationList.updateMany({
                 where: {
                     academy_id: academy_id,
-                    user_id: parent.parent_id,
+                    user_id: { in: parentIds },
                 },
                 data: { status: newStatus },
-            });
+            })
+        );
 
-            if(newStatus === 'APPROVED') {
-                await prisma.user.update({
+        if (newStatus === 'APPROVED') {
+            transactionOperations.push(
+                prisma.user.updateMany({
                     where: {
-                        user_id: parent.parent_id,
+                        user_id: { in: parentIds },
                     },
                     data: {
                         academy_id: academy_id,
                     },
-                });
-            }
+                })
+            );
         }
     }
 
+    // 업데이트된 유저 ID 배열 수집
+    const updatedUserIds = [...arr_user_id, ...parentIds];
+
+    // 모든 작업을 하나의 트랜잭션으로 실행
+    const result = await prisma.$transaction(transactionOperations);
+
     const resData = {
-        user_id: updatedUser.user_id,
-        academy_id: updatedUser.academy_id,
-        role: updatedUser.role,
-        status: updatedUser.status,
-        parent_id: parent ? parent.parent_id : null,
+        updatedUserIds, // 업데이트된 유저 ID 배열
+        inputCount: arr_user_id.length, // 입력된 유저 수
+        updatedCount: updatedUserIds.length, // 업데이트된 유저 수
+        status: newStatus,
     };
 
     return res.status(StatusCodes.OK).json({
@@ -231,6 +242,7 @@ exports.decideUserStatus = asyncWrapper(async (req, res, next) => {
         data: resData,
     });
 });
+
 
 
 exports.listUser = asyncWrapper(async (req, res, next) => {
