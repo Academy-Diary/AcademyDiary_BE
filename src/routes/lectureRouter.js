@@ -5,19 +5,19 @@ const lectureController = require("../controllers/lectureController.js");
 
 /**
  * @swagger
- * /lecture/{academy_id}:
+ * /lecture:
  *   get:
- *     summary: 학원 내의 모든 강의 조회
+ *     summary: 강사별 강의(또는 학원 내 모든 강의) 조회
  *     tags: [Lecture]
  *     security:
  *       - bearerAuth: []
  *     parameters:
- *       - in: path
- *         name: academy_id
- *         required: true
+ *       - in: query
+ *         name: user_id
+ *         required: false
  *         schema:
  *           type: string
- *         description: 학원 ID
+ *         description: 강사 ID, 없을 시 전체 강의
  *     responses:
  *       200:
  *         description: 성공적으로 강의를 불러옴
@@ -42,6 +42,9 @@ const lectureController = require("../controllers/lectureController.js");
  *                       teacher_id:
  *                         type: string
  *                         description: 강사 ID
+ *                       teacher_name:
+ *                         type: string
+ *                         description: 강사 이름
  *                       headcount:
  *                         type: integer
  *                         description: 현재 강의 수강 인원
@@ -56,9 +59,6 @@ const lectureController = require("../controllers/lectureController.js");
  *                         type: string
  *                         format: date-time
  *                         description: 강의 종료 시간
- *                       teacher_name:
- *                         type: string
- *                         description: 강사 이름
  *                       days:
  *                         type: array
  *                         items:
@@ -76,28 +76,6 @@ const lectureController = require("../controllers/lectureController.js");
  *                   end_time: "2024-10-16T06:00:00.000Z"
  *                   teacher_name: "홍길동"
  *                   days: ["TUESDAY", "THURSDAY"]
- *       400:
- *         description: 유효하지 않은 academy_id
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *             example:
- *               message: "유효한 academy_id가 제공되지 않았습니다."
- *       403:
- *         description: 접근 권한 없음
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *             example:
- *               message: "해당 학원에 대한 접근 권한이 없습니다."
  *       404:
  *         description: 개설된 강의가 존재하지 않음
  *         content:
