@@ -934,3 +934,90 @@ exports.getExamTypeScore = asyncWrapper(async (req, res, next) => {
     },
   });
 });
+
+
+exports.putLectureStudent = asyncWrapper(async (req, res, next) => {
+  const { lecture_id } = req.params;
+
+  if (!lecture_id) {
+    return next(
+      new CustomError(
+        "유효한 lecture_id가 제공되지 않았습니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+
+  const { studentList } = req.body;
+
+  if (!Array.isArray(studentList)) {
+    return next(
+      new CustomError(
+        "유효한 수강생 목록이 제공되지 않았습니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+
+  const targetLectureId = parseInt(lecture_id, 10);
+
+  // 데이터베이스에서 해당 강의 확인
+  const lectureExists = await prisma.lecture.findUnique({
+    where: { lecture_id: targetLectureId }
+  });
+
+  if (!lectureExists) {
+    return next(new CustomError(
+      "강의를 찾을 수 없습니다.", 
+      StatusCodes.NOT_FOUND,
+      StatusCodes.NOT_FOUND
+    ));
+  }
+
+  try {
+    // 기존 수강생 목록 조회
+    const existingStudents = await prisma.LectureParticipant.findMany({
+      where: { lecture_id: targetLectureId },
+      select: { user_id: true }
+    });
+
+    // 기존 수강생 user_id 목록과 요청받은 studentList로 업데이트할 목록 구분
+    const existingStudentIds = existingStudents.map(student => student.user_id);
+    const newStudents = studentList.filter(userId => !existingStudentIds.includes(userId));
+    const studentsToRemove = existingStudentIds.filter(userId => !studentList.includes(userId));
+
+    // 새로운 수강생 추가
+    if (newStudents.length > 0) {
+      await prisma.LectureParticipant.createMany({
+        data: newStudents.map(userId => ({
+          lecture_id: targetLectureId,
+          user_id: userId
+        }))
+      });
+    }
+
+    // 삭제할 수강생 제거
+    if (studentsToRemove.length > 0) {
+      await prisma.LectureParticipant.deleteMany({
+        where: {
+          lecture_id: targetLectureId,
+          user_id: { in: studentsToRemove }
+        }
+      });
+    }
+
+    return res.status(StatusCodes.OK).json({
+      message: "수강생 목록이 성공적으로 업데이트되었습니다.",
+      addedStudents: newStudents,
+      removedStudents: studentsToRemove
+    });
+  } catch (error) {
+    return next(new CustomError(
+      "수강생 목록을 업데이트하는데 실패하였습니다.",
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      StatusCodes.INTERNAL_SERVER_ERROR
+    ));
+  }
+});

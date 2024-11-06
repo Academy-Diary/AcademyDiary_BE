@@ -528,6 +528,69 @@ router.delete(
 
 /**
  * @swagger
+ * /lecture/{lecture_id}/student:
+ *   put:
+ *     summary: 강의 수강생 목록 업데이트
+ *     description: 특정 강의의 수강생 목록을 업데이트합니다. 기존 수강생을 유지하면서 새 수강생을 추가하거나 기존 수강생을 삭제할 수 있습니다.
+ *     tags: [Lecture]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: lecture_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 수강생 목록을 업데이트할 강의의 ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - studentList
+ *             properties:
+ *               studentList:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: 업데이트할 수강생 ID 목록
+ *     responses:
+ *       200:
+ *         description: 수강생 목록 업데이트 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: "수강생 목록이 성공적으로 업데이트되었습니다."
+ *                 addedStudents:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   description: 새로 추가된 수강생 ID 목록
+ *                 removedStudents:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   description: 제거된 수강생 ID 목록
+ *       400:
+ *         description: 유효하지 않은 lecture_id 또는 수강생 목록이 제공되었습니다.
+ *       500:
+ *         description: 수강생 목록 업데이트 중 서버 오류가 발생했습니다.
+ */
+//강의 수강생목록 업데이트
+router.put(
+  "/:lecture_id/student",
+  authenticateJWT("CHIEF", "TEACHER"),
+  lectureController.putLectureStudent
+);
+
+/**
+ * @swagger
  * /lecture/{lecture_id}/exam:
  *   post:
  *     summary: 강의에 대한 새로운 시험을 생성
