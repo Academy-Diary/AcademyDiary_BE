@@ -62,9 +62,18 @@ exports.getLecture = asyncWrapper(async (req, res, next) => {
 });
 //강의 생성
 exports.createLecture = asyncWrapper(async (req, res, next) => {
-  const { lecture_name, user_id, academy_id, day, start_time, end_time } = req.body;
+  const { lecture_name, user_id, academy_id, day, start_time, end_time } =
+    req.body;
 
-  if (!lecture_name || lecture_name.length === 0 || !user_id || !academy_id || !day || !start_time || !end_time) {
+  if (
+    !lecture_name ||
+    lecture_name.length === 0 ||
+    !user_id ||
+    !academy_id ||
+    !day ||
+    !start_time ||
+    !end_time
+  ) {
     return next(
       new CustomError(
         "유효하지 않은 입력입니다!",
@@ -73,53 +82,53 @@ exports.createLecture = asyncWrapper(async (req, res, next) => {
       )
     );
   }
- 
+
   // time은 "14:00"형식으로 입력받음(String)
-  const [start_hours, start_minutes] = start_time.split(':');
-  const [end_hours, end_minutes] = end_time.split(':');
+  const [start_hours, start_minutes] = start_time.split(":");
+  const [end_hours, end_minutes] = end_time.split(":");
   const lectureStartTime = new Date();
   const lectureEndTime = new Date();
   lectureStartTime.setHours(start_hours, start_minutes, 0, 0);
   lectureEndTime.setHours(end_hours, end_minutes, 0, 0);
-
 
   const result = await prisma.Lecture.create({
     data: {
       lecture_name,
       teacher_id: user_id,
       academy_id,
-      days : {
-        create : day.map(day => ({
-          day : day, // days 배열의 각 요소를 LectureDay에 저장
-        }))
-      },
-      start_time : lectureStartTime,
-      end_time : lectureEndTime
-    },
-    include: { // days 관계도 포함하여 응답
       days: {
-        select : {
-          day : true  
-        }
-      }
-    }
+        create: day.map((day) => ({
+          day: day, // days 배열의 각 요소를 LectureDay에 저장
+        })),
+      },
+      start_time: lectureStartTime,
+      end_time: lectureEndTime,
+    },
+    include: {
+      // days 관계도 포함하여 응답
+      days: {
+        select: {
+          day: true,
+        },
+      },
+    },
   });
 
-  const formattedDays = result.days.map(dayObj => dayObj.day)
+  const formattedDays = result.days.map((dayObj) => dayObj.day);
 
   return res.status(StatusCodes.OK).json({
     message: "새로운 강의가 생성되었습니다!",
     lecture: {
       ...result,
-      days : formattedDays
-    }
+      days: formattedDays,
+    },
   });
 });
 
 //강의 수정
 exports.modifyLecture = asyncWrapper(async (req, res, next) => {
   const { lecture_id } = req.params;
-  let { lecture_name, teacher_id , day, start_time, end_time} = req.body;
+  let { lecture_name, teacher_id, day, start_time, end_time } = req.body;
 
   const target_id = parseInt(lecture_id, 10);
 
@@ -128,11 +137,11 @@ exports.modifyLecture = asyncWrapper(async (req, res, next) => {
       lecture_id: target_id,
     },
     include: {
-      days : {
-        select : {
-          day : true
-        }
-      }
+      days: {
+        select: {
+          day: true,
+        },
+      },
     },
   });
 
@@ -147,21 +156,23 @@ exports.modifyLecture = asyncWrapper(async (req, res, next) => {
   }
 
   // 전달되지 않은 필드에 대해 기본값 설정
-  if(!lecture_name) lecture_name = targetLecture.lecture_name;
-  if(!teacher_id) teacher_id = targetLecture.teacher_id;
-  if(!day) day = targetLecture.days.map(dayObj => dayObj.day); // days가 없으면 기존 days 사용
+  if (!lecture_name) lecture_name = targetLecture.lecture_name;
+  if (!teacher_id) teacher_id = targetLecture.teacher_id;
+  if (!day) day = targetLecture.days.map((dayObj) => dayObj.day); // days가 없으면 기존 days 사용
 
   // 시간 처리
   // time은 "14:00"형식으로 입력받음(String)
-  if(!start_time){ start_time = targetLecture.start_time;}
-  else{
-    const [start_hours, start_minutes] = start_time.split(':');
+  if (!start_time) {
+    start_time = targetLecture.start_time;
+  } else {
+    const [start_hours, start_minutes] = start_time.split(":");
     start_time = new Date();
     start_time.setHours(start_hours, start_minutes, 0, 0);
   }
-  if(!end_time){ end_time = targetLecture.end_time;}
-  else{
-    const [end_hours, end_minutes] = end_time.split(':');
+  if (!end_time) {
+    end_time = targetLecture.end_time;
+  } else {
+    const [end_hours, end_minutes] = end_time.split(":");
     end_time = new Date();
     end_time.setHours(end_hours, end_minutes, 0, 0);
   }
@@ -173,7 +184,7 @@ exports.modifyLecture = asyncWrapper(async (req, res, next) => {
     },
   });
 
-// 강의 수정 및 새로운 LectureDay 관계 생성
+  // 강의 수정 및 새로운 LectureDay 관계 생성
   const result = await prisma.Lecture.update({
     where: {
       lecture_id: target_id,
@@ -182,16 +193,16 @@ exports.modifyLecture = asyncWrapper(async (req, res, next) => {
       lecture_name: lecture_name,
       teacher_id: teacher_id,
       start_time: start_time,
-      end_time : end_time,
+      end_time: end_time,
       days: {
-        create: day.map(dayValue => ({
+        create: day.map((dayValue) => ({
           day: dayValue, // 새로운 LectureDay 데이터를 생성
-        }))
-      }
+        })),
+      },
     },
     include: {
       days: true, // 업데이트된 days 반환
-    }
+    },
   });
 
   return res.status(StatusCodes.OK).json({
@@ -244,7 +255,6 @@ exports.deleteLecture = asyncWrapper(async (req, res, next) => {
   });
 });
 
-
 //강의 수강생 조회
 exports.getLectureStudent = asyncWrapper(async (req, res, next) => {
   const { lecture_id } = req.params;
@@ -274,16 +284,16 @@ exports.getLectureStudent = asyncWrapper(async (req, res, next) => {
     where: {
       lecture_id: target_id,
     },
-    include : {
+    include: {
       user: {
         select: {
-          user_id : true,
+          user_id: true,
           user_name: true,
-          email : true,
-          phone_number: true
-        }
-      }
-    }
+          email: true,
+          phone_number: true,
+        },
+      },
+    },
   });
 
   if (!result || result.length === 0) {
@@ -297,17 +307,17 @@ exports.getLectureStudent = asyncWrapper(async (req, res, next) => {
   }
 
   // lecture_id와 user_id를 제외하고 수강생 정보를 가공
-  const students = result.map(participant => ({
-    user_id : participant.user.user_id,
+  const students = result.map((participant) => ({
+    user_id: participant.user.user_id,
     user_name: participant.user.user_name,
-    email : participant.user.email,
-    phone_number: participant.user.phone_number
+    email: participant.user.email,
+    phone_number: participant.user.phone_number,
   }));
 
   return res.status(StatusCodes.OK).json({
     message: "수강생을 성공적으로 불러왔습니다.",
-    lecture_id : target_id,
-    data: students
+    lecture_id: target_id,
+    data: students,
   });
 });
 
@@ -353,10 +363,10 @@ exports.createLectureStudent = asyncWrapper(async (req, res, next) => {
     });
   } catch (error) {
     throw new CustomError(
-        "수강생을 추가하는데 실패하였습니다.",
-        StatusCodes.INTERNAL_SERVER_ERROR,
-        StatusCodes.INTERNAL_SERVER_ERROR
-      );
+      "수강생을 추가하는데 실패하였습니다.",
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
   }
 });
 
@@ -404,10 +414,10 @@ exports.deleteLectureStudent = asyncWrapper(async (req, res, next) => {
     });
   } catch (error) {
     throw new CustomError(
-        "수강생을 삭제하는데 실패하였습니다.",
-        StatusCodes.INTERNAL_SERVER_ERROR,
-        StatusCodes.INTERNAL_SERVER_ERROR
-      );
+      "수강생을 삭제하는데 실패하였습니다.",
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
   }
 });
 
@@ -764,12 +774,12 @@ exports.modifyScore = asyncWrapper(async (req, res, next) => {
   });
 
   // 대표값 계산
-  const minScore = await prisma.ExamUserScore.findFirst({ 
+  const minScore = await prisma.ExamUserScore.findFirst({
     where: { exam_id: exam_id_int },
     select: { score: true },
     orderBy: { score: "asc" },
   });
-  
+
   const maxScore = await prisma.ExamUserScore.findFirst({
     where: { exam_id: exam_id_int },
     select: { score: true },
@@ -897,7 +907,6 @@ exports.getExamTypeScore = asyncWrapper(async (req, res, next) => {
     )
   ).filter(Boolean); // undefined 값 제거
 
-  
   return res.status(StatusCodes.OK).json({
     message: `${user_id}의 성적을 성공적으로 불러왔습니다.`,
     data: {
