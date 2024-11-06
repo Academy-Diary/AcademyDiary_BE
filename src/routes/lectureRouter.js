@@ -556,6 +556,8 @@ router.delete(
  *                 items:
  *                   type: string
  *                 description: 업데이트할 수강생 ID 목록
+ *             example:
+ *               studentList: ["test_student", "test_student2"]
  *     responses:
  *       200:
  *         description: 수강생 목록 업데이트 성공
