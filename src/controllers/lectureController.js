@@ -5,43 +5,33 @@ const ErrorCode = require("../lib/errors/errorCode");
 const { StatusCodes } = require("http-status-codes");
 const { Prisma } = require("@prisma/client"); // Prisma 객체를 가져옵니다.
 
-//학원내의 모든 강의 조회
+// lectureController.js
 exports.getLecture = asyncWrapper(async (req, res, next) => {
-
-  const { user_id } = req.query;
+  const user_id = req.query.user_id;
   const academy_id = req.user.academy_id;
 
+  // where 조건을 동적으로 설정
+  const whereCondition = {
+    academy_id: academy_id,
+    ...(user_id ? { teacher_id: user_id } : null),
+  };
+
   const LectureList = await prisma.Lecture.findMany({
-    where: {
-      academy_id: academy_id,
-    },
-    include : {
-      days : {
-        select : {
-          day : true
-        }
+    where: whereCondition,
+    include: {
+      days: {
+        select: {
+          day: true,
+        },
       },
-     teacher:{
-        select:{
-          user_name : true
-        }
-      }
-    }
+      teacher: {
+        select: {
+          user_id: true,
+          user_name: true,
+        },
+      },
+    },
   });
-
-
-  // 각 강의에 대해 필요한 필드만 포함한 새로운 객체 배열 생성
-  const formattedLectureList = LectureList.map((lecture) => ({
-    lecture_id: lecture.lecture_id,
-    lecture_name: lecture.lecture_name,
-    teacher_id: lecture.teacher_id,
-    headcount: lecture.headcount,
-    academy_id: lecture.academy_id,
-    start_time: lecture.start_time,
-    end_time: lecture.end_time,
-    teacher_name: lecture.teacher.user_name, // teacher_name 필드로 추가
-    days: lecture.days.map((dayObj) => dayObj.day), // days에서 day 값만 추출
-  }));
 
   if (!LectureList || LectureList.length === 0) {
     return next(
@@ -52,6 +42,18 @@ exports.getLecture = asyncWrapper(async (req, res, next) => {
       )
     );
   }
+  // 각 강의에 대해 필요한 필드만 포함한 새로운 객체 배열 생성
+  const formattedLectureList = LectureList.map((lecture) => ({
+    lecture_id: lecture.lecture_id,
+    lecture_name: lecture.lecture_name,
+    teacher_id: lecture.teacher_id,
+    teacher_name: lecture.teacher.user_name, // teacher_name 필드로 추가
+    headcount: lecture.headcount,
+    academy_id: lecture.academy_id,
+    start_time: lecture.start_time,
+    end_time: lecture.end_time,
+    days: lecture.days.map((dayObj) => dayObj.day), // days에서 day 값만 추출
+  }));
 
   return res.status(StatusCodes.OK).json({
     message: "강의를 성공적으로 불러왔습니다.",
