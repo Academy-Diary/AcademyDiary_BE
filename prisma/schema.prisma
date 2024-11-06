@@ -29,6 +29,7 @@ model User {
   familiesAsStudent Family[]                     @relation("StudentFamilyRelation") // Family 테이블에서 student_id로 연결
   familiesAsParent  Family[]                     @relation("ParentFamilyRelation") // Family 테이블에서 parent_id로 연결
   billUsers   BillUser[]   // 여러 사용자를 청구서에 연결
+  notice            Notice[]                     @relation("UserToNotice_Relation") // 1:N 관계 (User to Notice)
 }
 
 model Academy {
