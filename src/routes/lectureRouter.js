@@ -113,8 +113,8 @@ const lectureController = require("../controllers/lectureController.js");
 
 //학원내의 모든 강의 조회
 router.get(
-  "/:academy_id",
-  authenticateJWT("CHIEF"),
+  "/",
+  authenticateJWT("CHIEF", "TEACHER"),
   lectureController.getLecture
 );
 /**
