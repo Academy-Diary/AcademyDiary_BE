@@ -5,10 +5,10 @@ const ErrorCode = require("../lib/errors/errorCode");
 const { StatusCodes } = require("http-status-codes");
 
 exports.deleteStudent = asyncWrapper(async (req, res, next) => {
-  const { user_id } = req.params;
+  const arr_user_id = req.body.user_id;
 
   //user_id가 올바르게 전달되었는지 확인
-  if (!user_id || user_id.trim() === "") {
+  if (!arr_user_id) {
     return next(
       new CustomError(
         "유효한 user_id가 제공되지 않았습니다.",
@@ -17,89 +17,81 @@ exports.deleteStudent = asyncWrapper(async (req, res, next) => {
       )
     );
   }
-  //학생 정보 조회
-  const userTableStudent = await prisma.user.findUnique({
-    where: {
-      user_id: user_id,
-    },
-  });
-
-  const registerationTableStudent =
-    await prisma.AcademyUserRegistrationList.findUnique({
+  const transactionOperations = [
+    //학생의 academy_id를 NULL로 업데이트
+    prisma.user.updateMany({
       where: {
-        user_id: user_id,
-      },
-    });
-
-  // 학생이 존재하지 않거나 학생 역할이 아닌 경우
-  if (!userTableStudent || userTableStudent.role !== "STUDENT") {
-    return next(
-      new CustomError(
-        `User DB에 ID ${user_id}에 해당하는 학생이 없습니다.`,
-        StatusCodes.NOT_FOUND,
-        StatusCodes.NOT_FOUND
-      )
-    );
-  }
-
-  if (
-    !registerationTableStudent ||
-    registerationTableStudent.role !== "STUDENT"
-  ) {
-    return next(
-      new CustomError(
-        `AcademyUserRegistrationList DB에 ID ${user_id}에 해당하는 학생이 없습니다.`,
-        StatusCodes.INTERNAL_SERVER_ERROR,
-        StatusCodes.INTERNAL_SERVER_ERROR
-      )
-    );
-  }
-
-  //학생의 academy_id를 NULL로 업데이트
-  await prisma.user.update({
-    where: {
-      user_id: user_id,
-    },
-    data: {
-      academy_id: null,
-    },
-  });
-
-  //AcademyUserRegistrationList에서 해당 학생 행 삭제
-  await prisma.AcademyUserRegistrationList.delete({
-    where: {
-      user_id: user_id,
-    },
-  });
-
-  const family = await prisma.family.findFirst({
-    where: {
-      student_id: user_id,
-    },
-  });
-  const parent_id = family ? family.parent_id : null;
-
-  if (parent_id) {
-    //부모의 academy_id를 NULL로 업데이트
-    await prisma.user.update({
-      where: {
-        user_id: parent_id,
+        user_id: {
+          in: arr_user_id,
+        },
       },
       data: {
         academy_id: null,
       },
-    });
-    //AcademyUserRegistrationList에서 해당 부모 행 삭제
-    await prisma.AcademyUserRegistrationList.delete({
+    }),
+    //AcademyUserRegistrationList에서 해당 학생 행 삭제
+    prisma.AcademyUserRegistrationList.deleteMany({
       where: {
-        user_id: parent_id,
+        user_id: {
+          in: arr_user_id,
+        },
       },
-    });
-  }
+    }),
+  ];
 
-  // 성공 응답
+  // 학부모 ID 배열 가져오기 (학생의 부모 ID만 포함)
+  const parents = await prisma.Family.findMany({
+    where: {
+      student_id: { in: arr_user_id },
+    },
+    select: {
+      parent_id: true,
+    },
+  });
+
+  // 학부모 ID 배열에서 null 값 제외
+  const parentIds = parents.map((p) => p.parent_id).filter((id) => id !== null);
+
+  if (parentIds.length > 0) {
+    //부모의 academy_id를 NULL로 업데이트
+    transactionOperations.push(
+      prisma.user.updateMany({
+        where: {
+          user_id: {
+            in: parentIds,
+          },
+        },
+        data: {
+          academy_id: null,
+        },
+      })
+    );
+    //AcademyUserRegistrationList에서 해당 부모 행 삭제
+    transactionOperations.push(
+      prisma.AcademyUserRegistrationList.deleteMany({
+        where: {
+          user_id: {
+            in: parentIds,
+          },
+        },
+      })
+    );
+  }
+  // 업데이트된 유저 ID 배열 수집
+  const deletedUserIds = [...arr_user_id, ...parentIds];
+
+  // 모든 작업을 하나의 트랜잭션으로 실행
+  const result = await prisma.$transaction(transactionOperations);
+
+  const resData = {
+    deletedUserIds, // 삭제된 유저 ID 배열
+    inputCount: arr_user_id.length, // 입력된 유저 수
+    deletedCount: deletedUserIds.length, // 삭제된 유저 수
+  };
+
   return res.status(StatusCodes.OK).json({
-    message: `학생 ID ${user_id}, 학부모 ID ${parent_id} 의 academy_id가 성공적으로 NULL로 설정되었고, 등록 목록에서 삭제되었습니다.`,
+    message: "학생/학부모 삭제가 성공적으로 완료되었습니다.",
+    data: resData,
   });
 });
 
@@ -158,16 +150,15 @@ exports.getStudent = asyncWrapper(async (req, res, next) => {
       user_id: student.user_id,
       user_name: student.user_name,
       phone_number: student.phone_number,
-      parent: family && family.parent // family가 존재하고 parent가 있는지 확인
-        ? {
-            user_name: family.parent.user_name,
-            phone_number: family.parent.phone_number,
-          }
-        : null,
+      parent:
+        family && family.parent // family가 존재하고 parent가 있는지 확인
+          ? {
+              user_name: family.parent.user_name,
+              phone_number: family.parent.phone_number,
+            }
+          : null,
     };
   });
-
-
 
   // 성공 응답
   return res.status(StatusCodes.OK).json({
@@ -206,7 +197,7 @@ exports.getStudentLecture = asyncWrapper(async (req, res, next) => {
           },
           teacher: {
             select: {
-              user_name: true,  // 강사의 이름만 선택
+              user_name: true, // 강사의 이름만 선택
             },
           },
         },
