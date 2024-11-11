@@ -8,14 +8,11 @@ const { StatusCodes } = require("http-status-codes");
 const {
   generateAccessToken,
   generateRefreshToken,
-  refreshAccessToken,
+  generateNewTokens,
 } = require("../lib/jwt/index.js");
 const jwt = require("jsonwebtoken");
 const path = require("path");
-const fs = require("fs");
-const multer = require("multer");
 const { secretKey, gmailID, gmailPW } = require("../config/secret.js");
-const { stat } = require("fs");
 
 exports.createUser = asyncWrapper(async (req, res, next) => {
   const {
@@ -184,7 +181,7 @@ exports.removeJWT = asyncWrapper(async (req, res, next) => {
 });
 
 // 리프레시 토큰을 사용하여 액세스 토큰 갱신
-exports.refreshToken = asyncWrapper(async (req, res) => {
+exports.refreshToken = asyncWrapper(async (req, res, next) => {
   const refreshToken = req.cookies.refreshToken;
 
   if (!refreshToken) {
@@ -196,7 +193,7 @@ exports.refreshToken = asyncWrapper(async (req, res) => {
       )
     );
   }
-  const newAccessToken = refreshAccessToken(refreshToken);
+  const {newAccessToken, newRefreshToken} = generateNewTokens(refreshToken);
 
   if (!newAccessToken) {
     return next(
@@ -207,6 +204,13 @@ exports.refreshToken = asyncWrapper(async (req, res) => {
       )
     );
   }
+
+  res.cookie("refreshToken", newRefreshToken, {
+    httpOnly: true,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    sameSite: "None",
+    secure: true,
+  }); //7일
 
   return res.status(StatusCodes.CREATED).json({
     message: "액세스 토큰이 갱신되었습니다.",

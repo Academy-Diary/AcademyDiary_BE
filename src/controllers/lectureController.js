@@ -5,52 +5,33 @@ const ErrorCode = require("../lib/errors/errorCode");
 const { StatusCodes } = require("http-status-codes");
 const { Prisma } = require("@prisma/client"); // Prisma 객체를 가져옵니다.
 
-//학원내의 모든 강의 조회
+// lectureController.js
 exports.getLecture = asyncWrapper(async (req, res, next) => {
-  const { academy_id } = req.params;
+  const user_id = req.query.user_id;
+  const academy_id = req.user.academy_id;
 
-  // JWT에서 academy_id를 추출 (인증 미들웨어를 통해 토큰을 디코드하고 req.user에 저장되어있음)
-  const userAcademyId = req.user.academy_id; // JWT 토큰에서 가져온 academy_id
-
-  // 사용자가 다른 학원의 수업을 접근하려고 하는지 체크
-  if (userAcademyId !== academy_id) {
-    return next(
-      new CustomError(
-        "해당 학원에 대한 접근 권한이 없습니다.",
-        StatusCodes.FORBIDDEN,
-        StatusCodes.FORBIDDEN
-      )
-    );
-  }
-
-  if (!academy_id) {
-    return next(
-      new CustomError(
-        "유효한 academy_id가 제공되지 않았습니다.",
-        StatusCodes.BAD_REQUEST,
-        StatusCodes.BAD_REQUEST
-      )
-    );
-  }
+  // where 조건을 동적으로 설정
+  const whereCondition = {
+    academy_id: academy_id,
+    ...(user_id ? { teacher_id: user_id } : null),
+  };
 
   const LectureList = await prisma.Lecture.findMany({
-    where: {
-      academy_id: academy_id,
+    where: whereCondition,
+    include: {
+      days: {
+        select: {
+          day: true,
+        },
+      },
+      teacher: {
+        select: {
+          user_id: true,
+          user_name: true,
+        },
+      },
     },
-    include : {
-      days : {
-        select : {
-          day : true
-        }
-      }
-    }
   });
-
-  // 각 강의에 대해 days에서 day 값만 추출하여 새로운 객체 배열 생성
-  const formattedLectureList = LectureList.map(lecture => ({
-    ...lecture,
-    days: lecture.days.map(dayObj => dayObj.day)  // days에서 day 값만 추출
-  }));
 
   if (!LectureList || LectureList.length === 0) {
     return next(
@@ -61,18 +42,38 @@ exports.getLecture = asyncWrapper(async (req, res, next) => {
       )
     );
   }
+  // 각 강의에 대해 필요한 필드만 포함한 새로운 객체 배열 생성
+  const formattedLectureList = LectureList.map((lecture) => ({
+    lecture_id: lecture.lecture_id,
+    lecture_name: lecture.lecture_name,
+    teacher_id: lecture.teacher_id,
+    teacher_name: lecture.teacher.user_name, // teacher_name 필드로 추가
+    headcount: lecture.headcount,
+    academy_id: lecture.academy_id,
+    start_time: lecture.start_time,
+    end_time: lecture.end_time,
+    days: lecture.days.map((dayObj) => dayObj.day), // days에서 day 값만 추출
+  }));
 
   return res.status(StatusCodes.OK).json({
     message: "강의를 성공적으로 불러왔습니다.",
-    data: formattedLectureList
+    data: formattedLectureList,
   });
 });
-
 //강의 생성
 exports.createLecture = asyncWrapper(async (req, res, next) => {
-  const { lecture_name, user_id, academy_id, day, start_time, end_time } = req.body;
+  const { lecture_name, user_id, academy_id, day, start_time, end_time } =
+    req.body;
 
-  if (!lecture_name || lecture_name.length === 0 || !user_id || !academy_id || !day || !start_time || !end_time) {
+  if (
+    !lecture_name ||
+    lecture_name.length === 0 ||
+    !user_id ||
+    !academy_id ||
+    !day ||
+    !start_time ||
+    !end_time
+  ) {
     return next(
       new CustomError(
         "유효하지 않은 입력입니다!",
@@ -81,53 +82,53 @@ exports.createLecture = asyncWrapper(async (req, res, next) => {
       )
     );
   }
- 
+
   // time은 "14:00"형식으로 입력받음(String)
-  const [start_hours, start_minutes] = start_time.split(':');
-  const [end_hours, end_minutes] = end_time.split(':');
+  const [start_hours, start_minutes] = start_time.split(":");
+  const [end_hours, end_minutes] = end_time.split(":");
   const lectureStartTime = new Date();
   const lectureEndTime = new Date();
   lectureStartTime.setHours(start_hours, start_minutes, 0, 0);
   lectureEndTime.setHours(end_hours, end_minutes, 0, 0);
-
 
   const result = await prisma.Lecture.create({
     data: {
       lecture_name,
       teacher_id: user_id,
       academy_id,
-      days : {
-        create : day.map(day => ({
-          day : day, // days 배열의 각 요소를 LectureDay에 저장
-        }))
-      },
-      start_time : lectureStartTime,
-      end_time : lectureEndTime
-    },
-    include: { // days 관계도 포함하여 응답
       days: {
-        select : {
-          day : true  
-        }
-      }
-    }
+        create: day.map((day) => ({
+          day: day, // days 배열의 각 요소를 LectureDay에 저장
+        })),
+      },
+      start_time: lectureStartTime,
+      end_time: lectureEndTime,
+    },
+    include: {
+      // days 관계도 포함하여 응답
+      days: {
+        select: {
+          day: true,
+        },
+      },
+    },
   });
 
-  const formattedDays = result.days.map(dayObj => dayObj.day)
+  const formattedDays = result.days.map((dayObj) => dayObj.day);
 
   return res.status(StatusCodes.OK).json({
     message: "새로운 강의가 생성되었습니다!",
     lecture: {
       ...result,
-      days : formattedDays
-    }
+      days: formattedDays,
+    },
   });
 });
 
 //강의 수정
 exports.modifyLecture = asyncWrapper(async (req, res, next) => {
   const { lecture_id } = req.params;
-  let { lecture_name, teacher_id , day, start_time, end_time} = req.body;
+  let { lecture_name, teacher_id, day, start_time, end_time } = req.body;
 
   const target_id = parseInt(lecture_id, 10);
 
@@ -136,11 +137,11 @@ exports.modifyLecture = asyncWrapper(async (req, res, next) => {
       lecture_id: target_id,
     },
     include: {
-      days : {
-        select : {
-          day : true
-        }
-      }
+      days: {
+        select: {
+          day: true,
+        },
+      },
     },
   });
 
@@ -155,21 +156,23 @@ exports.modifyLecture = asyncWrapper(async (req, res, next) => {
   }
 
   // 전달되지 않은 필드에 대해 기본값 설정
-  if(!lecture_name) lecture_name = targetLecture.lecture_name;
-  if(!teacher_id) teacher_id = targetLecture.teacher_id;
-  if(!day) day = targetLecture.days.map(dayObj => dayObj.day); // days가 없으면 기존 days 사용
+  if (!lecture_name) lecture_name = targetLecture.lecture_name;
+  if (!teacher_id) teacher_id = targetLecture.teacher_id;
+  if (!day) day = targetLecture.days.map((dayObj) => dayObj.day); // days가 없으면 기존 days 사용
 
   // 시간 처리
   // time은 "14:00"형식으로 입력받음(String)
-  if(!start_time){ start_time = targetLecture.start_time;}
-  else{
-    const [start_hours, start_minutes] = start_time.split(':');
+  if (!start_time) {
+    start_time = targetLecture.start_time;
+  } else {
+    const [start_hours, start_minutes] = start_time.split(":");
     start_time = new Date();
     start_time.setHours(start_hours, start_minutes, 0, 0);
   }
-  if(!end_time){ end_time = targetLecture.end_time;}
-  else{
-    const [end_hours, end_minutes] = end_time.split(':');
+  if (!end_time) {
+    end_time = targetLecture.end_time;
+  } else {
+    const [end_hours, end_minutes] = end_time.split(":");
     end_time = new Date();
     end_time.setHours(end_hours, end_minutes, 0, 0);
   }
@@ -181,7 +184,7 @@ exports.modifyLecture = asyncWrapper(async (req, res, next) => {
     },
   });
 
-// 강의 수정 및 새로운 LectureDay 관계 생성
+  // 강의 수정 및 새로운 LectureDay 관계 생성
   const result = await prisma.Lecture.update({
     where: {
       lecture_id: target_id,
@@ -190,16 +193,16 @@ exports.modifyLecture = asyncWrapper(async (req, res, next) => {
       lecture_name: lecture_name,
       teacher_id: teacher_id,
       start_time: start_time,
-      end_time : end_time,
+      end_time: end_time,
       days: {
-        create: day.map(dayValue => ({
+        create: day.map((dayValue) => ({
           day: dayValue, // 새로운 LectureDay 데이터를 생성
-        }))
-      }
+        })),
+      },
     },
     include: {
       days: true, // 업데이트된 days 반환
-    }
+    },
   });
 
   return res.status(StatusCodes.OK).json({
@@ -252,7 +255,6 @@ exports.deleteLecture = asyncWrapper(async (req, res, next) => {
   });
 });
 
-
 //강의 수강생 조회
 exports.getLectureStudent = asyncWrapper(async (req, res, next) => {
   const { lecture_id } = req.params;
@@ -282,6 +284,16 @@ exports.getLectureStudent = asyncWrapper(async (req, res, next) => {
     where: {
       lecture_id: target_id,
     },
+    include: {
+      user: {
+        select: {
+          user_id: true,
+          user_name: true,
+          email: true,
+          phone_number: true,
+        },
+      },
+    },
   });
 
   if (!result || result.length === 0) {
@@ -294,9 +306,18 @@ exports.getLectureStudent = asyncWrapper(async (req, res, next) => {
     );
   }
 
+  // lecture_id와 user_id를 제외하고 수강생 정보를 가공
+  const students = result.map((participant) => ({
+    user_id: participant.user.user_id,
+    user_name: participant.user.user_name,
+    email: participant.user.email,
+    phone_number: participant.user.phone_number,
+  }));
+
   return res.status(StatusCodes.OK).json({
     message: "수강생을 성공적으로 불러왔습니다.",
-    data: result,
+    lecture_id: target_id,
+    data: students,
   });
 });
 
@@ -342,10 +363,10 @@ exports.createLectureStudent = asyncWrapper(async (req, res, next) => {
     });
   } catch (error) {
     throw new CustomError(
-        "수강생을 추가하는데 실패하였습니다.",
-        StatusCodes.INTERNAL_SERVER_ERROR,
-        StatusCodes.INTERNAL_SERVER_ERROR
-      );
+      "수강생을 추가하는데 실패하였습니다.",
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
   }
 });
 
@@ -393,10 +414,10 @@ exports.deleteLectureStudent = asyncWrapper(async (req, res, next) => {
     });
   } catch (error) {
     throw new CustomError(
-        "수강생을 삭제하는데 실패하였습니다.",
-        StatusCodes.INTERNAL_SERVER_ERROR,
-        StatusCodes.INTERNAL_SERVER_ERROR
-      );
+      "수강생을 삭제하는데 실패하였습니다.",
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
   }
 });
 
@@ -753,12 +774,12 @@ exports.modifyScore = asyncWrapper(async (req, res, next) => {
   });
 
   // 대표값 계산
-  const minScore = await prisma.ExamUserScore.findFirst({ 
+  const minScore = await prisma.ExamUserScore.findFirst({
     where: { exam_id: exam_id_int },
     select: { score: true },
     orderBy: { score: "asc" },
   });
-  
+
   const maxScore = await prisma.ExamUserScore.findFirst({
     where: { exam_id: exam_id_int },
     select: { score: true },
@@ -886,7 +907,6 @@ exports.getExamTypeScore = asyncWrapper(async (req, res, next) => {
     )
   ).filter(Boolean); // undefined 값 제거
 
-  
   return res.status(StatusCodes.OK).json({
     message: `${user_id}의 성적을 성공적으로 불러왔습니다.`,
     data: {
@@ -902,4 +922,91 @@ exports.getExamTypeScore = asyncWrapper(async (req, res, next) => {
       },
     },
   });
+});
+
+
+exports.putLectureStudent = asyncWrapper(async (req, res, next) => {
+  const { lecture_id } = req.params;
+
+  if (!lecture_id) {
+    return next(
+      new CustomError(
+        "유효한 lecture_id가 제공되지 않았습니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+
+  const { studentList } = req.body;
+
+  if (!Array.isArray(studentList)) {
+    return next(
+      new CustomError(
+        "유효한 수강생 목록이 제공되지 않았습니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+
+  const targetLectureId = parseInt(lecture_id, 10);
+
+  // 데이터베이스에서 해당 강의 확인
+  const lectureExists = await prisma.lecture.findUnique({
+    where: { lecture_id: targetLectureId }
+  });
+
+  if (!lectureExists) {
+    return next(new CustomError(
+      "강의를 찾을 수 없습니다.", 
+      StatusCodes.NOT_FOUND,
+      StatusCodes.NOT_FOUND
+    ));
+  }
+
+  try {
+    // 기존 수강생 목록 조회
+    const existingStudents = await prisma.LectureParticipant.findMany({
+      where: { lecture_id: targetLectureId },
+      select: { user_id: true }
+    });
+
+    // 기존 수강생 user_id 목록과 요청받은 studentList로 업데이트할 목록 구분
+    const existingStudentIds = existingStudents.map(student => student.user_id);
+    const newStudents = studentList.filter(userId => !existingStudentIds.includes(userId));
+    const studentsToRemove = existingStudentIds.filter(userId => !studentList.includes(userId));
+
+    // 새로운 수강생 추가
+    if (newStudents.length > 0) {
+      await prisma.LectureParticipant.createMany({
+        data: newStudents.map(userId => ({
+          lecture_id: targetLectureId,
+          user_id: userId
+        }))
+      });
+    }
+
+    // 삭제할 수강생 제거
+    if (studentsToRemove.length > 0) {
+      await prisma.LectureParticipant.deleteMany({
+        where: {
+          lecture_id: targetLectureId,
+          user_id: { in: studentsToRemove }
+        }
+      });
+    }
+
+    return res.status(StatusCodes.OK).json({
+      message: "수강생 목록이 성공적으로 업데이트되었습니다.",
+      addedStudents: newStudents,
+      removedStudents: studentsToRemove
+    });
+  } catch (error) {
+    return next(new CustomError(
+      "수강생 목록을 업데이트하는데 실패하였습니다.",
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      StatusCodes.INTERNAL_SERVER_ERROR
+    ));
+  }
 });
