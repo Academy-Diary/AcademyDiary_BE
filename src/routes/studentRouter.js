@@ -5,20 +5,27 @@ const { authenticateJWT } = require("../lib/middlewares/auth.js");
 
 /**
  * @swagger
- * /student/{user_id}:
+ * /student:
  *   delete:
  *     summary: 학원에서 학생 삭제
- *     description: CHIEF 권한을 가진 사용자가 특정 학원에서 학생을 삭제합니다. 이 과정에서 해당 학생의 부모도 학원에서 제외됩니다.
+ *     description: CHIEF 권한을 가진 사용자가 특정 학원에서 여러 학생을 삭제합니다. 이 과정에서 해당 학생들의 부모도 학원에서 제외됩니다.
  *     tags: [Student]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: user_id
- *         required: true
- *         schema:
- *           type: string
- *         description: 삭제할 학생의 ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               user_id:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: 삭제할 학생들의 ID 배열
+ *             example:
+ *               user_id: ["test_student", "test_student_2"]
  *     responses:
  *       200:
  *         description: 학생 및 학부모의 academy_id가 NULL로 설정되고, 등록 목록에서 삭제됨
@@ -29,16 +36,60 @@ const { authenticateJWT } = require("../lib/middlewares/auth.js");
  *               properties:
  *                 message:
  *                   type: string
- *                   description: 삭제된 학생 및 학부모에 대한 정보
+ *                   description: 삭제 성공 메시지
+ *                   example: "학생/학부모 삭제가 성공적으로 완료되었습니다."
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     deletedUserIds:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                       description: 삭제된 학생 및 부모의 ID 배열
+ *                     inputCount:
+ *                       type: integer
+ *                       description: 입력된 학생 수
+ *                     deletedCount:
+ *                       type: integer
+ *                       description: 실제 삭제된 유저 수
+ *                   example:
+ *                     deletedUserIds: ["test_student", "test_student_2", "test_parent"]
+ *                     inputCount: 1
+ *                     deletedCount: 2
  *       400:
  *         description: 유효한 user_id가 제공되지 않았습니다.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "유효한 user_id가 제공되지 않았습니다."
  *       404:
  *         description: 해당 ID에 해당하는 학생을 찾을 수 없습니다.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "해당 ID에 해당하는 학생을 찾을 수 없습니다."
  *       500:
  *         description: 서버 오류가 발생했습니다.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "서버 오류가 발생했습니다."
  */
+
 // 학원에서 학생 삭제
-router.delete("/:user_id", authenticateJWT("CHIEF"), studentController.deleteStudent);
+router.delete("/", authenticateJWT("CHIEF"), studentController.deleteStudent);
 
 // studentRouter.js
 /**
