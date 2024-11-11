@@ -25,7 +25,7 @@ const { authenticateJWT } = require("../lib/middlewares/auth.js");
  *                   type: string
  *                 description: 삭제할 학생들의 ID 배열
  *             example:
- *               user_id: ["student1", "student2"]
+ *               user_id: ["test_student", "test_student_2"]
  *     responses:
  *       200:
  *         description: 학생 및 학부모의 academy_id가 NULL로 설정되고, 등록 목록에서 삭제됨
@@ -53,8 +53,8 @@ const { authenticateJWT } = require("../lib/middlewares/auth.js");
  *                       type: integer
  *                       description: 실제 삭제된 유저 수
  *                   example:
- *                     deletedUserIds: ["student1", "parent1"]
- *                     inputCount: 2
+ *                     deletedUserIds: ["test_student", "test_student_2", "test_parent"]
+ *                     inputCount: 1
  *                     deletedCount: 2
  *       400:
  *         description: 유효한 user_id가 제공되지 않았습니다.
