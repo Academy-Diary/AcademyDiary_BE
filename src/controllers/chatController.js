@@ -10,7 +10,7 @@ const { ObjectId } = require("mongodb"); // MongoDB ObjectId 가져오기
 exports.createRoom = asyncWrapper(async(req, res, next) => {
     const chatDB = getChatDB();
     const chatRoom = await chatDB.collection("chat_room").insertOne({
-        member : [req.user.user_id, new ObjectId(req.query.opponentId)],
+        member : [req.user.user_id, req.query.opponentId],
         date : new Date()
     });
 
@@ -52,7 +52,7 @@ exports.detailChatRoom = asyncWrapper(async(req, res, next) => {
   }
 
     const result = await chatDB.collection("chat_room").findOne({
-        _id : new ObjectId(req.params.id)
+        roomId : req.params.id
     });
 
     if (!result) {
