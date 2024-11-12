@@ -77,7 +77,7 @@ const errorHandler = require("./lib/middlewares/errorHandler");
 app.use(errorHandler);
 
 // start server
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`App running on port ${port}...\n>> http://localhost:${port}`);
 });
 

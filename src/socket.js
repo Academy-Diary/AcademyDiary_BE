@@ -2,7 +2,12 @@ const { getChatDB } = require("./lib/chatDB/chatDB"); // MongoDB 인스턴스 �
 const { ObjectId } = require("mongodb");
 
 module.exports = (server) => {
-  const io = require("socket.io")(server);
+  const io = require("socket.io")(server, {
+    cors: {
+      origin: "http://localhost:5173",
+      methods: ["GET", "POST"]
+    }
+  });
 
   io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
@@ -52,7 +57,7 @@ module.exports = (server) => {
     // 채팅방의 모든 메시지 조회
     socket.on("get messages", async ({ roomId }) => {
         const chatDB = getChatDB();
-        const messages = await chatDB.collection("messages")
+        const messages = await chatDB.collection("chat_content")
           .find({ roomId: new ObjectId(roomId) })
           .sort({ timestamp: 1 })
           .toArray();
