@@ -12,7 +12,13 @@ const {
 } = require("../lib/jwt/index.js");
 const jwt = require("jsonwebtoken");
 const path = require("path");
-const { secretKey, gmailID, gmailPW } = require("../config/secret.js");
+const {
+  secretKey,
+  gmailID,
+  gmailPW,
+  S3_BUCKET_NAME,
+} = require("../config/secret.js");
+const { deleteFilesFromS3 } = require("../lib/middlewares/handlingFile");
 
 exports.createUser = asyncWrapper(async (req, res, next) => {
   const {
@@ -193,7 +199,7 @@ exports.refreshToken = asyncWrapper(async (req, res, next) => {
       )
     );
   }
-  const {newAccessToken, newRefreshToken} = generateNewTokens(refreshToken);
+  const { newAccessToken, newRefreshToken } = generateNewTokens(refreshToken);
 
   if (!newAccessToken) {
     return next(
@@ -472,21 +478,40 @@ exports.updateUserImageInfo = asyncWrapper(async (req, res, next) => {
       )
     );
   }
-
-  // 이미지가 업로드된 경우, 데이터베이스 업데이트
-  const imagePath = `public/profile/${req.file.filename}`; // 새 이미지 경로 설정
-
-  await prisma.user.update({
-    where: { user_id },
-    data: {
-      image: req.file.filename,
-    },
+  // user_id가 존재하는지 확인
+  const userExists = await prisma.user.findUnique({
+    where: { user_id: user_id },
   });
+
+  if (!userExists) {
+    // 만약 잘못된 user_id를 받았다면, S3에 업로드된 이미지 삭제
+    s3Prefix = `public/profile/${user_id}${path.extname(
+      req.file.originalname
+    )}`;
+    await deleteFilesFromS3(S3_BUCKET_NAME, s3Prefix);
+    return next(
+      new CustomError(
+        "해당 사용자를 찾을 수 없습니다.",
+        StatusCodes.NOT_FOUND,
+        StatusCodes.NOT_FOUND
+      )
+    );
+  }
+  // User DB에 이미지 정보가 없는 경우, 이미지 정보 추가
+  if (!userExists.image) {
+    console.log("이미지 정보 추가");
+    await prisma.User.update({
+      where: { user_id: user_id },
+      data: {
+        image: req.file.location,
+      },
+    });
+  }
 
   return res.status(StatusCodes.OK).json({
     message: "회원 이미지 정보가 수정되었습니다.",
     user_id: user_id,
-    image: imagePath,
+    image: req.file.location,
   });
 });
 
