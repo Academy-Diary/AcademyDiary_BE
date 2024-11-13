@@ -158,7 +158,7 @@ router.delete("/", authenticateJWT("CHIEF"), teacherController.deleteTeacher);
  */
 router.get(
   "/:academy_id",
-  authenticateJWT("CHIEF"),
+  authenticateJWT("CHIEF", "TEACHER", "STUDENT", "PARENT"),
   teacherController.getTeacher
 );
 
