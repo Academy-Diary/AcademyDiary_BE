@@ -419,42 +419,51 @@ exports.getUserImageInfo = asyncWrapper(async (req, res, next) => {
 // 회원 기본 정보 수정
 exports.updateUserBasicInfo = asyncWrapper(async (req, res, next) => {
   const user_id = req.params["user_id"];
-  let { email, password, phone_number, user_name } = req.body;
+  let { email, password, birth_date,  user_name, phone_number} = req.body;
 
   const user = await findUserByCriteria({ user_id });
 
   // 입력값이 없는 경우 기존 값으로 대체
-  if (!email || email.trim() === "") {
+  if (!email) {
     email = user.email;
   }
-  if (!password || password.trim() === "") {
+  if (!password) {
     password = user.password;
   } else {
     password = await bcrypt.hash(password, 10);
   }
-  if (!phone_number || phone_number.trim() === "") {
-    phone_number = user.phone_number;
+  if (!birth_date) {
+    birth_date = user.birth_date;
   }
-  if (!user_name || user_name.trim() === "") {
+
+  if (!user_name) {
     user_name = user.user_name;
   }
+  if (!phone_number) {
+    phone_number = user.phone_number;
+  }
+
 
   await prisma.user.update({
     where: { user_id },
     data: {
       email,
       password,
-      phone_number,
+      birth_date: new Date(birth_date),
       user_name,
+      phone_number,
     },
   });
 
   return res.status(StatusCodes.OK).json({
     message: "회원 정보가 수정되었습니다.",
-    user_id: user_id,
-    email: email,
-    phone_number: phone_number,
-    user_name: user_name,
+    data:{
+      user_id: user_id,
+      email: email,
+      birth_date: birth_date,
+      user_name: user_name,
+      phone_number: phone_number,
+    }
   });
 });
 
