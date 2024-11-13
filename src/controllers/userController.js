@@ -17,6 +17,7 @@ const {
   gmailID,
   gmailPW,
   S3_BUCKET_NAME,
+  DEFAULT_PROFILE_IMAGE,
 } = require("../config/secret.js");
 const { deleteFilesFromS3 } = require("../lib/middlewares/handlingFile");
 
@@ -392,7 +393,7 @@ exports.getUserImageInfo = asyncWrapper(async (req, res, next) => {
   const user_id = req.params["user_id"];
   const user = await findUserByCriteria({ user_id });
 
-  if (!user || !user.image) {
+  if (!user) {
     return next(
       new CustomError(
         "해당 사용자를 찾을 수 없습니다.",
@@ -401,25 +402,18 @@ exports.getUserImageInfo = asyncWrapper(async (req, res, next) => {
       )
     );
   }
-
-  // 이미지 파일 경로 설정
-  const imagePath = path.resolve(
-    __dirname,
-    `../../public/profile/${user.image}`
-  );
-
-  if (!fs.existsSync(imagePath)) {
-    return next(
-      new CustomError(
-        "이미지 파일을 찾을 수 없습니다.",
-        StatusCodes.NOT_FOUND,
-        StatusCodes.NOT_FOUND
-      )
-    );
+  let image = user.image;
+  if (!user.image) {
+    image = DEFAULT_PROFILE_IMAGE;
   }
 
-  // 이미지 파일 반환
-  return res.sendFile(imagePath);
+  return res.status(StatusCodes.OK).json({
+    message: "회원 이미지 정보 조회가 완료되었습니다.",
+    data: {
+      user_id: user_id,
+      image: image,
+    },
+  });
 });
 
 // 회원 기본 정보 수정
