@@ -437,7 +437,7 @@ router.delete(
  * /user/{user_id}/image-info:
  *   get:
  *     summary: 사용자의 프로필 이미지 조회
- *     description: 특정 사용자의 프로필 이미지 파일을 반환합니다.
+ *     description: 특정 사용자의 프로필 이미지 URL을 반환합니다. 이미지가 없을 경우 기본 프로필 이미지를 반환합니다.
  *     tags: [User]
  *     parameters:
  *       - in: path
@@ -450,16 +450,27 @@ router.delete(
  *       200:
  *         description: 프로필 이미지 반환 성공
  *         content:
- *           uploadProfileImage/jpeg:
+ *           application/json:
  *             schema:
- *               type: string
- *               format: binary
- *           image/png:
- *             schema:
- *               type: string
- *               format: binary
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: 성공 메시지
+ *                   example: 회원 이미지 정보 조회가 완료되었습니다.
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     user_id:
+ *                       type: string
+ *                       description: 조회된 사용자의 ID
+ *                       example: "test_parent"
+ *                     image:
+ *                       type: string
+ *                       description: 사용자의 프로필 이미지 URL
+ *                       example: "https://adac-storage.s3.us-west-2.amazonaws.com/public/profile/default.png"
  *       404:
- *         description: 해당 사용자를 찾을 수 없거나 이미지 파일이 없습니다.
+ *         description: 해당 사용자를 찾을 수 없습니다.
  *         content:
  *           application/json:
  *             schema:
@@ -664,12 +675,15 @@ router.put(
  *               properties:
  *                 message:
  *                   type: string
+ *                   example: "회원 이미지 정보가 수정되었습니다."
  *                   description: "회원 이미지 정보가 수정되었습니다."
  *                 user_id:
  *                   type: string
+ *                   example: "test_student"
  *                   description: 이미지가 수정된 사용자의 ID
- *                 uploadProfileImage:
+ *                 image:
  *                   type: string
+ *                   example: "https://adac-storage.s3.us-west-2.amazonaws.com/public/profile/test_student.jpg"
  *                   description: 수정된 이미지 파일 경로
  *       400:
  *         description: 이미지 파일이 전송되지 않았습니다.

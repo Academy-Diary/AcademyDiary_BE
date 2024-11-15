@@ -17,8 +17,8 @@ model User {
   password     String
   phone_number String   @unique
   role         Role     @default(STUDENT)
-  image        String   @default("default.png")
-
+  image        String?
+  
   // Relations
   academy           Academy?                     @relation(fields: [academy_id], references: [academy_id], name: "UserAcademyRelation")
   chief             Chief_Academy?               @relation("UserChiefRelation")

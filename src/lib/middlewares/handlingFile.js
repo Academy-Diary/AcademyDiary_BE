@@ -13,14 +13,22 @@ const {
 const { S3_BUCKET_NAME } = require("../../config/secret");
 const multerS3 = require("multer-s3");
 
-// profile Multer 저장소 설정
-const profileStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.resolve(__dirname, `../../../public/profile/`)); // 파일 저장 경로
-  },
-  filename: (req, file, cb) => {
-    const newFileName = req.params.user_id + path.extname(file.originalname); // 파일 이름 설정
-    cb(null, newFileName);
+const profileStorage = multerS3({
+  s3: s3,
+  bucket: S3_BUCKET_NAME,
+  contentType: multerS3.AUTO_CONTENT_TYPE,
+  acl: "public-read",
+  key: (req, file, cb) => {
+    // 한글 인코딩 문제 해결
+    file.originalname = Buffer.from(file.originalname, "latin1").toString(
+      "utf8"
+    );
+    const s3KeyPrefix = `public/profile`;
+    // 저장 경로 설정 - public/profile/user_id.jpg(파일 확장자)
+    // 경로가 존재하지 않더라도 S3는 자동으로 경로 생성
+    const fileKey = `${s3KeyPrefix}/${req.params.user_id}${path.extname(file.originalname)}`;
+
+    cb(null, fileKey);
   },
 });
 
@@ -44,9 +52,7 @@ const imageFilter = (req, file, cb) => {
 const uploadProfileImage = multer({
   storage: profileStorage,
   fileFilter: imageFilter,
-  limits: {
-    fileSize: 10000000, // 10MB 제한
-  },
+  limits: { fileSize: 10 * 1024 * 1024 }, // 파일 크기 제한 10MB
 });
 
 const uploadNoticeFile = multer({
@@ -59,16 +65,16 @@ const uploadNoticeFile = multer({
       console.log(req.params.notice_id);
       let notice_id;
       if (!req.params.notice_id) {
-        console.log('params 없음');
+        console.log("params 없음");
         notice_id = req.body.notice_id.split("&");
       } else {
         console.log(req.params);
         notice_id = req.params.notice_id.split("&");
       }
-      const academy_id  = notice_id[0];
-      const lecture_id  = parseInt(notice_id[1], 10);
-      const notice_num  = parseInt(notice_id[2], 10);
-     
+      const academy_id = notice_id[0];
+      const lecture_id = parseInt(notice_id[1], 10);
+      const notice_num = parseInt(notice_id[2], 10);
+
       // 경로가 존재하지 않더라도 S3는 자동으로 경로 생성
       file.originalname = Buffer.from(file.originalname, "latin1").toString(
         "utf8"
