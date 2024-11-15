@@ -592,17 +592,26 @@ router.get(
  *               email:
  *                 type: string
  *                 format: email
+ *                 example: "user@naver.com"
  *                 description: 수정할 사용자의 이메일 (입력하지 않으면 기존 값 유지)
  *               password:
  *                 type: string
  *                 format: password
+ *                 example: "new_password"
  *                 description: 수정할 비밀번호 (입력하지 않으면 기존 값 유지)
- *               phone_number:
+ *               birth_date:
  *                 type: string
- *                 description: 수정할 사용자의 전화번호 (입력하지 않으면 기존 값 유지)
+ *                 format: date
+ *                 example: "YYYY-MM-DD"
+ *                 description: 수정할 사용자의 생년월일 (입력하지 않으면 기존 값 유지)
  *               user_name:
  *                 type: string
+ *                 example: "new_name"
  *                 description: 수정할 사용자의 이름 (입력하지 않으면 기존 값 유지)
+ *               phone_number:
+ *                 type: string
+ *                 example: "010-1234-5678"
+ *                 description: 수정할 사용자의 전화번호 (입력하지 않으면 기존 값 유지)
  *     responses:
  *       200:
  *         description: 회원 기본 정보 수정 성공
@@ -614,18 +623,24 @@ router.get(
  *                 message:
  *                   type: string
  *                   description: "회원 정보가 성공적으로 수정되었습니다."
- *                 user_id:
- *                   type: string
- *                   description: 수정된 사용자의 ID
- *                 email:
- *                   type: string
- *                   description: 수정된 이메일
- *                 phone_number:
- *                   type: string
- *                   description: 수정된 전화번호
- *                 user_name:
- *                   type: string
- *                   description: 수정된 사용자 이름
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     user_id:
+ *                       type: string
+ *                       description: 수정된 사용자의 ID
+ *                     email:
+ *                       type: string
+ *                       description: 수정된 이메일
+ *                     birth_date:
+ *                       type: string
+ *                       description: 수정된 생년월일
+ *                     user_name:
+ *                       type: string
+ *                       description: 수정된 사용자 이름
+ *                     phone_number:
+ *                       type: string
+ *                       description: 수정된 전화번호
  *       400:
  *         description: 입력 데이터가 잘못되었습니다.
  *       404:
@@ -633,7 +648,7 @@ router.get(
  *       500:
  *         description: 서버 오류가 발생했습니다.
  */
-// 사용자 기본 정보 수정 API
+// 회원 기본 정보 수정 API
 router.put(
   "/:user_id/basic-info",
   authenticateJWT("ADMIN", "CHIEF", "TEACHER", "STUDENT", "PARENT"),
