@@ -35,8 +35,8 @@ exports.createNotice = asyncWrapper(async (req, res, next) => {
     !title ||
     !content ||
     !academy_id ||
-    (!lecture_id && lecture_id != 0) ||
-    (!notice_num && notice_num != 0)
+    (!lecture_id && lecture_id !== 0) ||
+    (!notice_num && notice_num !== 0)
   ) {
     return next(
       new CustomError(
@@ -73,7 +73,7 @@ exports.createNotice = asyncWrapper(async (req, res, next) => {
 
   // 파일이 있는지 확인 후 처리
   const files = req.files && req.files.length > 0 ? req.files : [];
-  console.log(files);
+
   if (files.length > 0) {
     await prisma.NoticeFile.createMany({
       data: files.map((file) => ({
@@ -173,7 +173,7 @@ exports.deleteNotice = asyncWrapper(async (req, res, next) => {
   const notice_num = parseInt(notice_id[2], 10);
 
   // 유효성 검사1: 값들이 존재하지 않으면 에러 처리
-  if ((!lecture_id && lecture_id != 0) || (!notice_num && notice_num != 0)) {
+  if ((!lecture_id && lecture_id !== 0) || (!notice_num && notice_num !== 0)) {
     return next(
       new CustomError(
         "유효한 값들을 입력해주세요.",
@@ -325,7 +325,7 @@ exports.getNoticeDetail = asyncWrapper(async (req, res, next) => {
   const notice_num = parseInt(notice_id[2], 10);
 
   // 유효성 검사1: 값들이 존재하지 않으면 에러 처리
-  if ((!lecture_id && lecture_id != 0) || (!notice_num && notice_num != 0)) {
+  if ((!lecture_id && lecture_id !== 0) || (!notice_num && notice_num !== 0)) {
     return next(
       new CustomError(
         "유효한 값들을 입력해주세요.",
