@@ -139,6 +139,13 @@ exports.getNoticeList = asyncWrapper(async (req, res, next) => {
     },
   });
 
+  const noitceCount = await prisma.Notice.count({
+    where: {
+      academy_id: academy_id,
+      lecture_id: lecture_id,
+    },
+  });
+
   const resData = notices.map((notice) => {
     return {
       title: notice.title,
@@ -152,7 +159,10 @@ exports.getNoticeList = asyncWrapper(async (req, res, next) => {
   });
   return res.status(StatusCodes.OK).json({
     message: "공지사항 목록 조회에 성공했습니다.",
-    data: resData,
+    data: {
+      notice_count: noitceCount,
+      notice_list: resData,
+    },
   });
 });
 
