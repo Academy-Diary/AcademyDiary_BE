@@ -23,7 +23,13 @@ exports.createNotice = asyncWrapper(async (req, res, next) => {
   const user_id = req.user.user_id;
 
   // 유효성 검사1: 필수 값들이 존재하지 않거나 notice_id가 올바른 형식아 아니면.
-  if (!title || !content || !academy_id || !lecture_id || !notice_num) {
+  if (
+    !title ||
+    !content ||
+    !academy_id ||
+    (!lecture_id && lecture_id != 0) ||
+    (!notice_num && notice_num != 0)
+  ) {
     return next(
       new CustomError(
         "유효한 값들을 입력해주세요.",
@@ -90,7 +96,7 @@ exports.getNoticeList = asyncWrapper(async (req, res, next) => {
   const page_size = parseInt(req.query.page_size, 10);
 
   // 유효성 검사1: 값들이 존재하지 않으면 에러 처리
-  if (isNaN(lecture_id) || isNaN(page) || isNaN(page_size)) {
+  if ((!lecture_id && lecture_id != 0) || !page || !page_size) {
     return next(
       new CustomError(
         "유효한 값들을 입력해주세요.",
@@ -130,12 +136,12 @@ exports.getNoticeList = asyncWrapper(async (req, res, next) => {
 
 exports.deleteNotice = asyncWrapper(async (req, res, next) => {
   const notice_id = req.params.notice_id.split("&");
-  const academy_id = notice_id[0];
+  const academy_id = notice_id[0]; // treat as string
   const lecture_id = parseInt(notice_id[1], 10);
   const notice_num = parseInt(notice_id[2], 10);
 
   // 유효성 검사1: 값들이 존재하지 않으면 에러 처리
-  if (isNaN(lecture_id) || isNaN(notice_num)) {
+  if ((!lecture_id && lecture_id != 0) || (!notice_num && notice_num != 0)) {
     return next(
       new CustomError(
         "유효한 값들을 입력해주세요.",
@@ -207,7 +213,7 @@ exports.updateNotice = asyncWrapper(async (req, res, next) => {
   let { title, content } = req.body;
   const files_deleted = req.body.files_deleted.split(",");
   const notice_id = req.params.notice_id.split("&");
-  const academy_id = notice_id[0];
+  const academy_id = notice_id[0]; // treat as string
   const lecture_id = parseInt(notice_id[1], 10);
   const notice_num = parseInt(notice_id[2], 10);
 
@@ -282,12 +288,12 @@ exports.updateNotice = asyncWrapper(async (req, res, next) => {
 
 exports.getNoticeDetail = asyncWrapper(async (req, res, next) => {
   const notice_id = req.params.notice_id.split("&");
-  const academy_id = notice_id[0];
+  const academy_id = notice_id[0]; // treat as string
   const lecture_id = parseInt(notice_id[1], 10);
   const notice_num = parseInt(notice_id[2], 10);
 
   // 유효성 검사1: 값들이 존재하지 않으면 에러 처리
-  if (isNaN(lecture_id) || isNaN(notice_num)) {
+  if ((!lecture_id && lecture_id != 0) || (!notice_num && notice_num != 0)) {
     return next(
       new CustomError(
         "유효한 값들을 입력해주세요.",
