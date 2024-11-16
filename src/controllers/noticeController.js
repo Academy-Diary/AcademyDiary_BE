@@ -14,6 +14,14 @@ const {
   deleteFilesFromS3,
 } = require("../lib/middlewares/handlingFile");
 
+// 날짜 변환 함수
+const formatDate = (date) => {
+  if (!date || isNaN(new Date(date).getTime())) {
+    return ""; // 유효하지 않은 날짜는 빈 문자열로 반환
+  }
+  return new Date(date).toISOString().split("T")[0];
+};
+
 exports.createNotice = asyncWrapper(async (req, res, next) => {
   const { title, content } = req.body;
   const notice_id = req.body.notice_id.split("&");
@@ -76,15 +84,27 @@ exports.createNotice = asyncWrapper(async (req, res, next) => {
     });
   }
 
+  const resData = {
+    notice: {
+      notice_id: notice.notice_id,
+      notice_num: notice.notice_num,
+      lecture_id: notice.lecture_id,
+      title: notice.title,
+      content: notice.content,
+      user_id: notice.user_id,
+      views: notice.views,
+      created_at: formatDate(notice.created_at),
+      updated_at: formatDate(notice.updated_at),
+    },
+    files: files.map((file) => ({
+      url: file.location,
+      name: file.originalname,
+    })),
+  };
+
   return res.status(StatusCodes.CREATED).json({
     message: "공지사항이 성공적으로 생성되었습니다.",
-    data: {
-      notice,
-      files: files.map((file) => ({
-        url: file.location,
-        name: file.originalname,
-      })),
-    },
+    data: resData,
   });
 });
 
@@ -126,6 +146,8 @@ exports.getNoticeList = asyncWrapper(async (req, res, next) => {
       user_id: notice.user_id,
       views: notice.views,
       notice_id: notice.notice_id,
+      created_at: formatDate(notice.created_at),
+      updated_at: formatDate(notice.updated_at),
     };
   });
   return res.status(StatusCodes.OK).json({
