@@ -68,12 +68,16 @@ app.use("/teacher", teacherRouter);
 app.use("/lecture", lectureRouter);
 app.use("/expense", expenseRouter);
 app.use("/exam-type", examTypeRouter);
+app.use("/bill", billRouter);
+app.use("/notice", noticeRouter);
+app.use("/chat", chatRouter);
 
 //swagger
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs))
 
 // error handler
 const errorHandler = require("./lib/middlewares/errorHandler");
+const { bill } = require("./lib/prisma/index.js");
 app.use(errorHandler);
 
 // start server
