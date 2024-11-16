@@ -31,8 +31,11 @@ exports.createBill = asyncWrapper(async (req, res, next) => {
             ));
         }
 
-        // 입력받은 클래스 비용들 합산
-        const totalAmount = classes.reduce((sum, currentClass) => sum + currentClass.expense, 0);
+        // 입력받은 클래스 비용들 합산 (discount 반영)
+        const totalAmount = classes.reduce((sum, currentClass) => {
+            const discountedExpense = currentClass.expense - (currentClass.discount || 0);
+            return sum + Math.max(0, discountedExpense); // 0 이하의 비용은 0으로 처리
+        }, 0);
 
         // 유저 유효성 검사
         const users = await prisma.user.findMany({
