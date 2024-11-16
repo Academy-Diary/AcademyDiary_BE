@@ -377,6 +377,7 @@ router.get(
  * /lecture/{lecture_id}/student:
  *   post:
  *     summary: 강의에 수강생 추가
+ *     description: 특정 강의에 새로운 수강생을 추가하고, 수강생 수를 업데이트합니다.
  *     tags: [Lecture]
  *     security:
  *       - bearerAuth: []
@@ -385,20 +386,25 @@ router.get(
  *         name: lecture_id
  *         required: true
  *         schema:
- *           type: string
- *         description: 강의 ID
+ *           type: integer
+ *         description: 수강생을 추가할 강의의 ID
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - user_id
  *             properties:
  *               user_id:
  *                 type: string
+ *                 description: 추가할 수강생의 ID
+ *             example:
+ *               user_id: "test_student"
  *     responses:
  *       200:
- *         description: 수강생이 성공적으로 추가됨
+ *         description: 수강생 추가 성공
  *         content:
  *           application/json:
  *             schema:
@@ -406,29 +412,20 @@ router.get(
  *               properties:
  *                 message:
  *                   type: string
+ *                   description: "수강생을 성공적으로 추가했습니다."
  *                 data:
  *                   type: object
  *                   properties:
  *                     lecture_id:
  *                       type: integer
+ *                       description: 강의 ID
  *                     user_id:
  *                       type: string
- *             example:
- *               message: "수강생을 성공적으로 추가했습니다."
- *               data:
- *                 lecture_id: 1
- *                 user_id: "student123"
+ *                       description: 수강생 ID
  *       400:
- *         description: 유효하지 않은 입력
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *             example:
- *               message: "유효한 user_id가 제공되지 않았습니다."
+ *         description: 유효하지 않은 lecture_id 또는 user_id가 제공되었습니다.
+ *       500:
+ *         description: 수강생 추가 중 서버 오류가 발생했습니다.
  */
 
 //강의 수강생 추가
@@ -443,6 +440,7 @@ router.post(
  * /lecture/{lecture_id}/student:
  *   delete:
  *     summary: 강의에서 수강생 제거
+ *     description: 특정 강의에서 수강생을 제거하고, 수강생 수를 업데이트합니다.
  *     tags: [Lecture]
  *     security:
  *       - bearerAuth: []
@@ -451,20 +449,25 @@ router.post(
  *         name: lecture_id
  *         required: true
  *         schema:
- *           type: string
- *         description: 강의 ID
+ *           type: integer
+ *         description: 수강생을 제거할 강의의 ID
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - user_id
  *             properties:
  *               user_id:
  *                 type: string
+ *                 description: 제거할 수강생의 ID
+ *             example:
+ *               user_id: "test_student"
  *     responses:
  *       200:
- *         description: 수강생이 성공적으로 삭제됨
+ *         description: 수강생 제거 성공
  *         content:
  *           application/json:
  *             schema:
@@ -472,29 +475,20 @@ router.post(
  *               properties:
  *                 message:
  *                   type: string
+ *                   description: "수강생을 성공적으로 삭제했습니다."
  *                 data:
  *                   type: object
  *                   properties:
  *                     lecture_id:
  *                       type: integer
+ *                       description: 강의 ID
  *                     user_id:
  *                       type: string
- *             example:
- *               message: "수강생을 성공적으로 삭제했습니다."
- *               data:
- *                 lecture_id: 1
- *                 user_id: "student123"
+ *                       description: 삭제된 수강생 ID
  *       400:
- *         description: 유효하지 않은 입력
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *             example:
- *               message: "유효한 user_id가 제공되지 않았습니다."
+ *         description: 유효하지 않은 lecture_id 또는 user_id가 제공되었습니다.
+ *       500:
+ *         description: 수강생 삭제 중 서버 오류가 발생했습니다.
  */
 
 //강의 수강생 제거
@@ -509,7 +503,7 @@ router.delete(
  * /lecture/{lecture_id}/student:
  *   put:
  *     summary: 강의 수강생 목록 업데이트
- *     description: 특정 강의의 수강생 목록을 업데이트합니다. 기존 수강생을 유지하면서 새 수강생을 추가하거나 기존 수강생을 삭제할 수 있습니다.
+ *     description: 특정 강의의 수강생 목록을 업데이트합니다. 기존 수강생 목록에서 새 수강생을 추가하거나 기존 수강생을 제거할 수 있습니다.
  *     tags: [Lecture]
  *     security:
  *       - bearerAuth: []
@@ -559,6 +553,8 @@ router.delete(
  *                   description: 제거된 수강생 ID 목록
  *       400:
  *         description: 유효하지 않은 lecture_id 또는 수강생 목록이 제공되었습니다.
+ *       404:
+ *         description: 강의를 찾을 수 없습니다.
  *       500:
  *         description: 수강생 목록 업데이트 중 서버 오류가 발생했습니다.
  */

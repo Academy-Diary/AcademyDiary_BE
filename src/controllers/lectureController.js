@@ -357,6 +357,23 @@ exports.createLectureStudent = asyncWrapper(async (req, res, next) => {
       },
     });
 
+    // 현재 수강생 수를 다시 조회하여 headcount 업데이트
+    const participantCount = await prisma.LectureParticipant.count({
+      where: {
+        lecture_id: target_id,
+      },
+    });
+
+    // 수강생 수 업데이트
+    await prisma.Lecture.update({
+      where : {
+        lecture_id : target_id
+      },
+      data : {
+        headcount : participantCount
+      }
+    });
+
     return res.status(StatusCodes.OK).json({
       message: "수강생을 성공적으로 추가했습니다.",
       data: result,
@@ -406,6 +423,23 @@ exports.deleteLectureStudent = asyncWrapper(async (req, res, next) => {
           user_id: user_id,
         },
       },
+    });
+
+    // 현재 수강생 수를 다시 조회하여 headcount 업데이트
+    const participantCount = await prisma.LectureParticipant.count({
+      where: {
+        lecture_id: target_id,
+      },
+    });
+
+    // 수강생 수 업데이트
+    await prisma.Lecture.update({
+      where : {
+        lecture_id : target_id
+      },
+      data : {
+        headcount : participantCount
+      }
     });
 
     return res.status(StatusCodes.OK).json({
@@ -996,6 +1030,23 @@ exports.putLectureStudent = asyncWrapper(async (req, res, next) => {
         }
       });
     }
+
+    // 현재 수강생 수를 다시 조회하여 headcount 업데이트
+    const participantCount = await prisma.LectureParticipant.count({
+      where: {
+        lecture_id: target_id,
+      },
+    });
+
+    // 수강생 수 업데이트
+    await prisma.Lecture.update({
+      where : {
+        lecture_id : target_id
+      },
+      data : {
+        headcount : participantCount
+      }
+    });
 
     return res.status(StatusCodes.OK).json({
       message: "수강생 목록이 성공적으로 업데이트되었습니다.",
