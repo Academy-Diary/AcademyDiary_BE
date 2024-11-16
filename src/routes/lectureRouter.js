@@ -503,7 +503,7 @@ router.delete(
  * /lecture/{lecture_id}/student:
  *   put:
  *     summary: 강의 수강생 목록 업데이트
- *     description: 특정 강의의 수강생 목록을 업데이트합니다. 기존 수강생을 유지하면서 새 수강생을 추가하거나 기존 수강생을 삭제할 수 있습니다.
+ *     description: 특정 강의의 수강생 목록을 업데이트합니다. 기존 수강생 목록에서 새 수강생을 추가하거나 기존 수강생을 제거할 수 있습니다.
  *     tags: [Lecture]
  *     security:
  *       - bearerAuth: []
@@ -553,6 +553,8 @@ router.delete(
  *                   description: 제거된 수강생 ID 목록
  *       400:
  *         description: 유효하지 않은 lecture_id 또는 수강생 목록이 제공되었습니다.
+ *       404:
+ *         description: 강의를 찾을 수 없습니다.
  *       500:
  *         description: 수강생 목록 업데이트 중 서버 오류가 발생했습니다.
  */
