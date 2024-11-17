@@ -14,6 +14,14 @@ const {
   deleteFilesFromS3,
 } = require("../lib/middlewares/handlingFile");
 
+// 날짜 변환 함수
+const formatDate = (date) => {
+  if (!date || isNaN(new Date(date).getTime())) {
+    return ""; // 유효하지 않은 날짜는 빈 문자열로 반환
+  }
+  return new Date(date).toISOString().split("T")[0];
+};
+
 exports.createNotice = asyncWrapper(async (req, res, next) => {
   const { title, content } = req.body;
   const notice_id = req.body.notice_id.split("&");
@@ -23,7 +31,13 @@ exports.createNotice = asyncWrapper(async (req, res, next) => {
   const user_id = req.user.user_id;
 
   // 유효성 검사1: 필수 값들이 존재하지 않거나 notice_id가 올바른 형식아 아니면.
-  if (!title || !content || !academy_id || !lecture_id || !notice_num) {
+  if (
+    !title ||
+    !content ||
+    !academy_id ||
+    (!lecture_id && lecture_id !== 0) ||
+    (!notice_num && notice_num !== 0)
+  ) {
     return next(
       new CustomError(
         "유효한 값들을 입력해주세요.",
@@ -59,7 +73,7 @@ exports.createNotice = asyncWrapper(async (req, res, next) => {
 
   // 파일이 있는지 확인 후 처리
   const files = req.files && req.files.length > 0 ? req.files : [];
-  console.log(files);
+
   if (files.length > 0) {
     await prisma.NoticeFile.createMany({
       data: files.map((file) => ({
@@ -70,15 +84,27 @@ exports.createNotice = asyncWrapper(async (req, res, next) => {
     });
   }
 
+  const resData = {
+    notice: {
+      notice_id: notice.notice_id,
+      notice_num: notice.notice_num,
+      lecture_id: notice.lecture_id,
+      title: notice.title,
+      content: notice.content,
+      user_id: notice.user_id,
+      views: notice.views,
+      created_at: formatDate(notice.created_at),
+      updated_at: formatDate(notice.updated_at),
+    },
+    files: files.map((file) => ({
+      url: file.location,
+      name: file.originalname,
+    })),
+  };
+
   return res.status(StatusCodes.CREATED).json({
     message: "공지사항이 성공적으로 생성되었습니다.",
-    data: {
-      notice,
-      files: files.map((file) => ({
-        url: file.location,
-        name: file.originalname,
-      })),
-    },
+    data: resData,
   });
 });
 
@@ -90,7 +116,7 @@ exports.getNoticeList = asyncWrapper(async (req, res, next) => {
   const page_size = parseInt(req.query.page_size, 10);
 
   // 유효성 검사1: 값들이 존재하지 않으면 에러 처리
-  if (isNaN(lecture_id) || isNaN(page) || isNaN(page_size)) {
+  if ((!lecture_id && lecture_id != 0) || !page || !page_size) {
     return next(
       new CustomError(
         "유효한 값들을 입력해주세요.",
@@ -113,6 +139,13 @@ exports.getNoticeList = asyncWrapper(async (req, res, next) => {
     },
   });
 
+  const noitceCount = await prisma.Notice.count({
+    where: {
+      academy_id: academy_id,
+      lecture_id: lecture_id,
+    },
+  });
+
   const resData = notices.map((notice) => {
     return {
       title: notice.title,
@@ -120,22 +153,27 @@ exports.getNoticeList = asyncWrapper(async (req, res, next) => {
       user_id: notice.user_id,
       views: notice.views,
       notice_id: notice.notice_id,
+      created_at: formatDate(notice.created_at),
+      updated_at: formatDate(notice.updated_at),
     };
   });
   return res.status(StatusCodes.OK).json({
     message: "공지사항 목록 조회에 성공했습니다.",
-    data: resData,
+    data: {
+      notice_count: noitceCount,
+      notice_list: resData,
+    },
   });
 });
 
 exports.deleteNotice = asyncWrapper(async (req, res, next) => {
   const notice_id = req.params.notice_id.split("&");
-  const academy_id = notice_id[0];
+  const academy_id = notice_id[0]; // treat as string
   const lecture_id = parseInt(notice_id[1], 10);
   const notice_num = parseInt(notice_id[2], 10);
 
   // 유효성 검사1: 값들이 존재하지 않으면 에러 처리
-  if (isNaN(lecture_id) || isNaN(notice_num)) {
+  if ((!lecture_id && lecture_id !== 0) || (!notice_num && notice_num !== 0)) {
     return next(
       new CustomError(
         "유효한 값들을 입력해주세요.",
@@ -207,7 +245,7 @@ exports.updateNotice = asyncWrapper(async (req, res, next) => {
   let { title, content } = req.body;
   const files_deleted = req.body.files_deleted.split(",");
   const notice_id = req.params.notice_id.split("&");
-  const academy_id = notice_id[0];
+  const academy_id = notice_id[0]; // treat as string
   const lecture_id = parseInt(notice_id[1], 10);
   const notice_num = parseInt(notice_id[2], 10);
 
@@ -282,12 +320,12 @@ exports.updateNotice = asyncWrapper(async (req, res, next) => {
 
 exports.getNoticeDetail = asyncWrapper(async (req, res, next) => {
   const notice_id = req.params.notice_id.split("&");
-  const academy_id = notice_id[0];
+  const academy_id = notice_id[0]; // treat as string
   const lecture_id = parseInt(notice_id[1], 10);
   const notice_num = parseInt(notice_id[2], 10);
 
   // 유효성 검사1: 값들이 존재하지 않으면 에러 처리
-  if (isNaN(lecture_id) || isNaN(notice_num)) {
+  if ((!lecture_id && lecture_id !== 0) || (!notice_num && notice_num !== 0)) {
     return next(
       new CustomError(
         "유효한 값들을 입력해주세요.",

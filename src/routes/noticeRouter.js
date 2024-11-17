@@ -31,7 +31,7 @@ const { uploadNoticeFile } = require("../lib/middlewares/handlingFile");
  *                 example: 코로나19로 인한 운영 방침 안내
  *               notice_id:
  *                 type: string
- *                 description: 최근 공지사항의 id에 +1한 값을 넣어주세요. academy_id&lecture_id&{recent_notice_num + 1}입니다. 전체 공지는 전체 공지 번호 조회 API을 조회 후 공지 아이디를 입력하세요.
+ *                 description: 최근 공지사항의 id에 +1한 값을 넣어주세요. academy_id&lecture_id&{recent_notice_num + 1}입니다. 전체 공지는 lecture_id가 0입니다.
  *                 example: test_academy&5&2
  *               file:
  *                 type: array
@@ -56,27 +56,33 @@ const { uploadNoticeFile } = require("../lib/middlewares/handlingFile");
  *                     notice:
  *                       type: object
  *                       properties:
+ *                         notice_id:
+ *                           type: string
+ *                           example: test_academy2&0&5
+ *                         notice_num:
+ *                           type: integer
+ *                           example: 5
+ *                         lecture_id:
+ *                           type: integer
+ *                           example: 0
  *                         title:
  *                           type: string
  *                           example: 코로나19로 인한 학원 운영 방침
  *                         content:
  *                           type: string
  *                           example: 코로나19로 인한 운영 방침 안내
- *                         academy_id:
- *                           type: string
- *                           example: test_academy2
- *                         lecture_id:
- *                           type: integer
- *                           example: 0
  *                         user_id:
  *                           type: string
- *                           example: chief_seonu
- *                         notice_num:
+ *                           example: test_chief
+ *                         views:
  *                           type: integer
- *                           example: 5
- *                         notice_id:
+ *                           example: 0
+ *                         created_at:
  *                           type: string
- *                           example: test_academy2&0&5
+ *                           example: 2021-08-30
+ *                         updated_at:
+ *                           type: string
+ *                           example: 2021-08-30
  *                     files:
  *                       type: array
  *                       items:
@@ -124,7 +130,7 @@ router.post(
  *         required: true
  *         schema:
  *           type: integer
- *         description: 조회할 강의 ID
+ *         description: 조회할 강의 ID. 전체 공지는 lecture_id가 0입니다.
  *       - in: query
  *         name: page
  *         required: true
@@ -151,25 +157,46 @@ router.post(
  *                   type: string
  *                   example: 공지사항 목록 조회에 성공했습니다.
  *                 data:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       title:
- *                         type: string
- *                         example: 코로나19로 인한 학원 운영 방침
- *                       content:
- *                         type: string
- *                         example: 코로나19 예방 방침 공지합니다.
- *                       user_id:
- *                         type: string
- *                         example: chief_seonu
- *                       views:
- *                         type: integer
- *                         example: 123
- *                       notice_id:
- *                         type: string
- *                         example: test_academy2_0_5
+ *                   type: object
+ *                   properties:
+ *                     notice_count:
+ *                       type: integer
+ *                       description: 조회된 공지의 총 개수
+ *                       example: 25
+ *                     notice_list:
+ *                       type: array
+ *                       description: 공지 목록
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           title:
+ *                             type: string
+ *                             description: 공지 제목
+ *                             example: 코로나19로 인한 학원 운영 방침
+ *                           content:
+ *                             type: string
+ *                             description: 공지 내용
+ *                             example: 코로나19 예방 방침 공지합니다.
+ *                           user_id:
+ *                             type: string
+ *                             description: 공지 작성자 ID
+ *                             example: test_chief
+ *                           views:
+ *                             type: integer
+ *                             description: 조회수
+ *                             example: 123
+ *                           notice_id:
+ *                             type: string
+ *                             description: 공지 ID
+ *                             example: test_academy&0&5
+ *                           created_at:
+ *                             type: string
+ *                             description: 공지 생성일 (yyyy-mm-dd)
+ *                             example: 2024-11-16
+ *                           updated_at:
+ *                             type: string
+ *                             description: 공지 수정일 (yyyy-mm-dd)
+ *                             example: 2024-11-17
  *       400:
  *         description: 유효하지 않은 파라미터가 입력되었습니다.
  *         content:
@@ -177,7 +204,7 @@ router.post(
  *             schema:
  *               type: object
  *               properties:
- *                 error:
+ *                 message:
  *                   type: string
  *                   example: 유효한 값들을 입력해주세요.
  */
@@ -202,7 +229,7 @@ router.get(
  *         required: true
  *         schema:
  *           type: string
- *         description: 삭제할 공지의 ID, 형식은 academy_id&lecture_id&notice_num입니다. 전체 공지는 전체 공지 번호 조회 API을 조회 후 공지 아이디를 입력하세요.
+ *         description: 삭제할 공지의 ID, 형식은 academy_id&lecture_id&notice_num입니다. 전체 공지는 lecture_id가 0입니다.
  *         example: test_academy2&0&5
  *     responses:
  *       200:
@@ -275,7 +302,7 @@ router.delete(
  *         required: true
  *         schema:
  *           type: string
- *         description: 수정할 공지의 ID로, 형식은 academy_id&lecture_id&notice_num입니다. 전체 공지는 전체 공지 번호 조회 API을 조회 후 공지 아이디를 입력하세요.
+ *         description: 수정할 공지의 ID로, 형식은 academy_id&lecture_id&notice_num입니다.전체 공지는 lecture_id가 0입니다.
  *     requestBody:
  *       required: true
  *       content:
