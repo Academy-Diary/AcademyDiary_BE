@@ -391,8 +391,8 @@ exports.getUserBasicInfo = asyncWrapper(async (req, res, next) => {
 
 exports.getUserImageInfo = asyncWrapper(async (req, res, next) => {
   const user_id = req.params["user_id"];
-  const user = await findUserByCriteria({ user_id });
 
+  const user = await findUserByCriteria({ user_id });
   if (!user) {
     return next(
       new CustomError(
@@ -402,10 +402,10 @@ exports.getUserImageInfo = asyncWrapper(async (req, res, next) => {
       )
     );
   }
-  let image = user.image;
-  if (!user.image) {
-    image = DEFAULT_PROFILE_IMAGE;
-  }
+
+  console.log(user.image);
+  // user.image가 null인 경우 기본 이미지 사용
+  const image = user.image || DEFAULT_PROFILE_IMAGE;
 
   return res.status(StatusCodes.OK).json({
     message: "회원 이미지 정보 조회가 완료되었습니다.",
@@ -419,7 +419,7 @@ exports.getUserImageInfo = asyncWrapper(async (req, res, next) => {
 // 회원 기본 정보 수정
 exports.updateUserBasicInfo = asyncWrapper(async (req, res, next) => {
   const user_id = req.params["user_id"];
-  let { email, password, birth_date,  user_name, phone_number} = req.body;
+  let { email, password, birth_date, user_name, phone_number } = req.body;
 
   const user = await findUserByCriteria({ user_id });
 
@@ -443,7 +443,6 @@ exports.updateUserBasicInfo = asyncWrapper(async (req, res, next) => {
     phone_number = user.phone_number;
   }
 
-
   await prisma.user.update({
     where: { user_id },
     data: {
@@ -457,13 +456,13 @@ exports.updateUserBasicInfo = asyncWrapper(async (req, res, next) => {
 
   return res.status(StatusCodes.OK).json({
     message: "회원 정보가 수정되었습니다.",
-    data:{
+    data: {
       user_id: user_id,
       email: email,
       birth_date: birth_date,
       user_name: user_name,
       phone_number: phone_number,
-    }
+    },
   });
 });
 
@@ -553,26 +552,26 @@ function validateRequestData(email, phone_number, user_id = undefined) {
 
 // 유저 검색 함수
 async function findUserByCriteria(criteria) {
-  return await prisma.user
-    .findUniqueOrThrow({
+  try {
+    const user = await prisma.user.findUnique({
       where: criteria,
-    })
-    .catch((error) => {
-      if (error.code === "P2018" || error.code === "P2025") {
-        throw new CustomError(
-          "해당하는 유저가 존재하지 않습니다.",
-          StatusCodes.NOT_FOUND,
-          StatusCodes.NOT_FOUND
-        );
-      } else {
-        throw new CustomError(
-          "Prisma Error occurred!",
-          ErrorCode.INTERNAL_SERVER_PRISMA_ERROR,
-          StatusCodes.INTERNAL_SERVER_ERROR
-        );
-      }
     });
+
+    if (!user) {
+      throw new CustomError(
+        "해당하는 유저가 존재하지 않습니다.",
+        StatusCodes.NOT_FOUND,
+        StatusCodes.NOT_FOUND
+      );
+    }
+
+    return user;
+  } catch (error) {
+    console.error("Error in findUserByCriteria:", error);
+    throw error;
+  }
 }
+
 // 임시 비밀번호 생성 함수
 function generateRandomPassword(temp_pw_lenngth = 8) {
   const chars =
