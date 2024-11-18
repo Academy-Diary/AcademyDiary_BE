@@ -553,25 +553,20 @@ function validateRequestData(email, phone_number, user_id = undefined) {
 
 // 유저 검색 함수
 async function findUserByCriteria(criteria) {
-  return await prisma.user
-    .findUniqueOrThrow({
-      where: criteria,
-    })
-    .catch((error) => {
-      if (error.code === "P2018" || error.code === "P2025") {
-        throw new CustomError(
-          "해당하는 유저가 존재하지 않습니다.",
-          StatusCodes.NOT_FOUND,
-          StatusCodes.NOT_FOUND
-        );
-      } else {
-        throw new CustomError(
-          "Prisma Error occurred!",
-          ErrorCode.INTERNAL_SERVER_PRISMA_ERROR,
-          StatusCodes.INTERNAL_SERVER_ERROR
-        );
-      }
-    });
+  // findUnqiueOrThrow 대신 findUnqiue 사용
+  const user = await prisma.user.findUnique({
+    where: criteria,
+  });
+
+  if (!user) {
+    throw new CustomError(
+      "해당하는 유저가 존재하지 않습니다.",
+      StatusCodes.NOT_FOUND,
+      StatusCodes.NOT_FOUND
+    );
+  }
+
+  return user;
 }
 // 임시 비밀번호 생성 함수
 function generateRandomPassword(temp_pw_lenngth = 8) {
