@@ -54,10 +54,16 @@ exports.createBill = asyncWrapper(async (req, res, next) => {
         }
 
         // 새 청구서 생성
+        const userAcademyId = req.user.academy_id;
         const newBill = await prisma.bill.create({
             data: {
                 deadline: new Date(deadline),
                 amount: totalAmount, // 클래스 비용을 합산하여 청구서에 저장
+                academy: {
+                    connect: {
+                      academy_id:  userAcademyId
+                    }
+                  }
             },
         });
 
