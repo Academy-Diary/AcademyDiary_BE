@@ -391,30 +391,28 @@ exports.getUserBasicInfo = asyncWrapper(async (req, res, next) => {
 
 exports.getUserImageInfo = asyncWrapper(async (req, res, next) => {
   const user_id = req.params["user_id"];
-  exports.getUserImageInfo = asyncWrapper(async (req, res, next) => {
-    const user_id = req.params["user_id"];
 
-    const user = await findUserByCriteria({ user_id });
-    if (!user) {
-      return next(
-        new CustomError(
-          "해당 사용자를 찾을 수 없습니다.",
-          StatusCodes.NOT_FOUND,
-          StatusCodes.NOT_FOUND
-        )
-      );
-    }
+  const user = await findUserByCriteria({ user_id });
+  if (!user) {
+    return next(
+      new CustomError(
+        "해당 사용자를 찾을 수 없습니다.",
+        StatusCodes.NOT_FOUND,
+        StatusCodes.NOT_FOUND
+      )
+    );
+  }
 
-    // user.image가 null인 경우 기본 이미지 사용
-    const image = user.image || DEFAULT_PROFILE_IMAGE;
+  console.log(user.image);
+  // user.image가 null인 경우 기본 이미지 사용
+  const image = user.image || DEFAULT_PROFILE_IMAGE;
 
-    return res.status(StatusCodes.OK).json({
-      message: "회원 이미지 정보 조회가 완료되었습니다.",
-      data: {
-        user_id: user_id,
-        image: image,
-      },
-    });
+  return res.status(StatusCodes.OK).json({
+    message: "회원 이미지 정보 조회가 완료되었습니다.",
+    data: {
+      user_id: user_id,
+      image: image,
+    },
   });
 });
 
@@ -554,21 +552,26 @@ function validateRequestData(email, phone_number, user_id = undefined) {
 
 // 유저 검색 함수
 async function findUserByCriteria(criteria) {
-  // findUnqiueOrThrow 대신 findUnqiue 사용
-  const user = await prisma.user.findUnique({
-    where: criteria,
-  });
+  try {
+    const user = await prisma.user.findUnique({
+      where: criteria,
+    });
 
-  if (!user) {
-    throw new CustomError(
-      "해당하는 유저가 존재하지 않습니다.",
-      StatusCodes.NOT_FOUND,
-      StatusCodes.NOT_FOUND
-    );
+    if (!user) {
+      throw new CustomError(
+        "해당하는 유저가 존재하지 않습니다.",
+        StatusCodes.NOT_FOUND,
+        StatusCodes.NOT_FOUND
+      );
+    }
+
+    return user;
+  } catch (error) {
+    console.error("Error in findUserByCriteria:", error);
+    throw error;
   }
-
-  return user;
 }
+
 // 임시 비밀번호 생성 함수
 function generateRandomPassword(temp_pw_lenngth = 8) {
   const chars =
