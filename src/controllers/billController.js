@@ -20,7 +20,7 @@ exports.createBill = asyncWrapper(async (req, res, next) => {
             where: {
                 class_id: { in: classId.map((id) => parseInt(id)) },
             },
-            select: { class_id: true, expense: true },
+            select: { class_id: true, expense: true, discount : true },
         });
         // Class 유효성 검사
         if (classes.length != classId.length) {
@@ -99,7 +99,7 @@ exports.createBill = asyncWrapper(async (req, res, next) => {
 
 
 exports.getBill = asyncWrapper(async(req, res, next) => {
-    const { academy_id } = req.params.academy_id;
+    const { academy_id } = req.params;
     const isPaid = req.query.isPaid;
 
     // `isPaid`가 null 또는 undefined일 경우 기본값으로 false를 설정
@@ -123,13 +123,13 @@ exports.getBill = asyncWrapper(async(req, res, next) => {
     const foundRawBillList = await prisma.bill.findMany({
         where : {
             academy_id : academy_id,
-            paid : isPaid === "true" ? true : false
         },
         include : {
             billClasses : {
                 include : { class : { select : { class_name : true } } } 
             },
             billUsers : {
+                where : { paid : isPaid === "true" ? true : false },
                 include : { user : { select : { user_name : true } } }
             }
         }
@@ -150,7 +150,7 @@ exports.getBill = asyncWrapper(async(req, res, next) => {
         bill_id : bill.bill_id,
         deadline : bill.deadline,
         amount : bill.amount,
-        paid : bill.paid,
+        paid : bill.billUsers.map((billUserPaid) => billUserPaid.paid),
         user_name : bill.billUsers.map((billUser) => billUser.user.user_name),
         class_name :  bill.billClasses.map((billClass) => billClass.class.class_name)
     }));
