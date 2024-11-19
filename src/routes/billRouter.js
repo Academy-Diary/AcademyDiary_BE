@@ -148,7 +148,7 @@ router.get("/:academy_id", authenticateJWT("CHIEF"), billController.getBill);
  * /bill/my/{user_id}:
  *   get:
  *     summary: 내 Bill 조회
- *     description: 로그인한 사용자가 자신의 Bill 목록을 조회합니다. 청구서에 포함된 클래스 이름도 함께 반환됩니다.
+ *     description: 로그인한 사용자가 자신의 청구서 목록을 조회합니다. 청구서에 포함된 클래스 이름도 함께 반환됩니다.
  *     tags: [Bill]
  *     security:
  *       - bearerAuth: []
@@ -161,7 +161,7 @@ router.get("/:academy_id", authenticateJWT("CHIEF"), billController.getBill);
  *         description: 조회할 사용자의 ID
  *     responses:
  *       200:
- *         description: Bill 목록 조회 성공
+ *         description: 청구서 목록 조회 성공
  *         content:
  *           application/json:
  *             schema:
@@ -175,24 +175,24 @@ router.get("/:academy_id", authenticateJWT("CHIEF"), billController.getBill);
  *                   items:
  *                     type: object
  *                     properties:
+ *                       bill_id:
+ *                         type: integer
+ *                         description: 청구서 ID
  *                       amount:
  *                         type: number
  *                         description: 청구된 금액
  *                       deadline:
  *                         type: string
  *                         format: date
- *                         description: Bill의 마감 기한
+ *                         description: 청구서의 마감 기한
  *                       paid:
  *                         type: boolean
  *                         description: 지불 여부
- *                       classes:
+ *                       class_name:
  *                         type: array
  *                         items:
- *                           type: object
- *                           properties:
- *                             class_name:
- *                               type: string
- *                               description: 포함된 클래스 이름
+ *                           type: string
+ *                         description: 청구서에 포함된 클래스 이름
  *       403:
  *         description: 사용자에 대한 접근 권한이 없습니다.
  *       404:

@@ -187,7 +187,6 @@ exports.getMyBill = asyncWrapper(async(req, res, next) => {
             }
         }
     });
-    console.log(foundBillList)
 
     if (!foundBillList || foundBillList.length === 0) {
         return next(
