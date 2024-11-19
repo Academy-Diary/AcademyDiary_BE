@@ -59,36 +59,38 @@ exports.createQuiz = asyncWrapper(async (req, res, next) => {
     console.time("MySQL 트랜잭션");
 
     // 1. Prisma 트랜잭션
-    const prismaTransactionResult = await prisma.$transaction(async (prisma) => {
-      // ExamType 찾기 또는 생성
-      let examType = await prisma.ExamType.findFirst({
-        where: {
-          academy_id: academy_id,
-          exam_type_name: "퀴즈",
-        },
-      });
-
-      if (!examType) {
-        examType = await prisma.ExamType.create({
-          data: {
+    const prismaTransactionResult = await prisma.$transaction(
+      async (prisma) => {
+        // ExamType 찾기 또는 생성
+        let examType = await prisma.ExamType.findFirst({
+          where: {
             academy_id: academy_id,
             exam_type_name: "퀴즈",
           },
         });
+
+        if (!examType) {
+          examType = await prisma.ExamType.create({
+            data: {
+              academy_id: academy_id,
+              exam_type_name: "퀴즈",
+            },
+          });
+        }
+
+        // Exam 생성
+        const exam = await prisma.Exam.create({
+          data: {
+            lecture_id: lecture_id_int,
+            exam_name: title,
+            exam_date: new Date(),
+            exam_type_id: examType.exam_type_id,
+          },
+        });
+
+        return { exam, examType };
       }
-
-      // Exam 생성
-      const exam = await prisma.Exam.create({
-        data: {
-          lecture_id: lecture_id_int,
-          exam_name: title,
-          exam_date: new Date(),
-          exam_type_id: examType.exam_type_id,
-        },
-      });
-
-      return { exam, examType };
-    });
+    );
 
     console.log("MySQL 트랜잭션 성공:", prismaTransactionResult);
     console.timeEnd("MySQL 트랜잭션");
@@ -113,8 +115,8 @@ exports.createQuiz = asyncWrapper(async (req, res, next) => {
       title: title,
       comment: comment,
       keyword: keyword,
-      exam_id : prismaTransactionResult.exam.exam_id,
-      user_id : user_id,
+      exam_id: prismaTransactionResult.exam.exam_id,
+      user_id: user_id,
       quiz_list: resultJSON.quiz_list,
       answer_list: resultJSON.answer_list,
     };
@@ -132,16 +134,16 @@ exports.createQuiz = asyncWrapper(async (req, res, next) => {
 
     return res.status(StatusCodes.CREATED).json({
       message: "퀴즈가 성공적으로 생성되었습니다.",
-      data: quizData
+      data: quizData,
     });
   } catch (error) {
     console.error("에러 발생 -> 트랜잭션 실패:", error);
-    if(error.code === "P2003"){
+    if (error.code === "P2003") {
       return next(
         new CustomError(
           `${lecture_id_int}에 해당하는 강의가 존재하지 않습니다.`,
           StatusCodes.BAD_REQUEST,
-          StatusCodes.BAD_REQUEST,
+          StatusCodes.BAD_REQUEST
         )
       );
     }
