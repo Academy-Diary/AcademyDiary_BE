@@ -55,39 +55,40 @@ exports.createBill = asyncWrapper(async (req, res, next) => {
 
         // 새 청구서 생성
         const userAcademyId = req.user.academy_id;
-        const newBill = await prisma.bill.create({
-            data: {
-                deadline: new Date(deadline),
-                amount: totalAmount, // 클래스 비용을 합산하여 청구서에 저장
-                academy: {
-                    connect: {
-                      academy_id:  userAcademyId
+        const newBills = await Promise.all(
+            userId.map((user) => 
+                prisma.bill.create({
+                    data : {
+                        deadline : new Date(deadline),
+                        amount : totalAmount,
+                        academy : {
+                            connect : {
+                                academy_id : userAcademyId
+                            }
+                        },
+                        user : {
+                            connect : {
+                                user_id : user
+                            }
+                        }
                     }
-                  }
-            },
-        });
+                })
+            )
+        );
 
         // 청구서-Class N:M 테이블에 데이터 저장
-        await prisma.billClass.createMany({
-            data : classId.map((x) => {
-               return {
-                   bill_id : newBill.bill_id, 
-                   class_id : parseInt(x)
-               };
-           })
-       });
+        await Promise.all(
+            newBills.map((bill) => 
+                prisma.billClass.createMany({
+                    data : classId.map((x) => ({
+                        bill_id : bill.bill_id,
+                        class_id : parseInt(x)
+                    }))
+                })
+            )
+        )
 
-        // 청구서-User N:M 테이블에 데이터 저장
-        await prisma.billUser.createMany({
-            data : userId.map((x) => {
-               return {
-                   bill_id : newBill.bill_id, 
-                   user_id : x
-               };
-           })
-       });
-
-        return newBill;
+        return newBills;
     });
 
     // 성공적인 트랜잭션 후 응답
