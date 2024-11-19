@@ -218,4 +218,97 @@ router.get(
   authenticateJWT("CHEIF", "TEACHER", "STUDENT"),
   quizController.getQuiz
 );
+/**
+ * @swagger
+ * tags:
+ *   name: Quiz
+ *   description: 퀴즈 관련 API
+ */
+
+/**
+ * @swagger
+ * /quiz/mark:
+ *   post:
+ *     summary: 퀴즈 채점
+ *     description: 사용자 답안을 채점하고 점수를 저장하며, MongoDB와 MySQL에 데이터를 업데이트합니다.
+ *     tags: [Quiz]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               exam_id:
+ *                 type: integer
+ *                 description: 채점할 시험의 ID
+ *                 example: 47
+ *               marked:
+ *                 type: array
+ *                 description: 사용자가 선택한 각 문제의 정답 번호 배열
+ *                 items:
+ *                   type: integer
+ *                 example: [0, 1, 2, 3, 4]
+ *     responses:
+ *       200:
+ *         description: 채점 성공 및 결과 반환
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 score:
+ *                   type: integer
+ *                   description: 사용자의 총 점수
+ *                   example: 3
+ *                 marked:
+ *                   type: object
+ *                   additionalProperties:
+ *                     type: object
+ *                     properties:
+ *                       selected:
+ *                         type: integer
+ *                         description: 사용자가 선택한 정답 번호
+ *                         example: 1
+ *                       corrected:
+ *                         type: boolean
+ *                         description: 정답 여부
+ *                         example: true
+ *       400:
+ *         description: 잘못된 요청 (필수 데이터 누락 또는 유효하지 않은 값)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "exam_id, user_id, marked는 필수입니다."
+ *       404:
+ *         description: 해당 시험 ID에 해당하는 퀴즈가 없음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "47에 해당하는 퀴즈가 존재하지 않습니다."
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "퀴즈 채점 중 문제가 발생했습니다."
+ */
+
+// 퀴즈 채점 API
+router.post("/mark", authenticateJWT("STUDENT"), quizController.markQuiz);
+
 module.exports = router;

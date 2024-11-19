@@ -11,6 +11,9 @@ const { getMongoClient } = require("../lib/mongo/mongo");
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const scorePerQuestion = 20;
+const totalQuestions = 5;
+const totalOptions = 4;
 
 const generatePrompt = (keyword, n, count) => {
   const prompt = ` 다음조건에 맞춰 "${keyword}"에 맞는 퀴즈를 JSON형식으로 ${count}개 축제하시오.
@@ -97,7 +100,7 @@ exports.createQuiz = asyncWrapper(async (req, res, next) => {
 
     // 2. GEMINI API 호출
     console.time("GEMINI API 호출");
-    const prompt = generatePrompt(keyword, 4, 5);
+    const prompt = generatePrompt(keyword, totalOptions, totalQuestions);
     const result = await model.generateContent(prompt);
     const resultText = result.response.text();
     const cleanedText = resultText.replace(/```json|```/g, "").trim();
@@ -185,7 +188,6 @@ exports.getQuiz = asyncWrapper(async (req, res, next) => {
     );
   }
 
-  const mongoClient = getMongoClient();
   try {
     const quizCollection = getQuizDB().collection("quizzes");
 
@@ -230,7 +232,132 @@ exports.getQuiz = asyncWrapper(async (req, res, next) => {
         StatusCodes.INTERNAL_SERVER_ERROR
       )
     );
+  }
+});
+
+exports.markQuiz = asyncWrapper(async (req, res, next) => {
+  const { exam_id, marked } = req.body;
+  const user_id = req.user.user_id;
+  
+  if (!exam_id || !marked) {
+    return next(
+      new CustomError(
+        "exam_id, user_id, marked는 필수입니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+
+  const exam_id_int = parseInt(exam_id, 10);
+  if (isNaN(exam_id_int)) {
+    return next(
+      new CustomError(
+        "exam_id는 숫자여야 합니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+
+  const mongoClient = getMongoClient();
+  const session = mongoClient.startSession();
+
+  try {
+    // MongoDB 연결
+    const quizCollection = getQuizDB().collection("quizzes");
+    const quizResultCollection = getQuizDB().collection("quiz_results");
+
+    // 1. MongoDB에서 퀴즈 데이터 가져오기
+    const quizData = await quizCollection.findOne({ exam_id: exam_id_int });
+    if (!quizData) {
+      return next(
+        new CustomError(
+          `${exam_id}에 해당하는 퀴즈가 존재하지 않습니다.`,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.NOT_FOUND
+        )
+      );
+    }
+
+    // 2. 정답 및 채점 처리
+    const answer_list = quizData.answer_list;
+    const resultData = {};
+    let score = 0;
+
+    marked.forEach((selected, index) => {
+      const correct = answer_list[index] === selected;
+      resultData[index] = {
+        selected,
+        corrected: correct,
+      };
+      if (correct) score += scorePerQuestion; // 각 문제 1점
+    });
+
+    // 3. MongoDB - 사용자별 채점 결과 업데이트
+    const updateResult = {
+      $set: {
+        [`${exam_id_int}.${user_id}`]: resultData,
+      },
+    };
+    await session.withTransaction(async () => {
+      await quizResultCollection.updateOne(
+        { exam_id: exam_id_int },
+        updateResult,
+        { upsert: true }
+      );
+    });
+
+    // 4. MySQL - 사용자 점수 저장 및 메타데이터 업데이트
+    const prismaResult = await prisma.$transaction(async (prisma) => {
+      // ExamUserScore 생성
+      await prisma.ExamUserScore.create({
+        data: {
+          exam_id: exam_id_int,
+          user_id,
+          score,
+        },
+      });
+
+      // Exam 메타데이터 업데이트
+      const exam = await prisma.Exam.findUnique({
+        where: { exam_id: exam_id_int },
+      });
+
+      const newHighScore = Math.max(exam.high_score, score);
+      const newLowScore = Math.min(exam.low_score, score);
+      const newTotalScore = exam.total_score + score;
+      const newHeadcount = exam.headcount + 1;
+      const newAverageScore = newTotalScore / newHeadcount;
+
+      await prisma.Exam.update({
+        where: { exam_id: exam_id_int },
+        data: {
+          high_score: newHighScore,
+          low_score: newLowScore,
+          total_score: newTotalScore,
+          headcount: newHeadcount,
+          average_score: newAverageScore.toFixed(2),
+        },
+      });
+    });
+
+    // 5. 응답 생성
+    return res.status(StatusCodes.OK).json({
+      score,
+      marked: resultData,
+    });
+  } catch (error) {
+    console.error("퀴즈 채점 중 오류 발생:", error);
+    return next(
+      new CustomError(
+        "퀴즈 채점 중 문제가 발생했습니다.",
+        StatusCodes.INTERNAL_SERVER_ERROR,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      )
+    );
   } finally {
-    await mongoClient.close();
+    session.endSession();
+    await prisma.$disconnect();
   }
 });
