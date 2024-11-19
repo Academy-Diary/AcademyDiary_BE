@@ -159,3 +159,78 @@ exports.createQuiz = asyncWrapper(async (req, res, next) => {
     await prisma.$disconnect();
   }
 });
+
+exports.getQuiz = asyncWrapper(async (req, res, next) => {
+  const { exam_id, quiz_num } = req.params;
+
+  if (!exam_id || !quiz_num) {
+    return next(
+      new CustomError(
+        "exam_id와 quiz_num은 필수입니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+  const exam_id_int = parseInt(exam_id, 10);
+  const quiz_num_int = parseInt(quiz_num, 10);
+
+  if (isNaN(exam_id_int) || isNaN(quiz_num_int)) {
+    return next(
+      new CustomError(
+        "quiz_num은 숫자여야 합니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+
+  const mongoClient = getMongoClient();
+  try {
+    const quizCollection = getQuizDB().collection("quizzes");
+
+    // exam_id로 퀴즈 데이터 조회
+    const quizData = await quizCollection.findOne({ exam_id: exam_id_int });
+
+    if (!quizData) {
+      return next(
+        new CustomError(
+          `${exam_id}에 해당하는 퀴즈가 존재하지 않습니다.`,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.NOT_FOUND
+        )
+      );
+    }
+
+    // quiz_num이 범위를 벗어났는지 확인
+    if (quiz_num_int < 0 || quiz_num_int >= quizData.quiz_list.length) {
+      return next(
+        new CustomError(
+          `quiz_num이 유효하지 않습니다. 범위: 0 ~ ${
+            quizData.quiz_list.length - 1
+          }`,
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.BAD_REQUEST
+        )
+      );
+    }
+
+    // 해당 quiz_num의 문제 반환
+    const quiz = quizData.quiz_list[quiz_num_int];
+
+    return res.status(StatusCodes.OK).json({
+      [quiz_num_int]: quiz,
+    });
+  } catch (error) {
+    console.error("퀴즈 조회 중 오류 발생:", error);
+    return next(
+      new CustomError(
+        "퀴즈 데이터를 불러오는 중 문제가 발생했습니다.",
+        StatusCodes.INTERNAL_SERVER_ERROR,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      )
+    );
+  } finally {
+    await mongoClient.close();
+  }
+});
