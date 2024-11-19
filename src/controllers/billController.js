@@ -177,31 +177,17 @@ exports.getMyBill = asyncWrapper(async(req, res, next) => {
         ));
     }
 
-    const foundBillList = await prisma.billUser.findMany({
+    const foundBillList = await prisma.bill.findMany({
         where : {
             user_id : user_id
         },
         include : {
-            bill : {
-                include : {
-                    billClasses : {
-                        include : {
-                            class : {
-                                select : {
-                                    class_name : true
-                                }
-                            }
-                        }
-                    }
-                },
-                select : {
-                    amount : true,
-                    deadline : true,
-                    paid : true
-                }
+            billClasses : {
+                include : { class : { select : { class_name : true } } }
             }
         }
     });
+    console.log(foundBillList)
 
     if (!foundBillList || foundBillList.length === 0) {
         return next(
@@ -215,12 +201,13 @@ exports.getMyBill = asyncWrapper(async(req, res, next) => {
 
     // 청구서 데이터를 가공하여 반환
     const responseBillList = foundBillList.map((billUser) => ({
-        amount: billUser.bill.amount,
-        deadline: billUser.bill.deadline,
-        paid: billUser.bill.paid,
-        classes: billUser.bill.billClasses.map((billClass) => ({
-        class_name: billClass.class.class_name, // class_name 포함
-        })),
+        bill_id : billUser.bill_id,
+        amount: billUser.amount,
+        deadline: billUser.deadline,
+        paid: billUser.paid,
+        class_name: billUser.billClasses.map((billClass) => (
+            billClass.class.class_name // class_name 포함
+        )),
     }));
 
     return res.status(StatusCodes.OK).json({
