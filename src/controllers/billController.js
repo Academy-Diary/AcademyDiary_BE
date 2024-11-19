@@ -124,14 +124,14 @@ exports.getBill = asyncWrapper(async(req, res, next) => {
     const foundRawBillList = await prisma.bill.findMany({
         where : {
             academy_id : academy_id,
+            paid : isPaid === "true" ? true : false
         },
         include : {
             billClasses : {
                 include : { class : { select : { class_name : true } } } 
             },
-            billUsers : {
-                where : { paid : isPaid === "true" ? true : false },
-                include : { user : { select : { user_name : true } } }
+            user : {
+                 select : { user_name : true }
             }
         }
     });
@@ -151,8 +151,8 @@ exports.getBill = asyncWrapper(async(req, res, next) => {
         bill_id : bill.bill_id,
         deadline : bill.deadline,
         amount : bill.amount,
-        paid : bill.billUsers.map((billUserPaid) => billUserPaid.paid),
-        user_name : bill.billUsers.map((billUser) => billUser.user.user_name),
+        paid : bill.paid,
+        user_name : bill.user.user_name,
         class_name :  bill.billClasses.map((billClass) => billClass.class.class_name)
     }));
 
