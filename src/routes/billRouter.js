@@ -79,8 +79,8 @@ router.post("/",authenticateJWT("CHIEF"), billController.createBill);
  * @swagger
  * /bill/{academy_id}:
  *   get:
- *     summary: Bill 조회
- *     description: 특정 학원에 대한 Bill 목록을 지불 여부에 따라 필터링하여 조회합니다.
+ *     summary: 청구서 목록 조회
+ *     description: 특정 학원에서 청구서 목록을 지불 여부에 따라 조회합니다.
  *     tags: [Bill]
  *     security:
  *       - bearerAuth: []
@@ -93,12 +93,12 @@ router.post("/",authenticateJWT("CHIEF"), billController.createBill);
  *         description: 조회할 학원의 ID
  *       - in: query
  *         name: isPaid
+ *         required: false
  *         schema:
  *           type: boolean
- *         description: 지불 여부에 따른 Bill 필터링 (기본값 false)
  *     responses:
  *       200:
- *         description: Bill 목록 조회 성공
+ *         description: 청구서 목록 조회 성공
  *         content:
  *           application/json:
  *             schema:
@@ -114,11 +114,11 @@ router.post("/",authenticateJWT("CHIEF"), billController.createBill);
  *                     properties:
  *                       bill_id:
  *                         type: integer
- *                         description: Bill의 ID
+ *                         description: 청구서 ID
  *                       deadline:
  *                         type: string
  *                         format: date
- *                         description: Bill의 마감 기한
+ *                         description: 청구서의 마감 기한
  *                       amount:
  *                         type: number
  *                         description: 청구된 금액
@@ -126,19 +126,19 @@ router.post("/",authenticateJWT("CHIEF"), billController.createBill);
  *                         type: boolean
  *                         description: 지불 여부
  *                       user_name:
- *                         type: array
- *                         items:
- *                           type: string
- *                         description: 청구된 학생들의 이름
+ *                         type: string
+ *                         description: 청구된 사용자 이름
  *                       class_name:
  *                         type: array
  *                         items:
  *                           type: string
- *                         description: 청구된 클래스들의 이름
+ *                         description: 청구서에 포함된 클래스 이름 목록
  *       403:
  *         description: 학원에 대한 접근 권한이 없습니다.
+ *       404:
+ *         description: 청구서가 존재하지 않습니다.
  *       500:
- *         description: 서버 오류가 발생했습니다.
+ *         description: 청구서 조회 중 서버 오류가 발생했습니다.
  */
 //미&완납 청구서 목록 조회(원장)
 router.get("/:academy_id", authenticateJWT("CHIEF"), billController.getBill);
