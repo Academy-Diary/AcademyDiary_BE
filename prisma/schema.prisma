@@ -243,7 +243,6 @@ model Bill {
   academy_id String
   deadline DateTime
   amount Int @default(0)
-  paid Boolean @default(false)
 
   // Relations
   billClasses BillClass[]  // 여러 클래스를 청구서에 포함
@@ -269,6 +268,7 @@ model BillUser {
   id       Int    @id @default(autoincrement())
   bill_id  Int
   user_id  String
+  paid Boolean @default(false)
 
   // Relations
   bill     Bill   @relation(fields: [bill_id], references: [bill_id], onDelete: Cascade)
