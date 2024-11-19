@@ -110,11 +110,11 @@ exports.createQuiz = asyncWrapper(async (req, res, next) => {
     const resultJSON = JSON.parse(cleanedText);
     console.timeEnd("GEMINI API 호출");
     const quizData = {
-      title,
-      comment,
-      keyword,
-      lecture_id_int,
-      user_id,
+      title: title,
+      comment: comment,
+      keyword: keyword,
+      exam_id : prismaTransactionResult.exam.exam_id,
+      user_id : user_id,
       quiz_list: resultJSON.quiz_list,
       answer_list: resultJSON.answer_list,
     };
@@ -132,6 +132,7 @@ exports.createQuiz = asyncWrapper(async (req, res, next) => {
 
     return res.status(StatusCodes.CREATED).json({
       message: "퀴즈가 성공적으로 생성되었습니다.",
+      data: quizData
     });
   } catch (error) {
     console.error("에러 발생 -> 트랜잭션 실패:", error);
