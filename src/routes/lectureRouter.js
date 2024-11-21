@@ -656,6 +656,7 @@ router.post(
  * /lecture/{lecture_id}/exam:
  *   get:
  *     summary: 강의에 대한 시험 목록 조회
+ *     description: 특정 강의의 시험 목록을 조회합니다. Optional Query Parameter로 `exam_type_id`를 제공하여 특정 시험 유형만 필터링할 수 있습니다.
  *     tags: [Lecture]
  *     security:
  *       - bearerAuth: []
@@ -666,6 +667,12 @@ router.post(
  *         schema:
  *           type: string
  *         description: 강의 ID
+ *       - in: query
+ *         name: exam_type_id
+ *         required: false
+ *         schema:
+ *           type: integer
+ *         description: 필터링할 시험 유형 ID
  *     responses:
  *       200:
  *         description: 성공적으로 시험을 불러옴
@@ -676,11 +683,13 @@ router.post(
  *               properties:
  *                 message:
  *                   type: string
+ *                   example: 시험을 성공적으로 불러왔습니다.
  *                 data:
  *                   type: object
  *                   properties:
  *                     lecture_id:
  *                       type: integer
+ *                       description: 강의 ID
  *                     exams:
  *                       type: array
  *                       items:
@@ -688,19 +697,45 @@ router.post(
  *                         properties:
  *                           exam_id:
  *                             type: integer
+ *                             description: 시험 ID
  *                           exam_name:
  *                             type: string
+ *                             description: 시험 이름
  *                           exam_date:
  *                             type: string
  *                             format: date
+ *                             description: 시험 날짜
+ *                           exam_type_id:
+ *                             type: integer
+ *                             description: 시험 유형 ID
+ *                           high_score:
+ *                             type: number
+ *                             description: 최고 점수
+ *                           low_score:
+ *                             type: number
+ *                             description: 최저 점수
+ *                           average_score:
+ *                             type: number
+ *                             description: 평균 점수
+ *                           total_score:
+ *                             type: number
+ *                             description: 총 점수
+ *                           created_at:
+ *                             type: string
+ *                             format: date-time
+ *                             description: 시험 생성 일시
+ *                           headcount:
+ *                             type: integer
+ *                             description: 시험 응시자 수
  *                     exam_cnt:
  *                       type: integer
+ *                       description: 조회된 시험의 총 개수
  *             example:
  *               message: "시험을 성공적으로 불러왔습니다."
  *               data:
  *                 lecture_id: 1001
  *                 exams:
- *                   - exam_id: 9,
+ *                   - exam_id: 9
  *                     lecture_id: 129
  *                     exam_name: "단원평가2"
  *                     high_score: 0
@@ -721,9 +756,9 @@ router.post(
  *               properties:
  *                 message:
  *                   type: string
- *             example:
- *               message: "현재 개설된 시험이 존재하지 않습니다."
+ *                   example: 현재 개설된 시험이 존재하지 않습니다.
  */
+
 // 시험 조회
 router.get(
   "/:lecture_id/exam",

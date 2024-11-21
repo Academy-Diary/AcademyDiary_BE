@@ -513,6 +513,7 @@ exports.createExam = asyncWrapper(async (req, res, next) => {
 
 exports.getExam = asyncWrapper(async (req, res, next) => {
   const { lecture_id } = req.params;
+  const { exam_type_id } = req.query;
 
   // 유효성 검사: lecture_id가 존재하지 않으면 에러 처리
   if (!lecture_id) {
@@ -526,10 +527,14 @@ exports.getExam = asyncWrapper(async (req, res, next) => {
   }
   const lecture_id_int = parseInt(lecture_id, 10);
 
+  // Prisma where 조건 동적 구성
+  const whereCondition = {
+    lecture_id: lecture_id_int,
+    ...(exam_type_id && { exam_type_id: parseInt(exam_type_id, 10) }), // exam_type_id가 존재할 경우 조건 추가
+  };
+
   const examList = await prisma.Exam.findMany({
-    where: {
-      lecture_id: lecture_id_int,
-    },
+    where: whereCondition,
   });
 
   // 유효성 검사: 존재하는 시험이 있는지 확인
@@ -547,11 +552,13 @@ exports.getExam = asyncWrapper(async (req, res, next) => {
     message: "시험을 성공적으로 불러왔습니다.",
     data: {
       lecture_id: lecture_id_int,
+      exam_type_id: exam_type_id,
       exams: examList,
       exam_cnt: examList.length,
     },
   });
 });
+
 
 exports.deleteExam = asyncWrapper(async (req, res, next) => {
   const { lecture_id, exam_id } = req.params;
