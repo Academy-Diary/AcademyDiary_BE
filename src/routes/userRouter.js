@@ -778,5 +778,10 @@ router.post("/family", userController.setFamily);
 // router.get("/protected", authenticateJWT, (req, res) => {
 //   res.json({ message: "This is a protected route", user: req.user });
 // });
+router.get(
+  "/academy-info",
+  authenticateJWT("CHIEF", "TEACHER", "STUDENT", "PARENT"),
+  userController.getAcademyInfo
+);
 
 module.exports = router;

@@ -646,3 +646,36 @@ exports.setFamily = asyncWrapper(async (req, res, next) => {
     data: family,
   });
 });
+
+exports.getAcademyInfo = asyncWrapper(async (req, res, next) => {
+  const academy_id = req.user.academy_id; // 오타 수정
+
+  const queryResult = await prisma.academy.findUnique({
+    where: {
+      academy_id: academy_id,
+    },
+  });
+
+  if (!queryResult) {
+    return next(
+      new CustomError(
+        "학원 정보를 찾을 수 없습니다.",
+        StatusCodes.NOT_FOUND,
+        StatusCodes.NOT_FOUND
+      )
+    );
+  }
+
+  const academyInfo = {
+    academy_id: queryResult.academy_id,
+    academy_name: queryResult.academy_name,
+    academy_email: queryResult.academy_email,
+    address: queryResult.address,
+    phone_number: queryResult.phone_number,
+  };
+
+  return res.status(StatusCodes.OK).json({
+    message: "학원 정보를 성공적으로 불러왔습니다.",
+    data: academyInfo,
+  });
+});
