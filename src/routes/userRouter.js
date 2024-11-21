@@ -774,10 +774,72 @@ router.put(
 // 학생 학부모 관계설정 API
 router.post("/family", userController.setFamily);
 
-// 보호된 라우트 예시
-// router.get("/protected", authenticateJWT, (req, res) => {
-//   res.json({ message: "This is a protected route", user: req.user });
-// });
+/**
+ * @swagger
+ * /user/academy-info:
+ *   get:
+ *     summary: 학원 정보 조회
+ *     description: 사용자가 속한 학원의 정보를 조회합니다.
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 학원 정보를 성공적으로 불러왔습니다.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: 학원 정보를 성공적으로 불러왔습니다.
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     academy_id:
+ *                       type: string
+ *                       description: 학원의 고유 ID
+ *                       example: "1234-5678-9012"
+ *                     academy_name:
+ *                       type: string
+ *                       description: 학원의 이름
+ *                       example: "한빛 학원"
+ *                     academy_email:
+ *                       type: string
+ *                       description: 학원의 이메일
+ *                       example: "info@hanbitacademy.com"
+ *                     address:
+ *                       type: string
+ *                       description: 학원의 주소
+ *                       example: "서울시 강남구 테헤란로 123"
+ *                     phone_number:
+ *                       type: string
+ *                       description: 학원의 전화번호
+ *                       example: "02-1234-5678"
+
+ *       404:
+ *         description: 학원 정보를 찾을 수 없습니다.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "학원 정보를 찾을 수 없습니다."
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "서버에서 오류가 발생했습니다."
+ */
+
 router.get(
   "/academy-info",
   authenticateJWT("CHIEF", "TEACHER", "STUDENT", "PARENT"),
