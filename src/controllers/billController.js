@@ -20,7 +20,7 @@ exports.createBill = asyncWrapper(async (req, res, next) => {
             where: {
                 class_id: { in: classId.map((id) => parseInt(id)) },
             },
-            select: { class_id: true, expense: true },
+            select: { class_id: true, expense: true, discount : true },
         });
         // Class 유효성 검사
         if (classes.length != classId.length) {
@@ -54,34 +54,41 @@ exports.createBill = asyncWrapper(async (req, res, next) => {
         }
 
         // 새 청구서 생성
-        const newBill = await prisma.bill.create({
-            data: {
-                deadline: new Date(deadline),
-                amount: totalAmount, // 클래스 비용을 합산하여 청구서에 저장
-            },
-        });
+        const userAcademyId = req.user.academy_id;
+        const newBills = await Promise.all(
+            userId.map((user) => 
+                prisma.bill.create({
+                    data : {
+                        deadline : new Date(deadline),
+                        amount : totalAmount,
+                        academy : {
+                            connect : {
+                                academy_id : userAcademyId
+                            }
+                        },
+                        user : {
+                            connect : {
+                                user_id : user
+                            }
+                        }
+                    }
+                })
+            )
+        );
 
         // 청구서-Class N:M 테이블에 데이터 저장
-        await prisma.billClass.createMany({
-            data : classId.map((x) => {
-               return {
-                   bill_id : newBill.bill_id, 
-                   class_id : parseInt(x)
-               };
-           })
-       });
+        await Promise.all(
+            newBills.map((bill) => 
+                prisma.billClass.createMany({
+                    data : classId.map((x) => ({
+                        bill_id : bill.bill_id,
+                        class_id : parseInt(x)
+                    }))
+                })
+            )
+        )
 
-        // 청구서-User N:M 테이블에 데이터 저장
-        await prisma.billUser.createMany({
-            data : userId.map((x) => {
-               return {
-                   bill_id : newBill.bill_id, 
-                   user_id : x
-               };
-           })
-       });
-
-        return newBill;
+        return newBills;
     });
 
     // 성공적인 트랜잭션 후 응답
@@ -93,7 +100,7 @@ exports.createBill = asyncWrapper(async (req, res, next) => {
 
 
 exports.getBill = asyncWrapper(async(req, res, next) => {
-    const { academy_id } = req.params.academy_id;
+    const { academy_id } = req.params;
     const isPaid = req.query.isPaid;
 
     // `isPaid`가 null 또는 undefined일 경우 기본값으로 false를 설정
@@ -123,8 +130,8 @@ exports.getBill = asyncWrapper(async(req, res, next) => {
             billClasses : {
                 include : { class : { select : { class_name : true } } } 
             },
-            billUsers : {
-                include : { user : { select : { user_name : true } } }
+            user : {
+                 select : { user_name : true }
             }
         }
     });
@@ -145,7 +152,7 @@ exports.getBill = asyncWrapper(async(req, res, next) => {
         deadline : bill.deadline,
         amount : bill.amount,
         paid : bill.paid,
-        user_name : bill.billUsers.map((billUser) => billUser.user.user_name),
+        user_name : bill.user.user_name,
         class_name :  bill.billClasses.map((billClass) => billClass.class.class_name)
     }));
 
@@ -170,28 +177,13 @@ exports.getMyBill = asyncWrapper(async(req, res, next) => {
         ));
     }
 
-    const foundBillList = await prisma.billUser.findMany({
+    const foundBillList = await prisma.bill.findMany({
         where : {
             user_id : user_id
         },
         include : {
-            bill : {
-                include : {
-                    billClasses : {
-                        include : {
-                            class : {
-                                select : {
-                                    class_name : true
-                                }
-                            }
-                        }
-                    }
-                },
-                select : {
-                    amount : true,
-                    deadline : true,
-                    paid : true
-                }
+            billClasses : {
+                include : { class : { select : { class_name : true } } }
             }
         }
     });
@@ -208,12 +200,13 @@ exports.getMyBill = asyncWrapper(async(req, res, next) => {
 
     // 청구서 데이터를 가공하여 반환
     const responseBillList = foundBillList.map((billUser) => ({
-        amount: billUser.bill.amount,
-        deadline: billUser.bill.deadline,
-        paid: billUser.bill.paid,
-        classes: billUser.bill.billClasses.map((billClass) => ({
-        class_name: billClass.class.class_name, // class_name 포함
-        })),
+        bill_id : billUser.bill_id,
+        amount: billUser.amount,
+        deadline: billUser.deadline,
+        paid: billUser.paid,
+        class_name: billUser.billClasses.map((billClass) => (
+            billClass.class.class_name // class_name 포함
+        )),
     }));
 
     return res.status(StatusCodes.OK).json({
