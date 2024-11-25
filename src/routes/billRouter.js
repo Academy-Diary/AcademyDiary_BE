@@ -261,6 +261,6 @@ router.get("/my/:user_id", authenticateJWT("STUDENT", "PARENT"), billController.
  *       500:
  *         description: 서버 오류가 발생했습니다.
  */
-router.post("/:academy_id/pay", authenticateJWT("CHIEF"), billController.payBill);
+router.patch("/:academy_id/pay", authenticateJWT("CHIEF"), billController.payBill);
 
 module.exports = router;
