@@ -16,7 +16,7 @@ const totalQuestions = 5;
 const totalOptions = 4;
 
 const generatePrompt = (keyword, n, count) => {
-  const prompt = ` 다음조건에 맞춰 "${keyword}"에 맞는 퀴즈를 JSON형식으로 ${count}개 축제하시오.
+  const prompt = ` 다음조건에 맞춰 "${keyword}"에 맞는 퀴즈를 JSON형식으로 ${count}개 출제하시오.
 - 주어진 주제에 대해 ${n}개 보기가 있는 객관식 문제 ${count}개 생성
 - 출력은 모두 한국어로 작성, 다만 영어를 써야하는 경우에는 영어로 작성(영어 문제를 만들 때에는 영어로 작성)
 - 아래 예시와 같은 형태로 quiz-list와 answer-list 작성
@@ -108,6 +108,7 @@ exports.createQuiz = asyncWrapper(async (req, res, next) => {
     if (!isValidJSON(cleanedText)) {
       throw new CustomError(
         "GEMINI API에서 유효하지 않은 JSON을 반환했습니다.",
+        StatusCodes.INTERNAL_SERVER_ERROR,
         StatusCodes.INTERNAL_SERVER_ERROR
       );
     }
@@ -238,7 +239,7 @@ exports.getQuiz = asyncWrapper(async (req, res, next) => {
 exports.markQuiz = asyncWrapper(async (req, res, next) => {
   const { exam_id, marked } = req.body;
   const user_id = req.user.user_id;
-  
+
   if (!exam_id || !marked) {
     return next(
       new CustomError(
