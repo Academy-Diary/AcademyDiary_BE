@@ -846,6 +846,104 @@ router.get(
   userController.getAcademyInfo
 );
 
+/**
+ * @swagger
+ * /user/academy-info:
+ *   post:
+ *     summary: 학원 정보 수정
+ *     description: CHIEF 권한을 가진 사용자가 학원의 정보를 수정합니다. 제공되지 않은 필드는 기존 값을 유지합니다.
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               academy_name:
+ *                 type: string
+ *                 description: 학원의 이름 (Optional)
+ *                 example: "새로운 한빛 학원"
+ *               academy_email:
+ *                 type: string
+ *                 description: 학원의 이메일 (Optional)
+ *                 example: "new_info@hanbitacademy.com"
+ *               address:
+ *                 type: string
+ *                 description: 학원의 주소 (Optional)
+ *                 example: "서울시 강남구 테헤란로 456"
+ *               phone_number:
+ *                 type: string
+ *                 description: 학원의 전화번호 (Optional)
+ *                 example: "02-9876-5432"
+ *     responses:
+ *       200:
+ *         description: 학원 정보 수정 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: 성공 메시지
+ *                   example: "학원 정보가 성공적으로 수정되었습니다."
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     academy_id:
+ *                       type: string
+ *                       description: 학원의 고유 ID
+ *                       example: "1234-5678-9012"
+ *                     academy_name:
+ *                       type: string
+ *                       description: 수정된 학원의 이름
+ *                       example: "새로운 한빛 학원"
+ *                     academy_email:
+ *                       type: string
+ *                       description: 수정된 학원의 이메일
+ *                       example: "new_info@hanbitacademy.com"
+ *                     address:
+ *                       type: string
+ *                       description: 수정된 학원의 주소
+ *                       example: "서울시 강남구 테헤란로 456"
+ *                     phone_number:
+ *                       type: string
+ *                       description: 수정된 학원의 전화번호
+ *                       example: "02-9876-5432"
+ *       401:
+ *         description: 인증 실패 또는 권한 부족
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Unauthorized"
+ *       404:
+ *         description: 학원 정보를 찾을 수 없음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "학원 정보를 찾을 수 없습니다."
+ *       500:
+ *         description: 서버 오류 발생
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "서버에서 오류가 발생했습니다."
+ */
 router.post(
   "/academy-info",
   authenticateJWT("CHIEF"),
