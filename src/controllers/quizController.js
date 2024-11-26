@@ -311,9 +311,25 @@ exports.markQuiz = asyncWrapper(async (req, res, next) => {
 
     // 4. MySQL - 사용자 점수 저장 및 메타데이터 업데이트
     const prismaResult = await prisma.$transaction(async (prisma) => {
+      const prevScore = await prisma.ExamUserScore.findFirst({
+        where: {
+          exam_id: exam_id_int,
+          user_id,
+        },
+      });
+
       // ExamUserScore 생성
-      await prisma.ExamUserScore.create({
-        data: {
+      await prisma.ExamUserScore.upsert({
+        where: {
+          exam_id_user_id: {
+            exam_id: exam_id_int,
+            user_id,
+          },
+        },
+        update: {
+          score,
+        },
+        create: {
           exam_id: exam_id_int,
           user_id,
           score,
@@ -327,8 +343,11 @@ exports.markQuiz = asyncWrapper(async (req, res, next) => {
 
       const newHighScore = Math.max(exam.high_score, score);
       const newLowScore = Math.min(exam.low_score, score);
-      const newTotalScore = exam.total_score + score;
-      const newHeadcount = exam.headcount + 1;
+
+      const newTotalScore = prevScore
+        ? exam.total_score - prevScore.score + score
+        : exam.total_score + score;
+      const newHeadcount = prevScore ? exam.headcount : exam.headcount + 1;
       const newAverageScore = newTotalScore / newHeadcount;
 
       await prisma.Exam.update({
