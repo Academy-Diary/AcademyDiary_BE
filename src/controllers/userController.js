@@ -701,29 +701,15 @@ exports.updateAcademyInfo = asyncWrapper(async (req, res, next) => {
     );
   }
 
-  // 입력값이 없는 경우 기존 값으로 대체
-  if (!academy_name) {
-    academy_name = academy.academy_name;
-  }
-  if (!academy_email) {
-    academy_email = academy.academy_email;
-  }
-  if (!address) {
-    address = academy.address;
-  }
-  if (!phone_number) {
-    phone_number = academy.phone_number;
-  }
-
   const queryResult = await prisma.academy.update({
     where: {
       academy_id: academy_id,
     },
     data: {
-      academy_name,
-      academy_email,
-      address,
-      phone_number,
+      academy_name: academy_name || undefined,
+      academy_email: academy_email || undefined,
+      address: address || undefined,
+      phone_number: phone_number || undefined,
     },
   });
 
