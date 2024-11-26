@@ -846,4 +846,9 @@ router.get(
   userController.getAcademyInfo
 );
 
+router.post(
+  "/academy-info",
+  authenticateJWT("CHIEF"),
+  userController.updateAcademyInfo
+);
 module.exports = router;
