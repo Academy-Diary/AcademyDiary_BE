@@ -898,6 +898,7 @@ router.post(
   "/check-password",
   authenticateJWT("ADMIN", "CHIEF", "TEACHER", "STUDENT", "PARENT"),
   userController.checkPassword
+);
 /**
  * @swagger
  * /user/academy-info:
