@@ -105,8 +105,8 @@ exports.createJWT = asyncWrapper(async (req, res) => {
     );
   }
   // 검사2:비밀번호가 일치하는지 확인
-  const isMatch = bcrypt.compareSync(password, user.password);
-  if (isMatch) {
+  const isMatched = bcrypt.compareSync(password, user.password);
+  if (isMatched) {
     const payload = {
       user_id: user_id,
       role: user.role,
@@ -677,6 +677,24 @@ exports.getAcademyInfo = asyncWrapper(async (req, res, next) => {
   return res.status(StatusCodes.OK).json({
     message: "학원 정보를 성공적으로 불러왔습니다.",
     data: academyInfo,
+  });
+});
+
+exports.checkPassword = asyncWrapper(async (req, res, next) => {
+  const { password } = req.body;
+  const user_id = req.user.user_id;
+  const user = await prisma.user.findUnique({
+    where: { user_id },
+  });
+
+  const isMatched = bcrypt.compareSync(password, user.password);
+  const message = isMatched
+    ? "비밀번호가 일치합니다."
+    : "비밀번호가 일치하지 않습니다.";
+    
+  res.status(StatusCodes.OK).json({
+    message: message,
+    isMatched: isMatched,
   });
 });
 

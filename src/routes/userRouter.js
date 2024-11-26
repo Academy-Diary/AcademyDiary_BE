@@ -845,7 +845,59 @@ router.get(
   authenticateJWT("CHIEF", "TEACHER", "STUDENT", "PARENT"),
   userController.getAcademyInfo
 );
+/**
+ * @swagger
+ * /user/check-password:
+ *   post:
+ *     summary: 비밀번호 확인
+ *     description: 현재 로그인한 사용자의 비밀번호가 입력한 값과 일치하는지 확인합니다.
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               password:
+ *                 type: string
+ *                 description: 확인할 비밀번호
+ *                 example: "your_password"
+ *     responses:
+ *       200:
+ *         description: 비밀번호 확인 결과
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: 결과 메시지
+ *                   example: "비밀번호가 일치합니다."
+ *                 isMatched:
+ *                   type: boolean
+ *                   description: 비밀번호가 일치하는지 여부
+ *                   example: true
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "서버에서 오류가 발생했습니다."
+ */
 
+// 비밀번호 확인 API
+router.post(
+  "/check-password",
+  authenticateJWT("ADMIN", "CHIEF", "TEACHER", "STUDENT", "PARENT"),
+  userController.checkPassword
 /**
  * @swagger
  * /user/academy-info:
