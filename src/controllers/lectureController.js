@@ -366,12 +366,12 @@ exports.createLectureStudent = asyncWrapper(async (req, res, next) => {
 
     // 수강생 수 업데이트
     await prisma.Lecture.update({
-      where : {
-        lecture_id : target_id
+      where: {
+        lecture_id: target_id,
       },
-      data : {
-        headcount : participantCount
-      }
+      data: {
+        headcount: participantCount,
+      },
     });
 
     return res.status(StatusCodes.OK).json({
@@ -434,12 +434,12 @@ exports.deleteLectureStudent = asyncWrapper(async (req, res, next) => {
 
     // 수강생 수 업데이트
     await prisma.Lecture.update({
-      where : {
-        lecture_id : target_id
+      where: {
+        lecture_id: target_id,
       },
-      data : {
-        headcount : participantCount
-      }
+      data: {
+        headcount: participantCount,
+      },
     });
 
     return res.status(StatusCodes.OK).json({
@@ -559,7 +559,6 @@ exports.getExam = asyncWrapper(async (req, res, next) => {
   });
 });
 
-
 exports.deleteExam = asyncWrapper(async (req, res, next) => {
   const { lecture_id, exam_id } = req.params;
 
@@ -612,7 +611,6 @@ exports.deleteExam = asyncWrapper(async (req, res, next) => {
 exports.createScore = asyncWrapper(async (req, res, next) => {
   const { lecture_id, exam_id } = req.params;
   let { scoreList } = req.body;
-  let minScore, maxScore, sumScore;
   // 유효성 검사: lecture_id, exam_id, user_id가 존재하지 않으면 에러 처리
   if (!lecture_id || !exam_id || !scoreList || scoreList.length === 0) {
     return next(
@@ -631,9 +629,6 @@ exports.createScore = asyncWrapper(async (req, res, next) => {
       exam_id: exam_id_int,
     },
   });
-  minScore = exam.low_score;
-  maxScore = exam.high_score;
-  sumScore = exam.total_score;
 
   // 아래의 유효성 검사는 삭제했음. 이 함수는 화면단에서 처리된 데이터를 받아서 처리하는 함수이기 때문에.
   // 존재하는 lecture_id, exam_id, user_id인지 확인  / 해당 강의에 수강생으로 등록되어 있는 user_id인지 확인
@@ -671,16 +666,34 @@ exports.createScore = asyncWrapper(async (req, res, next) => {
         score: scoreList[i].score, // 없으면 새로 생성
       },
     });
-    // 대표값 계산
-    if (minScore > scoreList[i].score) minScore = scoreList[i].score;
-    if (maxScore < scoreList[i].score) maxScore = scoreList[i].score;
-    sumScore += scoreList[i].score;
   }
 
-  // ExamUserScore에서 해당 시험의 응시 인원수 계산
-  const newHeadcount = await prisma.ExamUserScore.count({
+  // ExamUserScore에서 모든 데이터를 조회하여 합산 및 평균 계산
+  const scores = await prisma.ExamUserScore.findMany({
     where: {
       exam_id: exam_id_int,
+    },
+    select: {
+      score: true,
+    },
+  });
+
+  const newHeadcount = scores.length;
+  const sumScore = scores.reduce((sum, record) => sum + record.score, 0);
+  const minScore = Math.min(...scores.map((record) => record.score));
+  const maxScore = Math.max(...scores.map((record) => record.score));
+
+  // 대표값 업데이트
+  await prisma.Exam.update({
+    where: {
+      exam_id: exam_id_int,
+    },
+    data: {
+      low_score: minScore,
+      high_score: maxScore,
+      average_score: sumScore / (newHeadcount || 1),
+      total_score: sumScore,
+      headcount: newHeadcount,
     },
   });
 
@@ -748,7 +761,7 @@ exports.getExamScore = asyncWrapper(async (req, res, next) => {
     data: {
       exam_id: exam_id_int,
       scoreList: scoreList,
-      student_cnt: scoreList.length,
+      headcount: scoreList.length,
     },
   });
 });
@@ -965,7 +978,6 @@ exports.getExamTypeScore = asyncWrapper(async (req, res, next) => {
   });
 });
 
-
 exports.putLectureStudent = asyncWrapper(async (req, res, next) => {
   const { lecture_id } = req.params;
 
@@ -995,36 +1007,44 @@ exports.putLectureStudent = asyncWrapper(async (req, res, next) => {
 
   // 데이터베이스에서 해당 강의 확인
   const lectureExists = await prisma.lecture.findUnique({
-    where: { lecture_id: targetLectureId }
+    where: { lecture_id: targetLectureId },
   });
 
   if (!lectureExists) {
-    return next(new CustomError(
-      "강의를 찾을 수 없습니다.", 
-      StatusCodes.NOT_FOUND,
-      StatusCodes.NOT_FOUND
-    ));
+    return next(
+      new CustomError(
+        "강의를 찾을 수 없습니다.",
+        StatusCodes.NOT_FOUND,
+        StatusCodes.NOT_FOUND
+      )
+    );
   }
 
   try {
     // 기존 수강생 목록 조회
     const existingStudents = await prisma.LectureParticipant.findMany({
       where: { lecture_id: targetLectureId },
-      select: { user_id: true }
+      select: { user_id: true },
     });
 
     // 기존 수강생 user_id 목록과 요청받은 studentList로 업데이트할 목록 구분
-    const existingStudentIds = existingStudents.map(student => student.user_id);
-    const newStudents = studentList.filter(userId => !existingStudentIds.includes(userId));
-    const studentsToRemove = existingStudentIds.filter(userId => !studentList.includes(userId));
+    const existingStudentIds = existingStudents.map(
+      (student) => student.user_id
+    );
+    const newStudents = studentList.filter(
+      (userId) => !existingStudentIds.includes(userId)
+    );
+    const studentsToRemove = existingStudentIds.filter(
+      (userId) => !studentList.includes(userId)
+    );
 
     // 새로운 수강생 추가
     if (newStudents.length > 0) {
       await prisma.LectureParticipant.createMany({
-        data: newStudents.map(userId => ({
+        data: newStudents.map((userId) => ({
           lecture_id: targetLectureId,
-          user_id: userId
-        }))
+          user_id: userId,
+        })),
       });
     }
 
@@ -1033,8 +1053,8 @@ exports.putLectureStudent = asyncWrapper(async (req, res, next) => {
       await prisma.LectureParticipant.deleteMany({
         where: {
           lecture_id: targetLectureId,
-          user_id: { in: studentsToRemove }
-        }
+          user_id: { in: studentsToRemove },
+        },
       });
     }
 
@@ -1047,24 +1067,26 @@ exports.putLectureStudent = asyncWrapper(async (req, res, next) => {
 
     // 수강생 수 업데이트
     await prisma.Lecture.update({
-      where : {
-        lecture_id : target_id
+      where: {
+        lecture_id: target_id,
       },
-      data : {
-        headcount : participantCount
-      }
+      data: {
+        headcount: participantCount,
+      },
     });
 
     return res.status(StatusCodes.OK).json({
       message: "수강생 목록이 성공적으로 업데이트되었습니다.",
       addedStudents: newStudents,
-      removedStudents: studentsToRemove
+      removedStudents: studentsToRemove,
     });
   } catch (error) {
-    return next(new CustomError(
-      "수강생 목록을 업데이트하는데 실패하였습니다.",
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      StatusCodes.INTERNAL_SERVER_ERROR
-    ));
+    return next(
+      new CustomError(
+        "수강생 목록을 업데이트하는데 실패하였습니다.",
+        StatusCodes.INTERNAL_SERVER_ERROR,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      )
+    );
   }
 });
