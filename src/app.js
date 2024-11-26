@@ -10,7 +10,7 @@ const port = 8000;
 const { swaggerUi, specs } = require("./swagger/swagger");
 const socketConfig = require("./socket"); // Socket.IO 설정 파일 가져오기
 const { MongoClient } = require("mongodb");
-const { connectToMongo } = require("../src/lib/chatDB/chatDB");
+const { connectToMongo } = require("../src/lib/mongo/mongo");
 
 const whitelist = [
   "http://localhost:5173",
@@ -59,6 +59,7 @@ const examTypeRouter = require("./routes/examTypeRouter");
 const noticeRouter = require("./routes/noticeRouter.js");
 const billRouter = require("./routes/billRouter");
 const chatRouter = require("./routes/chatRouter");
+const quizRouter = require("./routes/quizRouter");
 
 app.use("/", indexRouter);
 app.use("/user", userRouter);
@@ -71,6 +72,7 @@ app.use("/exam-type", examTypeRouter);
 app.use("/bill", billRouter);
 app.use("/notice", noticeRouter);
 app.use("/chat", chatRouter);
+app.use("/quiz", quizRouter);
 
 //swagger
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs))

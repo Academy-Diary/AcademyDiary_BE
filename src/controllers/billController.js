@@ -261,7 +261,7 @@ exports.payBill = asyncWrapper(async(req, res, next) => {
       bill_id: { in: targetBillList }
     },
     data: {
-      status: paid
+      paid : paid
     }
   });
 

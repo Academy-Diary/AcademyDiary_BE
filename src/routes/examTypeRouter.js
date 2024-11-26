@@ -71,7 +71,7 @@ router.post(
  * /exam-type/academy/{academy_id}:
  *   get:
  *     summary: 학원의 시험 유형 조회
- *     description: CHIEF 또는 TEACHER 권한을 가진 사용자가 특정 학원의 시험 유형을 조회합니다. 요청한 사용자가 학원에 소속되지 않은 경우 접근이 제한됩니다.
+ *     description: CHIEF, TEACHER, STUDENT, PARENT 권한을 가진 사용자가 특정 학원의 시험 유형을 조회합니다. 요청한 사용자가 학원에 소속되지 않은 경우 접근이 제한됩니다. `exam_type_name` Query Parameter를 사용해 특정 이름을 포함하는 시험 유형을 필터링할 수 있습니다.
  *     tags: [ExamType]
  *     security:
  *       - bearerAuth: []
@@ -82,6 +82,12 @@ router.post(
  *         schema:
  *           type: string
  *         description: 조회할 학원의 ID
+ *       - in: query
+ *         name: exam_type_name
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: 특정 이름을 포함하는 시험 유형 필터링 (부분 일치)
  *     responses:
  *       200:
  *         description: 시험 유형 조회 성공
@@ -92,16 +98,19 @@ router.post(
  *               properties:
  *                 message:
  *                   type: string
- *                   description: "시험 유형을 성공적으로 불러왔습니다."
+ *                   description: 성공 메시지
+ *                   example: "시험 유형을 성공적으로 불러왔습니다."
  *                 data:
  *                   type: object
  *                   properties:
  *                     academy_id:
  *                       type: string
  *                       description: 학원의 ID
+ *                       example: "1234-5678-9012"
  *                     type_cnt:
  *                       type: integer
  *                       description: 개설된 시험 유형의 수
+ *                       example: 2
  *                     exam_types:
  *                       type: array
  *                       items:
@@ -110,18 +119,46 @@ router.post(
  *                           exam_type_name:
  *                             type: string
  *                             description: 시험 유형의 이름
+ *                             example: "중간고사"
  *                           exam_type_id:
  *                             type: integer
  *                             description: 시험 유형의 ID
- *       401:
- *         description: 인증 실패 또는 권한 부족
+ *                             example: 1
  *       403:
  *         description: 다른 학원에 접근할 수 없습니다.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: 접근 제한 메시지
+ *                   example: "다른 학원에는 접근할 수 없습니다."
  *       404:
  *         description: 개설된 시험 유형이 존재하지 않습니다.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: 데이터가 없을 때의 메시지
+ *                   example: "현재 개설된 시험 유형이 존재하지 않습니다."
  *       500:
  *         description: 서버 오류가 발생했습니다.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: 서버 에러 메시지
+ *                   example: "서버에서 오류가 발생했습니다."
  */
+
 // 시험 유형 조회
 router.get(
   "/academy/:academy_id",

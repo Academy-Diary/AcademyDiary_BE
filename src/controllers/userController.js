@@ -697,3 +697,42 @@ exports.checkPassword = asyncWrapper(async (req, res, next) => {
     isMatched: isMatched,
   });
 });
+
+exports.updateAcademyInfo = asyncWrapper(async (req, res, next) => {
+  const academy_id = req.user.academy_id;
+  let { academy_name, academy_email, address, phone_number } = req.body;
+
+  const academy = await prisma.academy.findUnique({
+    where: {
+      academy_id: academy_id,
+    },
+  });
+
+  // 유효성 검사1: 학원이 존재하지 않으면 에러 처리
+  if (!academy) {
+    return next(
+      new CustomError(
+        "학원 정보를 찾을 수 없습니다.",
+        StatusCodes.NOT_FOUND,
+        StatusCodes.NOT_FOUND
+      )
+    );
+  }
+
+  const queryResult = await prisma.academy.update({
+    where: {
+      academy_id: academy_id,
+    },
+    data: {
+      academy_name: academy_name || undefined,
+      academy_email: academy_email || undefined,
+      address: address || undefined,
+      phone_number: phone_number || undefined,
+    },
+  });
+
+  return res.status(StatusCodes.OK).json({
+    message: "학원 정보가 성공적으로 수정되었습니다.",
+    data: queryResult,
+  });
+});

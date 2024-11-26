@@ -1,4 +1,4 @@
-const { getChatDB } = require("./lib/chatDB/chatDB"); // MongoDB 인스턴스 가져오기
+const { getChatDB } = require("./lib/mongo/mongo"); // MongoDB 인스턴스 가져오기
 const { ObjectId } = require("mongodb");
 
 module.exports = (server) => {

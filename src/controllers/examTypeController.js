@@ -59,6 +59,7 @@ exports.createExamType = asyncWrapper(async (req, res, next) => {
 
 exports.getExamType = asyncWrapper(async (req, res, next) => {
   const { academy_id } = req.params;
+  const { exam_type_name } = req.query;
 
   // 유효성 검사1: academy_id가 다른 학원이면 에러 처리
   if (academy_id !== req.user.academy_id) {
@@ -71,10 +72,14 @@ exports.getExamType = asyncWrapper(async (req, res, next) => {
     );
   }
 
+  // Prisma where 조건 동적 생성
+  const whereCondition = {
+    academy_id: academy_id,
+    ...(exam_type_name && { exam_type_name: { contains: exam_type_name } }), // exam_type_name이 제공되면 조건 추가
+  };
+
   const examTypeList = await prisma.ExamType.findMany({
-    where: {
-      academy_id: academy_id,
-    },
+    where: whereCondition,
   });
 
   // 유효성 검사2: examTypeList가 존재하지 않으면 에러 처리
@@ -87,6 +92,8 @@ exports.getExamType = asyncWrapper(async (req, res, next) => {
       )
     );
   }
+  
+  // 데이터 구조화
   const examTypes = examTypeList.map((x) => ({
     exam_type_name: x.exam_type_name,
     exam_type_id: x.exam_type_id,
@@ -101,6 +108,7 @@ exports.getExamType = asyncWrapper(async (req, res, next) => {
     },
   });
 });
+
 
 exports.deleteExamType = asyncWrapper(async (req, res, next) => {
   const { exam_type_id } = req.params;
