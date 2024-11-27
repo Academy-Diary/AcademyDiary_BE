@@ -321,6 +321,87 @@ exports.getLectureStudent = asyncWrapper(async (req, res, next) => {
   });
 });
 
+//강의 수강생 학부모 조회
+exports.getLectureParent = asyncWrapper(async(req, res, next) => {
+    const { lecture_id } = req.params;
+    const target_id = parseInt(lecture_id, 10);
+
+    if (!lecture_id) {
+      return next(
+        new CustomError(
+          "유효한 lecture_id가 제공되지 않았습니다.",
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.BAD_REQUEST
+        )
+      );
+    }
+
+  try {
+    // Step 1: 해당 강의에 등록된 학생 조회
+    const students = await prisma.LectureParticipant.findMany({
+      where: { lecture_id: target_id },
+      select: {
+        user_id: true, // 학생 ID
+      },
+    });
+
+    if (!students || students.length === 0) {
+      return next(new CustomError(
+        "해당 강의에 등록된 학생이 없습니다.",
+        StatusCodes.NOT_FOUND,
+        StatusCodes.NOT_FOUND
+      ));
+    }
+
+    const studentIds = students.map(student => student.user_id);
+
+    // Step 2: 학생들과 연결된 학부모 조회
+    const parents = await prisma.family.findMany({
+      where: {
+        student_id: { in: studentIds }, // 학생 ID와 관련된 가족 관계 조회
+      },
+      select: {
+        parent: { // 학부모 정보
+          select: {
+            user_id: true,
+            user_name: true,
+            phone_number: true,
+            email: true,
+          },
+        },
+        student: { // 학생 정보
+          select: {
+            user_id: true,
+            user_name: true,
+          },
+        },
+      },
+    });
+
+    // Step 3: 학부모 정보와 학생 이름 정리
+    const parentData = parents.map(({ parent, student }) => ({
+      parent_id: parent.user_id,
+      parent_name: parent.user_name,
+      phone_number: parent.phone_number,
+      email: parent.email,
+      student_id: student.user_id,
+      student_name: student.user_name,
+    }));
+
+    return res.status(StatusCodes.OK).json({
+      message: "학부모 조회 성공",
+      data: parentData,
+    });
+
+  } catch(err) {
+    return next(new CustomError(
+      "학부모 정보를 조회하는 중 오류가 발생했습니다.",
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      StatusCodes.INTERNAL_SERVER_ERROR
+    ));
+  }
+})
+
 //강의 수강생 추가
 exports.createLectureStudent = asyncWrapper(async (req, res, next) => {
   const { lecture_id } = req.params;

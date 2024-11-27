@@ -372,6 +372,70 @@ router.get(
   authenticateJWT("CHIEF", "TEACHER"),
   lectureController.getLectureStudent
 );
+
+/**
+ * @swagger
+ * /lecture/{lecture_id}/parent:
+ *   get:
+ *     summary: 강의 수강생의 학부모 및 학생 정보 조회
+ *     description: 특정 강의에 등록된 학생들의 학부모 정보와 해당 학생들의 정보를 조회합니다.
+ *     tags: [Lecture]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: lecture_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 조회할 강의의 ID
+ *     responses:
+ *       200:
+ *         description: 학부모 및 학생 정보 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: "학부모 조회 성공"
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       parent_id:
+ *                         type: string
+ *                         description: 학부모 ID
+ *                       parent_name:
+ *                         type: string
+ *                         description: 학부모 이름
+ *                       phone_number:
+ *                         type: string
+ *                         description: 학부모 전화번호
+ *                       email:
+ *                         type: string
+ *                         description: 학부모 이메일
+ *                       student_id:
+ *                         type: string
+ *                         description: 학생 ID
+ *                       student_name:
+ *                         type: string
+ *                         description: 학생 이름
+ *       400:
+ *         description: 유효하지 않은 lecture_id가 제공되었습니다.
+ *       404:
+ *         description: 해당 강의에 등록된 학생이 없습니다.
+ *       500:
+ *         description: 학부모 정보를 조회하는 중 서버 오류가 발생했습니다.
+ */
+// 강의 수강생 학부모 조회
+router.get(
+  "/:lecture_id/parent",
+  authenticateJWT("CHIEF", "TEACHER"),
+  lectureController.getLectureParent
+);
 /**
  * @swagger
  * /lecture/{lecture_id}/student:
