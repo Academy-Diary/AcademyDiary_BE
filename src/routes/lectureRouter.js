@@ -605,23 +605,70 @@ router.delete(
  *                 message:
  *                   type: string
  *                   description: "수강생 목록이 성공적으로 업데이트되었습니다."
- *                 addedStudents:
- *                   type: array
- *                   items:
- *                     type: string
- *                   description: 새로 추가된 수강생 ID 목록
- *                 removedStudents:
- *                   type: array
- *                   items:
- *                     type: string
- *                   description: 제거된 수강생 ID 목록
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     lecture_id:
+ *                       type: integer
+ *                       description: 강의 ID
+ *                     headcount:
+ *                       type: integer
+ *                       description: 갱신된 수강생 수
+ *                     addedStudents:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                       description: 새로 추가된 수강생 ID 목록
+ *                     removedStudents:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                       description: 제거된 수강생 ID 목록
+ *             example:
+ *               message: "수강생 목록이 성공적으로 업데이트되었습니다."
+ *               data:
+ *                 lecture_id: 1
+ *                 headcount: 2
+ *                 addedStudents: ["test_student2"]
+ *                 removedStudents: ["test_student"]
  *       400:
  *         description: 유효하지 않은 lecture_id 또는 수강생 목록이 제공되었습니다.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: "에러 메시지"
+ *             example:
+ *               message: "유효하지 않은 lecture_id 또는 수강생 목록이 제공되었습니다."
  *       404:
  *         description: 강의를 찾을 수 없습니다.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: "에러 메시지"
+ *             example:
+ *               message: "강의를 찾을 수 없습니다."
  *       500:
  *         description: 수강생 목록 업데이트 중 서버 오류가 발생했습니다.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: "에러 메시지"
+ *             example:
+ *               message: "수강생 목록 업데이트 중 서버 오류가 발생했습니다."
  */
+
 //강의 수강생목록 업데이트
 router.put(
   "/:lecture_id/student",
