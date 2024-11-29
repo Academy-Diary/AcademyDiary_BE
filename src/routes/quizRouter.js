@@ -310,6 +310,98 @@ router.get(
 
 // 퀴즈 채점 API
 router.post("/mark", authenticateJWT("STUDENT"), quizController.markQuiz);
+/**
+ * @swagger
+ * /quiz/{exam_id}:
+ *   get:
+ *     summary: 퀴즈 정보 조회
+ *     description: 특정 시험 ID(exam_id)에 해당하는 퀴즈 정보를 조회합니다.
+ *     tags: [Quiz]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: exam_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 퀴즈 정보를 조회할 시험 ID
+ *     responses:
+ *       200:
+ *         description: 퀴즈 정보 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: 성공 메시지
+ *                   example: "퀴즈 정보 조회를 성공했습니다."
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     title:
+ *                       type: string
+ *                       description: 퀴즈 제목
+ *                     comment:
+ *                       type: string
+ *                       description: 퀴즈에 대한 코멘트
+ *                     keyword:
+ *                       type: string
+ *                       description: 퀴즈 키워드
+ *                     exam_id:
+ *                       type: integer
+ *                       description: 시험 ID
+ *                     user_id:
+ *                       type: string
+ *                       description: 퀴즈를 생성한 사용자 ID
+ *             example:
+ *               message: "퀴즈 정보 조회를 성공했습니다."
+ *               data:
+ *                 title: "중간고사 퀴즈"
+ *                 comment: "학생들이 꼭 풀어야 할 문제"
+ *                 keyword: "중간고사, 예습"
+ *                 exam_id: 101
+ *                 user_id: "test_teacher"
+ *       400:
+ *         description: 유효하지 않은 exam_id가 제공된 경우
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: 에러 메시지
+ *             example:
+ *               message: "exam_id는 숫자여야 합니다."
+ *       404:
+ *         description: 해당 exam_id에 대한 퀴즈가 존재하지 않을 경우
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: 에러 메시지
+ *             example:
+ *               message: "101에 해당하는 퀴즈가 존재하지 않습니다."
+ *       500:
+ *         description: 서버 내부 오류 발생
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: 에러 메시지
+ *             example:
+ *               message: "퀴즈 정보를 불러오는 중 문제가 발생했습니다."
+ */
+
 router.get(
   "/:exam_id",
   authenticateJWT("CHIEF", "TEACHER", "STUDENT"),
