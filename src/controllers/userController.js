@@ -672,6 +672,8 @@ exports.getAcademyInfo = asyncWrapper(async (req, res, next) => {
     academy_email: queryResult.academy_email,
     address: queryResult.address,
     phone_number: queryResult.phone_number,
+    student_headcount: queryResult.student_headcount,
+    teacher_headcount: queryResult.teacher_headcount,
   };
 
   return res.status(StatusCodes.OK).json({
@@ -731,8 +733,19 @@ exports.updateAcademyInfo = asyncWrapper(async (req, res, next) => {
     },
   });
 
+  updatedAcademyInfo= {
+    academy_id: academy_id,
+    academy_name: queryResult.academy_name,
+    academy_email: queryResult.academy_email,
+    address: queryResult.address,
+    phone_number: queryResult.phone_number,
+    student_headcount: queryResult.student_headcount,
+    teacher_headcount: queryResult.teacher_headcount,
+  };
+  console.log(queryResult);
+
   return res.status(StatusCodes.OK).json({
     message: "학원 정보가 성공적으로 수정되었습니다.",
-    data: queryResult,
+    data: updatedAcademyInfo,
   });
 });
