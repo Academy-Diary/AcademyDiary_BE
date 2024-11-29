@@ -18,7 +18,7 @@ model User {
   phone_number String   @unique
   role         Role     @default(STUDENT)
   image        String?
-  
+
   // Relations
   academy           Academy?                     @relation(fields: [academy_id], references: [academy_id], name: "UserAcademyRelation")
   chief             Chief_Academy?               @relation("UserChiefRelation")
@@ -33,15 +33,17 @@ model User {
 }
 
 model Academy {
-  id               Int                           @id @default(autoincrement())
-  academy_id       String?                       @unique
-  academy_key      String                        @unique
-  academy_name     String
-  academy_email    String                        @unique
-  address          String
-  phone_number     String
-  status           Status                        @default(PENDING)
- 
+  id                Int     @id @default(autoincrement())
+  academy_id        String? @unique
+  academy_key       String  @unique
+  academy_name      String
+  academy_email     String  @unique
+  address           String
+  phone_number      String
+  status            Status  @default(PENDING)
+  student_headcount Int     @default(0)
+  teacher_headcount Int     @default(0)
+
   // Relations
   registrationList AcademyUserRegistrationList[] @relation("AcademyUserRegistrationList_Academy_Relation")
   chief            Chief_Academy?                @relation("AcademyChiefRelation")
@@ -54,39 +56,39 @@ model Academy {
 }
 
 model Chief_Academy {
-  id         String  @id @default(uuid())
-  chief_id   String  @unique
-  academy_id String  @unique
-  
+  id         String @id @default(uuid())
+  chief_id   String @unique
+  academy_id String @unique
+
   // Relations
-  academy    Academy @relation("AcademyChiefRelation", fields: [academy_id], references: [academy_id])
-  user       User    @relation("UserChiefRelation", fields: [chief_id], references: [user_id])
+  academy Academy @relation("AcademyChiefRelation", fields: [academy_id], references: [academy_id])
+  user    User    @relation("UserChiefRelation", fields: [chief_id], references: [user_id])
 
   @@unique([chief_id, academy_id])
 }
 
 model AcademyUserRegistrationList {
   academy_id String
-  user_id    String  @unique
-  role       Role    @default(STUDENT)
-  status     Status  @default(PENDING)
-  
+  user_id    String @unique
+  role       Role   @default(STUDENT)
+  status     Status @default(PENDING)
+
   // Rleations
-  academy    Academy @relation("AcademyUserRegistrationList_Academy_Relation", fields: [academy_id], references: [academy_id])
-  user       User    @relation("AcademyUserRegistrationList_User_Relation", fields: [user_id], references: [user_id])
+  academy Academy @relation("AcademyUserRegistrationList_Academy_Relation", fields: [academy_id], references: [academy_id])
+  user    User    @relation("AcademyUserRegistrationList_User_Relation", fields: [user_id], references: [user_id])
 
   @@index([academy_id], map: "AcademyUserRegistrationList_academy_id_fkey")
 }
 
 model Lecture {
-  lecture_id   Int                  @id @default(autoincrement())
+  lecture_id   Int      @id @default(autoincrement())
   lecture_name String
   teacher_id   String
   headcount    Int      @default(0)
   academy_id   String
-  start_time   DateTime             @default(now())
-  end_time     DateTime             @default(now())
-  
+  start_time   DateTime @default(now())
+  end_time     DateTime @default(now())
+
   // Relations
   ClassLecture ClassLecture[]
   exams        Exam[]               @relation("Lecture_Exam_Relation")
@@ -121,26 +123,26 @@ model LectureParticipant {
 }
 
 model Class {
-  class_id   Int            @id @default(autoincrement())
+  class_id   Int    @id @default(autoincrement())
   class_name String
   academy_id String
   expense    Int
   discount   Int?
   duration   Int
- 
+
   // Relations
-  academy    Academy        @relation(fields: [academy_id], references: [academy_id])
-  lectures   ClassLecture[]
-  billClasses BillClass[]  // 여러 클래스를 청구서에 포함
+  academy     Academy        @relation(fields: [academy_id], references: [academy_id])
+  lectures    ClassLecture[]
+  billClasses BillClass[] // 여러 클래스를 청구서에 포함
 }
 
 model ClassLecture {
   class_id   Int
   lecture_id Int
-  
+
   // Relations
-  class      Class   @relation(fields: [class_id], references: [class_id])
-  lecture    Lecture @relation(fields: [lecture_id], references: [lecture_id])
+  class   Class   @relation(fields: [class_id], references: [class_id])
+  lecture Lecture @relation(fields: [lecture_id], references: [lecture_id])
 
   @@id([class_id, lecture_id])
   @@index([lecture_id], map: "ClassLecture_lecture_id_fkey")
@@ -148,33 +150,33 @@ model ClassLecture {
 
 model ExamType {
   academy_id     String?
-  exam_type_id   Int      @id @default(autoincrement())
+  exam_type_id   Int     @id @default(autoincrement())
   exam_type_name String
-  
+
   // Relations
-  exams          Exam[]   @relation("ExamType_Exam_Relation")
-  academy        Academy? @relation("Academy_ExamType_Relation", fields: [academy_id], references: [academy_id])
+  exams   Exam[]   @relation("ExamType_Exam_Relation")
+  academy Academy? @relation("Academy_ExamType_Relation", fields: [academy_id], references: [academy_id])
 
   @@index([academy_id], map: "ExamType_academy_id_fkey")
 }
 
 model Exam {
-  exam_id       Int             @id @default(autoincrement())
+  exam_id       Int      @id @default(autoincrement())
   lecture_id    Int
   exam_name     String
-  high_score    Int             @default(0)
-  low_score     Int             @default(100)
-  average_score Decimal         @default(0.00) @db.Decimal(5, 2)
-  total_score   Int             @default(0)
-  created_at    DateTime        @default(now())
+  high_score    Int      @default(0)
+  low_score     Int      @default(100)
+  average_score Decimal  @default(0.00) @db.Decimal(5, 2)
+  total_score   Int      @default(0)
+  created_at    DateTime @default(now())
   exam_date     DateTime
   exam_type_id  Int
-  headcount     Int             @default(0)
-  
+  headcount     Int      @default(0)
+
   // Relations
-  exam_type     ExamType        @relation("ExamType_Exam_Relation", fields: [exam_type_id], references: [exam_type_id])
-  lecture       Lecture         @relation("Lecture_Exam_Relation", fields: [lecture_id], references: [lecture_id])
-  exam_scores   ExamUserScore[] @relation("ExamUserScore_Exam_Relation")
+  exam_type   ExamType        @relation("ExamType_Exam_Relation", fields: [exam_type_id], references: [exam_type_id])
+  lecture     Lecture         @relation("Lecture_Exam_Relation", fields: [lecture_id], references: [lecture_id])
+  exam_scores ExamUserScore[] @relation("ExamUserScore_Exam_Relation")
 
   @@index([exam_type_id], map: "Exam_exam_type_id_fkey")
   @@index([lecture_id], map: "Exam_lecture_id_fkey")
@@ -184,10 +186,10 @@ model ExamUserScore {
   exam_id Int
   user_id String
   score   Int    @default(0)
-  
+
   // Relations
-  exam    Exam   @relation("ExamUserScore_Exam_Relation", fields: [exam_id], references: [exam_id], onDelete: Cascade)
-  user    User   @relation("ExamUserScore_User_Relation", fields: [user_id], references: [user_id], onDelete: Cascade)
+  exam Exam @relation("ExamUserScore_Exam_Relation", fields: [exam_id], references: [exam_id], onDelete: Cascade)
+  user User @relation("ExamUserScore_User_Relation", fields: [user_id], references: [user_id], onDelete: Cascade)
 
   @@id([exam_id, user_id])
   @@index([user_id], map: "ExamUserScore_user_id_fkey")
@@ -196,10 +198,10 @@ model ExamUserScore {
 model Family {
   student_id String
   parent_id  String
-  
+
   // Relations
-  parent     User   @relation("ParentFamilyRelation", fields: [parent_id], references: [user_id], onDelete: Cascade)
-  student    User   @relation("StudentFamilyRelation", fields: [student_id], references: [user_id], onDelete: Cascade)
+  parent  User @relation("ParentFamilyRelation", fields: [parent_id], references: [user_id], onDelete: Cascade)
+  student User @relation("StudentFamilyRelation", fields: [student_id], references: [user_id], onDelete: Cascade)
 
   @@id([student_id, parent_id])
   @@index([parent_id], map: "Family_parent_id_fkey")
@@ -239,28 +241,28 @@ model NoticeFile {
 
 //청구서
 model Bill {
-  bill_id Int @id @default(autoincrement())
+  bill_id    Int      @id @default(autoincrement())
   academy_id String
-  user_id String
-  deadline DateTime
-  amount Int @default(0)
-  paid Boolean @default(false)
+  user_id    String
+  deadline   DateTime
+  amount     Int      @default(0)
+  paid       Boolean  @default(false)
 
   // Relations
-  billClasses BillClass[]  // 여러 클래스를 청구서에 포함
-  user        User       @relation(fields: [user_id], references: [user_id], name: "UserBillRelation")
-  academy Academy @relation(fields: [academy_id], references: [academy_id], onDelete: Cascade)
+  billClasses BillClass[] // 여러 클래스를 청구서에 포함
+  user        User        @relation(fields: [user_id], references: [user_id], name: "UserBillRelation")
+  academy     Academy     @relation(fields: [academy_id], references: [academy_id], onDelete: Cascade)
 }
 
 //BillClass 중간 테이블 (Bill과 Class 간 N:M 관계)
 model BillClass {
-  id         Int    @id @default(autoincrement())
-  bill_id    Int
-  class_id   Int
+  id       Int @id @default(autoincrement())
+  bill_id  Int
+  class_id Int
 
   // Relations
-  bill       Bill   @relation(fields: [bill_id], references: [bill_id], onDelete: Cascade)
-  class      Class  @relation(fields: [class_id], references: [class_id], onDelete: Cascade)
+  bill  Bill  @relation(fields: [bill_id], references: [bill_id], onDelete: Cascade)
+  class Class @relation(fields: [class_id], references: [class_id], onDelete: Cascade)
 
   @@unique([bill_id, class_id]) // 복합 고유 키 설정
 }
