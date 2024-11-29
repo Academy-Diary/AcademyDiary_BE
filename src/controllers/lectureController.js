@@ -45,7 +45,7 @@ exports.getLecture = asyncWrapper(async (req, res, next) => {
   /// 각 강의에 대해 필요한 필드만 포함한 새로운 객체 배열 생성
   const formattedLectureList = LectureList.map((lecture) => {
     const formatTime = (date) =>
-      (date ? date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : null); // 시간 부분만 추출 (HH:mm 형식)
+      (date ? date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : null); // 시간 부분만 추출 (HH:mm 형식)
 
     return {
       lecture_id: lecture.lecture_id,
