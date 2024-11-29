@@ -216,7 +216,7 @@ router.post(
 router.get(
   "/:exam_id/:quiz_num",
   authenticateJWT("CHEIF", "TEACHER", "STUDENT"),
-  quizController.getQuiz
+  quizController.getQuizProblem
 );
 /**
  * @swagger
@@ -310,5 +310,10 @@ router.get(
 
 // 퀴즈 채점 API
 router.post("/mark", authenticateJWT("STUDENT"), quizController.markQuiz);
+router.get(
+  "/:exam_id",
+  authenticateJWT("CHIEF", "TEACHER", "STUDENT"),
+  quizController.getQuizInfo  
+);
 
 module.exports = router;
