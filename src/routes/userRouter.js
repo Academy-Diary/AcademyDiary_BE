@@ -817,7 +817,15 @@ router.post("/family", userController.setFamily);
  *                       type: string
  *                       description: 학원의 전화번호
  *                       example: "02-1234-5678"
-
+ *                     student_headcount:
+ *                       type: integer
+ *                       description: 학생 수
+ *                       example: 10
+ *                     teacher_headcount:
+ *                       type: integer
+ *                       description: 강사 수
+ *                       example: 10
+ *
  *       404:
  *         description: 학원 정보를 찾을 수 없습니다.
  *         content:
@@ -966,6 +974,14 @@ router.post(
  *                       type: string
  *                       description: 수정된 학원의 전화번호
  *                       example: "02-9876-5432"
+ *                     student_headcount:
+ *                       type: integer
+ *                       description: 학생 수
+ *                       example: 10
+ *                     teacher_headcount:
+ *                       type: integer
+ *                       description: 강사 수
+ *                       example: 10
  *       401:
  *         description: 인증 실패 또는 권한 부족
  *         content:
