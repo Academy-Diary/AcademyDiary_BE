@@ -4,6 +4,7 @@ const { CustomError } = require("../lib/errors/customError");
 const ErrorCode = require("../lib/errors/errorCode");
 const { StatusCodes } = require("http-status-codes");
 const { Prisma } = require("@prisma/client"); // Prisma 객체를 가져옵니다.
+const { head } = require("../routes/lectureRouter");
 
 // lectureController.js
 exports.getLecture = asyncWrapper(async (req, res, next) => {
@@ -1142,14 +1143,14 @@ exports.putLectureStudent = asyncWrapper(async (req, res, next) => {
     // 현재 수강생 수를 다시 조회하여 headcount 업데이트
     const participantCount = await prisma.LectureParticipant.count({
       where: {
-        lecture_id: target_id,
+        lecture_id: targetLectureId,
       },
     });
 
     // 수강생 수 업데이트
     await prisma.Lecture.update({
       where: {
-        lecture_id: target_id,
+        lecture_id: targetLectureId,
       },
       data: {
         headcount: participantCount,
@@ -1158,8 +1159,12 @@ exports.putLectureStudent = asyncWrapper(async (req, res, next) => {
 
     return res.status(StatusCodes.OK).json({
       message: "수강생 목록이 성공적으로 업데이트되었습니다.",
-      addedStudents: newStudents,
-      removedStudents: studentsToRemove,
+      data: {
+        lecture_id: targetLectureId,
+        headcount: participantCount,
+        addedStudents: newStudents,
+        removedStudents: studentsToRemove,
+      },
     });
   } catch (error) {
     return next(
