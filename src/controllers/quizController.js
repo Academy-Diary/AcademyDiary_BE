@@ -164,7 +164,7 @@ exports.createQuiz = asyncWrapper(async (req, res, next) => {
   }
 });
 
-exports.getQuiz = asyncWrapper(async (req, res, next) => {
+exports.getQuizProblem = asyncWrapper(async (req, res, next) => {
   const { exam_id, quiz_num } = req.params;
 
   if (!exam_id || !quiz_num) {
@@ -379,5 +379,65 @@ exports.markQuiz = asyncWrapper(async (req, res, next) => {
   } finally {
     session.endSession();
     await prisma.$disconnect();
+  }
+});
+
+exports.getQuizInfo = asyncWrapper(async (req, res, next) => {
+  const exam_id = parseInt(req.params.exam_id, 10);
+  if (!exam_id) {
+    return next(
+      new CustomError(
+        "exam_id는 필수입니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+  const exam_id_int = parseInt(exam_id, 10);
+
+  if (isNaN(exam_id_int)) {
+    return next(
+      new CustomError(
+        "exam_id는 숫자여야 합니다.",
+        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+
+  try {
+    const quizCollection = getQuizDB().collection("quizzes");
+
+    // 1. MongoDB에서 퀴즈 데이터 가져오기
+    const quizData = await quizCollection.findOne({ exam_id });
+    if (!quizData) {
+      return next(
+        new CustomError(
+          `${exam_id}에 해당하는 퀴즈가 존재하지 않습니다.`,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.NOT_FOUND
+        )
+      );
+    }
+    const quizInfo = {
+      title: quizData.title,
+      comment: quizData.comment,
+      keyword: quizData.keyword,
+      exam_id: quizData.exam_id,
+      user_id: quizData.user_id,
+    };
+    return res.status(StatusCodes.OK).json({
+      message: "퀴즈 정보 조회를 성공했습니다.",
+      data: quizInfo,
+    });
+  } catch (error) {
+    console.error("퀴즈 정보 조회 중 오류 발생:", error);
+    return next(
+      new CustomError(
+        "퀴즈 정보를 불러오는 중 문제가 발생했습니다.",
+        StatusCodes.INTERNAL_SERVER_ERROR,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      )
+    );
   }
 });
