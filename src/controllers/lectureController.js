@@ -43,18 +43,23 @@ exports.getLecture = asyncWrapper(async (req, res, next) => {
       )
     );
   }
-  // 각 강의에 대해 필요한 필드만 포함한 새로운 객체 배열 생성
-  const formattedLectureList = LectureList.map((lecture) => ({
-    lecture_id: lecture.lecture_id,
-    lecture_name: lecture.lecture_name,
-    teacher_id: lecture.teacher_id,
-    teacher_name: lecture.teacher.user_name, // teacher_name 필드로 추가
-    headcount: lecture.headcount,
-    academy_id: lecture.academy_id,
-    start_time: lecture.start_time,
-    end_time: lecture.end_time,
-    days: lecture.days.map((dayObj) => dayObj.day), // days에서 day 값만 추출
-  }));
+  /// 각 강의에 대해 필요한 필드만 포함한 새로운 객체 배열 생성
+  const formattedLectureList = LectureList.map((lecture) => {
+    const formatTime = (date) =>
+      (date ? date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : null); // 시간 부분만 추출 (HH:mm 형식)
+
+    return {
+      lecture_id: lecture.lecture_id,
+      lecture_name: lecture.lecture_name,
+      teacher_id: lecture.teacher_id,
+      teacher_name: lecture.teacher.user_name,
+      headcount: lecture.headcount,
+      academy_id: lecture.academy_id,
+      start_time: formatTime(lecture.start_time), // 시간만 추출
+      end_time: formatTime(lecture.end_time), // 시간만 추출
+      days: lecture.days.map((dayObj) => dayObj.day),
+    };
+  });
 
   return res.status(StatusCodes.OK).json({
     message: "강의를 성공적으로 불러왔습니다.",

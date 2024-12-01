@@ -7,7 +7,8 @@ const lectureController = require("../controllers/lectureController.js");
  * @swagger
  * /lecture:
  *   get:
- *     summary: 강사별 강의(또는 학원 내 모든 강의) 조회
+ *     summary: 강의 조회
+ *     description: 특정 학원의 강의 목록을 조회합니다. 요청 시 교사 ID로 필터링할 수 있습니다.
  *     tags: [Lecture]
  *     security:
  *       - bearerAuth: []
@@ -17,10 +18,10 @@ const lectureController = require("../controllers/lectureController.js");
  *         required: false
  *         schema:
  *           type: string
- *         description: 강사 ID, 없을 시 전체 강의
+ *         description: 강의를 필터링할 교사 ID (선택 사항)
  *     responses:
  *       200:
- *         description: 성공적으로 강의를 불러옴
+ *         description: 강의 목록 조회 성공
  *         content:
  *           application/json:
  *             schema:
@@ -28,6 +29,7 @@ const lectureController = require("../controllers/lectureController.js");
  *               properties:
  *                 message:
  *                   type: string
+ *                   description: "강의를 성공적으로 불러왔습니다."
  *                 data:
  *                   type: array
  *                   items:
@@ -41,52 +43,33 @@ const lectureController = require("../controllers/lectureController.js");
  *                         description: 강의 이름
  *                       teacher_id:
  *                         type: string
- *                         description: 강사 ID
+ *                         description: 교사 ID
  *                       teacher_name:
  *                         type: string
- *                         description: 강사 이름
+ *                         description: 교사 이름
  *                       headcount:
  *                         type: integer
- *                         description: 현재 강의 수강 인원
+ *                         description: 강의의 현재 수강생 수
  *                       academy_id:
  *                         type: string
  *                         description: 학원 ID
  *                       start_time:
  *                         type: string
- *                         format: date-time
- *                         description: 강의 시작 시간
+ *                         format: time
+ *                         description: 강의 시작 시간 (HH:mm 형식)
  *                       end_time:
  *                         type: string
- *                         format: date-time
- *                         description: 강의 종료 시간
+ *                         format: time
+ *                         description: 강의 종료 시간 (HH:mm 형식)
  *                       days:
  *                         type: array
  *                         items:
  *                           type: string
- *                         description: 강의 요일 목록
- *             example:
- *               message: "강의를 성공적으로 불러왔습니다."
- *               data:
- *                 - lecture_id: 1
- *                   lecture_name: "한국사"
- *                   teacher_id: "test_teacher"
- *                   headcount: 0
- *                   academy_id: "test_academy"
- *                   start_time: "2024-10-16T04:30:00.000Z"
- *                   end_time: "2024-10-16T06:00:00.000Z"
- *                   teacher_name: "홍길동"
- *                   days: ["TUESDAY", "THURSDAY"]
+ *                         description: 강의가 진행되는 요일
  *       404:
- *         description: 개설된 강의가 존재하지 않음
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *             example:
- *               message: "현재 개설된 강의가 존재하지 않습니다."
+ *         description: 현재 개설된 강의가 존재하지 않습니다.
+ *       500:
+ *         description: 강의 조회 중 서버 오류가 발생했습니다.
  */
 
 //학원내의 모든 강의 조회
