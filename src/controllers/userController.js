@@ -742,7 +742,6 @@ exports.updateAcademyInfo = asyncWrapper(async (req, res, next) => {
     student_headcount: queryResult.student_headcount,
     teacher_headcount: queryResult.teacher_headcount,
   };
-  console.log(queryResult);
 
   return res.status(StatusCodes.OK).json({
     message: "학원 정보가 성공적으로 수정되었습니다.",
