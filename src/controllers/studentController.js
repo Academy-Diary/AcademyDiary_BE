@@ -73,9 +73,9 @@ exports.deleteStudent = asyncWrapper(async (req, res, next) => {
     return res.status(StatusCodes.OK).json({
       message: "학생/학부모 삭제가 성공적으로 완료되었습니다.",
       data: {
-        deletedUserIds,
-        student_headcount: result.student_headcount,
-        teacher_headcount: result.teacher_headcount,
+        deletedUserIds: deletedUserIds,
+        deletedCount: deletedUserIds.length,
+        remainedHeadcount: result.student_headcount, // 삭제 후 남은 학생 수
       },
     });
   } catch (error) {
