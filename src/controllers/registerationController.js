@@ -6,6 +6,7 @@ const { StatusCodes } = require("http-status-codes");
 const { Status, Role } = require("@prisma/client");
 const crypto = require("crypto");
 const { error } = require("console");
+const { updateHeadcount } = require("../lib/prisma/headcount");
 
 function generateInviteKey() {
   return crypto.randomBytes(16).toString("hex");
@@ -160,88 +161,105 @@ exports.decideUserStatus = asyncWrapper(async (req, res, next) => {
     const academy_id = req.user.academy_id;
     const newStatus = agreed ? 'APPROVED' : 'REJECTED';
 
-    // 트랜잭션 작업을 배열에 저장
-    const transactionOperations = [
-        // 등록 리스트 상태 업데이트
-        prisma.AcademyUserRegistrationList.updateMany({
-            where: {
-                user_id: { in: arr_user_id },
-            },
-            data: { status: newStatus },
-        }),
-    ];
-
-    // 승인인 경우 User 테이블에서 학원 ID 업데이트
-    if (newStatus === 'APPROVED') {
-        transactionOperations.push(
-            prisma.user.updateMany({
-                where: {
-                    user_id: { in: arr_user_id },
-                },
-                data: {
-                    academy_id: academy_id,
-                },
-            })
+    if (!arr_user_id || arr_user_id.length === 0) {
+        return next(
+            new CustomError(
+                "유효한 user_id가 제공되지 않았습니다.",
+                StatusCodes.BAD_REQUEST
+            )
         );
     }
 
-    // 학부모 ID 배열 가져오기 (학생의 부모 ID만 포함)
-    const parents = await prisma.Family.findMany({
-        where: {
-            student_id: { in: arr_user_id },
-        },
-        select: {
-            parent_id: true,
-        },
-    });
-
-    // 학부모 ID 배열에서 null 값 제외
-    const parentIds = parents.map((p) => p.parent_id).filter((id) => id !== null);
-
-    if (parentIds.length > 0) {
-        // 학부모 등록 리스트와 User 테이블에서 상태 업데이트
-        transactionOperations.push(
-            prisma.AcademyUserRegistrationList.updateMany({
+    try {
+        // 모든 작업을 하나의 트랜잭션으로 실행
+        const result = await prisma.$transaction(async (prisma) => {
+            // 트랜잭션 작업: 등록 리스트 상태 업데이트
+            await prisma.AcademyUserRegistrationList.updateMany({
                 where: {
-                    academy_id: academy_id,
-                    user_id: { in: parentIds },
+                    user_id: { in: arr_user_id },
                 },
                 data: { status: newStatus },
-            })
-        );
+            });
 
-        if (newStatus === 'APPROVED') {
-            transactionOperations.push(
-                prisma.user.updateMany({
+            // 승인인 경우 User 테이블에서 학원 ID 업데이트
+            if (newStatus === 'APPROVED') {
+                await prisma.user.updateMany({
                     where: {
-                        user_id: { in: parentIds },
+                        user_id: { in: arr_user_id },
                     },
                     data: {
                         academy_id: academy_id,
                     },
-                })
-            );
-        }
+                });
+            }
+
+            // 학부모 ID 배열 가져오기 (학생의 부모 ID만 포함)
+            const parents = await prisma.Family.findMany({
+                where: {
+                    student_id: { in: arr_user_id },
+                },
+                select: {
+                    parent_id: true,
+                },
+            });
+
+            // 학부모 ID 배열에서 null 값 제외
+            const parentIds = parents.map((p) => p.parent_id).filter((id) => id !== null);
+
+            if (parentIds.length > 0) {
+                // 학부모 등록 리스트 상태 업데이트
+                await prisma.AcademyUserRegistrationList.updateMany({
+                    where: {
+                        academy_id: academy_id,
+                        user_id: { in: parentIds },
+                    },
+                    data: { status: newStatus },
+                });
+
+                if (newStatus === 'APPROVED') {
+                    await prisma.user.updateMany({
+                        where: {
+                            user_id: { in: parentIds },
+                        },
+                        data: {
+                            academy_id: academy_id,
+                        },
+                    });
+                }
+            }
+
+            // 학원 학생 및 교사 수 업데이트
+            const headcountResult = await updateHeadcount(prisma, academy_id);
+
+            return {
+                updatedUserIds: [...arr_user_id, ...parentIds],
+                headcountResult,
+            };
+        });
+
+        const resData = {
+            updatedUserIds: result.updatedUserIds, // 업데이트된 유저 ID 배열
+            inputCount: arr_user_id.length, // 입력된 유저 수
+            updatedCount: result.updatedUserIds.length, // 업데이트된 유저 수
+            headcount: result.headcountResult, // 최신 학원 headcount 정보
+            status: newStatus,
+        };
+
+        return res.status(StatusCodes.OK).json({
+            message: '유저 승인/거절이 성공적으로 완료되었습니다.',
+            data: resData,
+        });
+    } catch (error) {
+        console.error("트랜잭션 실패:", error);
+        return next(
+            new CustomError(
+                "유저 승인/거절 처리 중 오류가 발생했습니다.",
+                StatusCodes.INTERNAL_SERVER_ERROR
+            )
+        );
     }
-
-    // 업데이트된 유저 ID 배열 수집
-    const updatedUserIds = [...arr_user_id, ...parentIds];
-
-    // 모든 작업을 하나의 트랜잭션으로 실행
-    const result = await prisma.$transaction(transactionOperations);
-
-    const resData = {
-        updatedUserIds, // 업데이트된 유저 ID 배열
-        inputCount: arr_user_id.length, // 입력된 유저 수
-        updatedCount: updatedUserIds.length, // 업데이트된 유저 수
-        status: newStatus,
-    };
-
-    return res.status(StatusCodes.OK).json({
-        message: '유저 승인/거절이 성공적으로 완료되었습니다.',
-        data: resData,
-    });
 });
+
 
 
 
