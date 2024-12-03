@@ -186,9 +186,9 @@ router.post(
 );
 /**
  * @swagger
- * /registeration/decide/user:
+ * /registration/decide/user:
  *   post:
- *     summary: 사용자 승인/거절 처리
+ *     summary: 사용자 등록 요청 승인/거절
  *     tags: [Registration]
  *     security:
  *       - bearerAuth: []
@@ -198,18 +198,21 @@ router.post(
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - user_id
+ *               - agreed
  *             properties:
  *               user_id:
  *                 type: array
  *                 items:
  *                   type: string
- *                 description: 승인 또는 거절할 유저의 ID 배열
+ *                 description: 승인 또는 거절할 사용자 ID 배열
  *               agreed:
  *                 type: boolean
- *                 description: 승인(true) 또는 거절(false)
+ *                 description: 요청 승인 여부 (true 승인, false 거절)
  *     responses:
  *       200:
- *         description: 사용자 승인/거절이 성공적으로 완료됨
+ *         description: 사용자 등록 요청이 성공적으로 처리됨
  *         content:
  *           application/json:
  *             schema:
@@ -217,7 +220,7 @@ router.post(
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "유저 승인/거절이 성공적으로 완료되었습니다."
+ *                   description: 처리 성공 메시지
  *                 data:
  *                   type: object
  *                   properties:
@@ -225,26 +228,29 @@ router.post(
  *                       type: array
  *                       items:
  *                         type: string
- *                       description: 업데이트된 유저 ID 배열
- *                     inputCount: 
- *                       type: integer 
- *                       description: 프론트에서 요청된(선택한) 유저 수
+ *                       description: 처리된 사용자 ID 목록
+ *                     inputCount:
+ *                       type: integer
+ *                       description: 입력된 사용자 수
  *                     updatedCount:
  *                       type: integer
- *                       description: 상태가 변경된 유저 수
+ *                       description: 처리된 사용자 수
+ *                     headcount:
+ *                       type: integer
+ *                       description: 승인 후 학원의 총 인원 수
  *                     status:
  *                       type: string
- *                       enum: [APPROVED, REJECTED]
- *                       description: 승인 또는 거절 상태
+ *                       description: 최종 상태 (APPROVED 또는 REJECTED)
  *             example:
  *               message: "유저 승인/거절이 성공적으로 완료되었습니다."
  *               data:
- *                 updatedUserIds: ["test_student", "test_teacher", "test_parent"]
- *                 inputCount: 2
- *                 updatedCount: 3
+ *                 updatedUserIds: ["user123", "parent123"]
+ *                 inputCount: 1
+ *                 updatedCount: 2
+ *                 headcount: 10
  *                 status: "APPROVED"
  *       404:
- *         description: 사용자 정보를 찾을 수 없음
+ *         description: 등록 요청 정보를 찾을 수 없음
  *         content:
  *           application/json:
  *             schema:
@@ -252,9 +258,10 @@ router.post(
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "해당하는 유저가 존재하지 않습니다."
+ *             example:
+ *               message: "해당하는 유저가 존재하지 않습니다."
  *       500:
- *         description: 서버 오류 발생
+ *         description: 사용자 승인/거절 처리 중 서버 오류 발생
  *         content:
  *           application/json:
  *             schema:
@@ -262,8 +269,10 @@ router.post(
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "사용자 승인/거절 처리 중 오류가 발생했습니다."
+ *             example:
+ *               message: "사용자 승인/거절 처리 중 오류가 발생했습니다."
  */
+// 사용자의 학원 등록 요청 승인/거절
 router.post(
   "/decide/user",
   authenticateJWT("CHIEF"),
