@@ -60,6 +60,7 @@ const noticeRouter = require("./routes/noticeRouter.js");
 const billRouter = require("./routes/billRouter");
 const chatRouter = require("./routes/chatRouter");
 const quizRouter = require("./routes/quizRouter");
+const smsRouter = require("./routes/smsRouter");
 
 app.use("/", indexRouter);
 app.use("/user", userRouter);
@@ -73,6 +74,7 @@ app.use("/bill", billRouter);
 app.use("/notice", noticeRouter);
 app.use("/chat", chatRouter);
 app.use("/quiz", quizRouter);
+app.use("/sms", smsRouter);
 
 //swagger
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs))
