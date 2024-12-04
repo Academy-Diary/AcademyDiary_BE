@@ -49,9 +49,13 @@ const { authenticateJWT } = require("../lib/middlewares/auth.js");
  *                     deletedCount:
  *                       type: integer
  *                       description: 삭제된 강사 수
+ *                     remainedCount:
+ *                      type: integer
+ *                      description: 삭제 후 남은 강사 수
  *                   example:
  *                     deletedUserIds: ["teacher1", "teacher2"]
  *                     deletedCount: 2
+ *                     remainedCount: 3
  *       400:
  *         description: 유효한 user_id가 제공되지 않았습니다.
  *         content:

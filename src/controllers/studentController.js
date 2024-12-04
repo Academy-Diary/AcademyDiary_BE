@@ -3,43 +3,21 @@ const prisma = require("../lib/prisma/index");
 const { CustomError } = require("../lib/errors/customError");
 const ErrorCode = require("../lib/errors/errorCode");
 const { StatusCodes } = require("http-status-codes");
+const { updateHeadcount } = require("../lib/prisma/headcount");
 
 exports.deleteStudent = asyncWrapper(async (req, res, next) => {
   const arr_user_id = req.body.user_id;
 
-  //user_id가 올바르게 전달되었는지 확인
   if (!arr_user_id) {
     return next(
       new CustomError(
         "유효한 user_id가 제공되지 않았습니다.",
-        StatusCodes.BAD_REQUEST,
         StatusCodes.BAD_REQUEST
       )
     );
   }
-  const transactionOperations = [
-    //학생의 academy_id를 NULL로 업데이트
-    prisma.user.updateMany({
-      where: {
-        user_id: {
-          in: arr_user_id,
-        },
-      },
-      data: {
-        academy_id: null,
-      },
-    }),
-    //AcademyUserRegistrationList에서 해당 학생 행 삭제
-    prisma.AcademyUserRegistrationList.deleteMany({
-      where: {
-        user_id: {
-          in: arr_user_id,
-        },
-      },
-    }),
-  ];
 
-  // 학부모 ID 배열 가져오기 (학생의 부모 ID만 포함)
+  // 학부모 ID 배열 가져오기
   const parents = await prisma.Family.findMany({
     where: {
       student_id: { in: arr_user_id },
@@ -49,50 +27,66 @@ exports.deleteStudent = asyncWrapper(async (req, res, next) => {
     },
   });
 
-  // 학부모 ID 배열에서 null 값 제외
   const parentIds = parents.map((p) => p.parent_id).filter((id) => id !== null);
+  const deletedUserIds = [...arr_user_id, ...parentIds];
 
-  if (parentIds.length > 0) {
-    //부모의 academy_id를 NULL로 업데이트
-    transactionOperations.push(
-      prisma.user.updateMany({
+  try {
+    // 모든 작업을 하나의 트랜잭션으로 실행
+    const result = await prisma.$transaction(async (prisma) => {
+      // 1. 학생 및 학부모 관련 데이터 삭제
+      await prisma.user.updateMany({
         where: {
-          user_id: {
-            in: parentIds,
-          },
+          user_id: { in: arr_user_id },
         },
         data: {
           academy_id: null,
         },
-      })
-    );
-    //AcademyUserRegistrationList에서 해당 부모 행 삭제
-    transactionOperations.push(
-      prisma.AcademyUserRegistrationList.deleteMany({
+      });
+
+      await prisma.AcademyUserRegistrationList.deleteMany({
         where: {
-          user_id: {
-            in: parentIds,
-          },
+          user_id: { in: arr_user_id },
         },
-      })
+      });
+
+      if (parentIds.length > 0) {
+        await prisma.user.updateMany({
+          where: {
+            user_id: { in: parentIds },
+          },
+          data: {
+            academy_id: null,
+          },
+        });
+
+        await prisma.AcademyUserRegistrationList.deleteMany({
+          where: {
+            user_id: { in: parentIds },
+          },
+        });
+      }
+
+      // 2. 학원의 Headcount 업데이트
+      return await updateHeadcount(prisma, req.user.academy_id);
+    });
+
+    return res.status(StatusCodes.OK).json({
+      message: "학생/학부모 삭제가 성공적으로 완료되었습니다.",
+      data: {
+        deletedUserIds: deletedUserIds,
+        deletedCount: deletedUserIds.length,
+        remainedHeadcount: result.student_headcount, // 삭제 후 남은 학생 수
+      },
+    });
+  } catch (error) {
+    console.error("트랜잭션 실패:", error);
+    return next(
+      new CustomError(
+        "학생 삭제 중 오류가 발생했습니다.",
+        StatusCodes.INTERNAL_SERVER_ERROR
+      )
     );
   }
-  // 업데이트된 유저 ID 배열 수집
-  const deletedUserIds = [...arr_user_id, ...parentIds];
-
-  // 모든 작업을 하나의 트랜잭션으로 실행
-  const result = await prisma.$transaction(transactionOperations);
-
-  const resData = {
-    deletedUserIds, // 삭제된 유저 ID 배열
-    inputCount: arr_user_id.length, // 입력된 유저 수
-    deletedCount: deletedUserIds.length, // 삭제된 유저 수
-  };
-
-  return res.status(StatusCodes.OK).json({
-    message: "학생/학부모 삭제가 성공적으로 완료되었습니다.",
-    data: resData,
-  });
 });
 
 exports.getStudent = asyncWrapper(async (req, res, next) => {
