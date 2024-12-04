@@ -61,8 +61,8 @@ model Chief_Academy {
   academy_id String @unique
 
   // Relations
-  academy Academy @relation("AcademyChiefRelation", fields: [academy_id], references: [academy_id])
-  user    User    @relation("UserChiefRelation", fields: [chief_id], references: [user_id])
+  academy Academy @relation("AcademyChiefRelation", fields: [academy_id], references: [academy_id], onDelete: Cascade)
+  user    User    @relation("UserChiefRelation", fields: [chief_id], references: [user_id], onDelete: Cascade)
 
   @@unique([chief_id, academy_id])
 }
@@ -74,7 +74,7 @@ model AcademyUserRegistrationList {
   status     Status @default(PENDING)
 
   // Rleations
-  academy Academy @relation("AcademyUserRegistrationList_Academy_Relation", fields: [academy_id], references: [academy_id])
+  academy Academy @relation("AcademyUserRegistrationList_Academy_Relation", fields: [academy_id], references: [academy_id], onDelete: Cascade)
   user    User    @relation("AcademyUserRegistrationList_User_Relation", fields: [user_id], references: [user_id])
 
   @@index([academy_id], map: "AcademyUserRegistrationList_academy_id_fkey")
@@ -92,8 +92,8 @@ model Lecture {
   // Relations
   ClassLecture ClassLecture[]
   exams        Exam[]               @relation("Lecture_Exam_Relation")
-  academy      Academy              @relation(fields: [academy_id], references: [academy_id])
-  teacher      User                 @relation("Teacher_Lecture", fields: [teacher_id], references: [user_id])
+  academy      Academy              @relation(fields: [academy_id], references: [academy_id], onDelete: Cascade)
+  teacher      User                 @relation("Teacher_Lecture", fields: [teacher_id], references: [user_id], onDelete: Cascade)
   days         LectureDay[]
   participant  LectureParticipant[]
   notice       Notice[]             @relation("LectureToNotice_Relation")
@@ -115,8 +115,8 @@ model LectureParticipant {
   id         Int     @id @default(autoincrement())
   lecture_id Int
   user_id    String
-  lecture    Lecture @relation(fields: [lecture_id], references: [lecture_id])
-  user       User    @relation(fields: [user_id], references: [user_id])
+  lecture    Lecture @relation(fields: [lecture_id], references: [lecture_id], onDelete: Cascade)
+  user       User    @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
 
   @@unique([lecture_id, user_id])
   @@index([user_id], map: "LectureParticipant_user_id_fkey")
@@ -131,7 +131,7 @@ model Class {
   duration   Int
 
   // Relations
-  academy     Academy        @relation(fields: [academy_id], references: [academy_id])
+  academy     Academy        @relation(fields: [academy_id], references: [academy_id], onDelete: Cascade)
   lectures    ClassLecture[]
   billClasses BillClass[] // 여러 클래스를 청구서에 포함
 }
@@ -141,8 +141,8 @@ model ClassLecture {
   lecture_id Int
 
   // Relations
-  class   Class   @relation(fields: [class_id], references: [class_id])
-  lecture Lecture @relation(fields: [lecture_id], references: [lecture_id])
+  class   Class   @relation(fields: [class_id], references: [class_id], onDelete: Cascade)
+  lecture Lecture @relation(fields: [lecture_id], references: [lecture_id], onDelete: Cascade)
 
   @@id([class_id, lecture_id])
   @@index([lecture_id], map: "ClassLecture_lecture_id_fkey")
@@ -155,7 +155,7 @@ model ExamType {
 
   // Relations
   exams   Exam[]   @relation("ExamType_Exam_Relation")
-  academy Academy? @relation("Academy_ExamType_Relation", fields: [academy_id], references: [academy_id])
+  academy Academy? @relation("Academy_ExamType_Relation", fields: [academy_id], references: [academy_id], onDelete: Cascade)
 
   @@index([academy_id], map: "ExamType_academy_id_fkey")
 }
@@ -175,7 +175,7 @@ model Exam {
 
   // Relations
   exam_type   ExamType        @relation("ExamType_Exam_Relation", fields: [exam_type_id], references: [exam_type_id])
-  lecture     Lecture         @relation("Lecture_Exam_Relation", fields: [lecture_id], references: [lecture_id])
+  lecture     Lecture         @relation("Lecture_Exam_Relation", fields: [lecture_id], references: [lecture_id], onDelete: Cascade)
   exam_scores ExamUserScore[] @relation("ExamUserScore_Exam_Relation")
 
   @@index([exam_type_id], map: "Exam_exam_type_id_fkey")
@@ -219,8 +219,8 @@ model Notice {
   academy_id String
   lecture_id Int
   views      Int          @default(0)
-  academy    Academy      @relation("AcademyToNotice_Relation", fields: [academy_id], references: [academy_id])
-  lecture    Lecture      @relation("LectureToNotice_Relation", fields: [lecture_id], references: [lecture_id])
+  academy    Academy      @relation("AcademyToNotice_Relation", fields: [academy_id], references: [academy_id], onDelete: Cascade)
+  lecture    Lecture      @relation("LectureToNotice_Relation", fields: [lecture_id], references: [lecture_id], onDelete: Cascade)
   user       User         @relation("UserToNotice_Relation", fields: [user_id], references: [user_id])
   files      NoticeFile[] @relation("NoticeToNoticeFiles_Relation")
 
