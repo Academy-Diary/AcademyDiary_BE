@@ -499,16 +499,13 @@ exports.updateUserImageInfo = asyncWrapper(async (req, res, next) => {
       )
     );
   }
-  // User DB에 이미지 정보가 없는 경우, 이미지 정보 추가
-  if (!userExists.image) {
-    console.log("이미지 정보 추가");
-    await prisma.User.update({
-      where: { user_id: user_id },
-      data: {
-        image: req.file.location,
+  // 어느 때든 이미지 경로 RDS에 갱신
+  await prisma.User.update({
+    where: { user_id: user_id },
+    data: {
+      image: req.file.location,
       },
-    });
-  }
+  });
 
   return res.status(StatusCodes.OK).json({
     message: "회원 이미지 정보가 수정되었습니다.",
@@ -693,7 +690,7 @@ exports.checkPassword = asyncWrapper(async (req, res, next) => {
   const message = isMatched
     ? "비밀번호가 일치합니다."
     : "비밀번호가 일치하지 않습니다.";
-    
+
   res.status(StatusCodes.OK).json({
     message: message,
     isMatched: isMatched,
@@ -733,7 +730,7 @@ exports.updateAcademyInfo = asyncWrapper(async (req, res, next) => {
     },
   });
 
-  updatedAcademyInfo= {
+  updatedAcademyInfo = {
     academy_id: academy_id,
     academy_name: queryResult.academy_name,
     academy_email: queryResult.academy_email,
