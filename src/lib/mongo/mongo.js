@@ -1,5 +1,5 @@
 const { MongoClient } = require("mongodb");
-const { MONGO_DB_URL } = require("../../config/secret");
+const { MONGO_DB_URL } = require("../../config/secret.js");
 
 let client, chatDB, quizDB, authDB;
 
